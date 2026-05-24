@@ -125,6 +125,8 @@ GameObject:
   - component: {fileID: 5679012224465737334}
   - component: {fileID: 1970539729057562251}
   - component: {fileID: 3149081206460350233}
+  - component: {fileID: 995269720023628889}
+  - component: {fileID: 1481412354457338367}
   m_Layer: 0
   m_Name: InitPlayer
   m_TagString: Untagged
@@ -279,6 +281,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23c2eeda73ef4ad4484c5e3d9e4bce87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInput
+  levelSystem: {fileID: 995269720023628889}
 --- !u!114 &5679012224465737334
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -293,6 +296,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLook
   cameraPivot: {fileID: 7734939027387009807}
   sensitivity: 50
+  upClamp: 20
+  downClamp: -30
 --- !u!114 &1970539729057562251
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -337,3 +342,37 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &995269720023628889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8888413459189353256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4577104441d41d4084ecbe144b0ac4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerLevelSystem
+  level: 1
+  currentExp: 0
+  requiredExp: 100
+  levelUpExp: 1.2
+  augmentManager: {fileID: 0}
+--- !u!114 &1481412354457338367
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8888413459189353256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79deaa57ff8ab1a44b0546774f403199, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
+  baseAttackDamage: 10
+  baseHP: 100
+  baseMoveSpeed: 5
+  baseAttackSpeed: 1
+  baseDefense: 0

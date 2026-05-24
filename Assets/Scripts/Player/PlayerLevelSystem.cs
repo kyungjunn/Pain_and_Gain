@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 public class PlayerLevelSystem : MonoBehaviour
 {
@@ -38,13 +39,16 @@ public class PlayerLevelSystem : MonoBehaviour
         level++;
 
         // 레벨마다 요구 경험치 증가
-        requiredExp *= Mathf.RoundToInt(requiredExp * levelUpExp); 
+        requiredExp = Mathf.RoundToInt(requiredExp * levelUpExp); 
 
         onLevelUp?.Invoke();
 
+        List<StatAugmentSO> augments = augmentManager.GetRandomAugments();
+
+        UIManager.Instance.OpenAugmentPanel(augments);
+
         Debug.Log($"레벨업! 다음 레벨 요구 경험치: {requiredExp}");
 
-        augmentManager.ShowRandomAugments();
     }
 
     public float GetExpPercent()

@@ -1,38 +1,56 @@
 using UnityEngine;
+using System;
 
 public class PlayerStats : MonoBehaviour
 {
-    [Header("Stats")]
-    public float attack = 10f;
-    public float hp = 100f;
-    public float moveSpeed = 5f;
-    public float attackSpeed = 1f;
-    public float defense = 0f;
+    [Header("Base Stats")] // 기본 스탯
+    public float baseAttackDamage = 10f;
+    public float baseHP = 100f;
+    public float baseMoveSpeed = 5f;
+    public float baseAttackSpeed = 1f;
+    public float baseDefense = 0f;
 
-    // 기본 스탯 증가
+    [Header("Augment Stats")] // 증가되는 스탯
+    private float AugmentAttackDamage;
+    private float AugmentHP;
+    private float AugmentMoveSpeed;
+    private float AugmentAttackSpeed;
+    private float AugmentDefense;
+
+    public Action onStatsChanged;
+
+    // 최종 계산 스탯
+    public float AttackDamage => baseAttackDamage + AugmentAttackDamage;
+    public float HP => baseHP + AugmentHP;
+    public float MoveSpeed => baseMoveSpeed + AugmentMoveSpeed;
+    public float AttackSpeed => baseAttackSpeed + AugmentAttackSpeed;
+    public float Defense => baseDefense + AugmentDefense;
+
     public void ApplyStat(AugmentType type, float value)
     {
         switch (type)
         {
-            case AugmentType.Attack:
-                attack += value;
+            case AugmentType.AttackDamage:
+                AugmentAttackDamage += value;
                 break;
 
             case AugmentType.HP:
-                hp += value;
+                AugmentHP += value;
                 break;
 
             case AugmentType.MoveSpeed:
-                moveSpeed += value;
+                AugmentMoveSpeed += value;
                 break;
 
             case AugmentType.AttackSpeed:
-                attackSpeed += value;
+                AugmentAttackSpeed += value;
                 break;
 
             case AugmentType.Defense:
-                defense += value;
+                AugmentDefense += value;
                 break;
         }
+
+        onStatsChanged?.Invoke();
     }
 }
