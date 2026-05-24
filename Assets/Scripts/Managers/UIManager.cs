@@ -12,13 +12,17 @@ public class UIManager : MonoBehaviour
     private void Awake()
     {
         if (Instance == null)
+        {
             Instance = this;
+        }
         else
+        {
             Destroy(gameObject);
+        }
+
     }
 
-    public void OpenAugmentPanel(
-        List<StatAugmentSO> augments)
+    public void OpenAugmentPanel(List<StatAugmentSO> augments)
     {
         augmentPanelUI.gameObject.SetActive(true);
 

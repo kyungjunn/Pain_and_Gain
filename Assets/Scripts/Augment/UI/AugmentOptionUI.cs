@@ -17,17 +17,13 @@ public class AugmentOptionUI : MonoBehaviour
     {
         currentAugment = augment;
 
-        titleText.text =
-            $"{augment.augmentName} +{augment.value}";
+        titleText.text = $"{augment.augmentName} +{augment.value}";
 
-        descText.text =
-            augment.description;
+        descText.text = augment.description;
 
-        rarityText.text =
-            augment.rarity.ToString();
+        rarityText.text = augment.rarity.ToString();
 
-        iconImage.sprite =
-            augment.icon;
+        iconImage.sprite = augment.icon;
 
         SetRarityColor(augment.rarity);
     }
@@ -58,10 +54,8 @@ public class AugmentOptionUI : MonoBehaviour
 
     public void OnClick()
     {
-        AugmentManager.Instance
-            .ApplyAugment(currentAugment);
+        AugmentManager.Instance.ApplyAugment(currentAugment);
 
-        UIManager.Instance
-            .CloseAugmentPanel();
+        UIManager.Instance.CloseAugmentPanel();
     }
 }
