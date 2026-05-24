@@ -14,25 +14,19 @@ public class StatsPanelUI : MonoBehaviour
     private void Start()
     {
         playerStat.onStatsChanged += Refresh;
-
         Refresh();
     }
 
     public void Refresh()
     {
-        damageText.text =
-            $"AttackDamage : {playerStat.AttackDamage}";
+        damageText.text = $"AttackDamage : {playerStat.AttackDamage}";
 
-        hpText.text =
-            $"HP : {playerStat.HP}";
+        hpText.text = $"HP : {playerStat.HP}";
 
-        moveSpeedText.text =
-            $"Speed : {playerStat.MoveSpeed}";
+        moveSpeedText.text = $"Speed : {playerStat.MoveSpeed}";
 
-        attackSpeedText.text =
-            $"AttackSpeed : {playerStat.AttackSpeed}";
+        attackSpeedText.text = $"AttackSpeed : {playerStat.AttackSpeed}";
 
-        defenseText.text =
-            $"Defense : {playerStat.Defense}";
+        defenseText.text = $"Defense : {playerStat.Defense}";
     }
 }

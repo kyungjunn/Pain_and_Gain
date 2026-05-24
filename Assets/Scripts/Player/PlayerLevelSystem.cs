@@ -16,8 +16,8 @@ public class PlayerLevelSystem : MonoBehaviour
     // 레벨 업 시 경험치 증가량
     public float levelUpExp = 1.2f;
 
-    public Action onExpChanged;
-    public Action onLevelUp;
+    public Action onExpChanged; // 경험치 변경 이벤트
+    public Action onLevelUp; // 레벨업 이벤트
 
     public AugmentManager augmentManager;
 
@@ -27,10 +27,11 @@ public class PlayerLevelSystem : MonoBehaviour
 
         while (currentExp >= requiredExp)
         {
-            currentExp -= requiredExp;
+            currentExp -= requiredExp; // 현재 레벨업에 사용된 경험치 차감
             LevelUp();
         }
 
+        // 경험치 이벤트 호출
         onExpChanged?.Invoke();
     }
 
@@ -41,10 +42,13 @@ public class PlayerLevelSystem : MonoBehaviour
         // 레벨마다 요구 경험치 증가
         requiredExp = Mathf.RoundToInt(requiredExp * levelUpExp); 
 
+        // 레벨업 이벤트 호출
         onLevelUp?.Invoke();
 
+        // 랜덤 증강 선택지 생성
         List<StatAugmentSO> augments = augmentManager.GetRandomAugments();
 
+        // 증강 선택 UI 열기
         UIManager.Instance.OpenAugmentPanel(augments);
 
         Debug.Log($"레벨업! 다음 레벨 요구 경험치: {requiredExp}");

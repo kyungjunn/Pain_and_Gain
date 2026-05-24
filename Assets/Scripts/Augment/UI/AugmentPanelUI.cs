@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 public class AugmentPanelUI : MonoBehaviour
 {
-    public List<AugmentOptionUI> optionUIs;
+    public List<AugmentOptionUI> optionUIs; // UI 슬롯들
 
-    public void Setup(List<StatAugmentSO> augments)
+    public void Setup(List<StatAugmentSO> augments) // 랜덤을 뽑힌 데이터
     {
         for (int i = 0; i < optionUIs.Count; i++)
         {
@@ -16,7 +16,7 @@ public class AugmentPanelUI : MonoBehaviour
         {
             optionUIs[i].gameObject.SetActive(true);
 
-            optionUIs[i].Setup(augments[i]);
+            optionUIs[i].Setup(augments[i]); //AugmentOptionUI 의 Setup
         }
     }
 }

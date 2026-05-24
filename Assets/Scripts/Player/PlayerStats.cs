@@ -17,9 +17,11 @@ public class PlayerStats : MonoBehaviour
     private float AugmentAttackSpeed;
     private float AugmentDefense;
 
+    // 스탯 변경 이벤트
     public Action onStatsChanged;
 
     // 최종 계산 스탯
+    // 프로퍼티 사용 -> 외부에서 수정 불가능 설계
     public float AttackDamage => baseAttackDamage + AugmentAttackDamage;
     public float HP => baseHP + AugmentHP;
     public float MoveSpeed => baseMoveSpeed + AugmentMoveSpeed;
@@ -51,6 +53,7 @@ public class PlayerStats : MonoBehaviour
                 break;
         }
 
+        // 스탯 갱신 이벤트 호출
         onStatsChanged?.Invoke();
     }
 }
