@@ -10,12 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df63a843032d5c74580d60f822d69123, type: 3}
-  m_Name: Damage_Data
+  m_Name: Lengend_Data
   m_EditorClassIdentifier: Assembly-CSharp::StatAugmentSO
   augmentName: Damage
-  description: Increase Damage
+  description: 'Legend Increase Attack Damage
+
+
+'
   icon: {fileID: 0}
   type: 0
-  value: 5
-  rarity: 0
-  weight: 50
+  value: 1000
+  rarity: 3
+  weight: 5
