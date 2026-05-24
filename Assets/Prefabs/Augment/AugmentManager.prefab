@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2117447976597949096}
   - component: {fileID: 1922184743213070111}
+  - component: {fileID: 8259290248297302196}
+  - component: {fileID: 6813259896320547655}
   m_Layer: 0
   m_Name: AugmentManager
   m_TagString: Untagged
@@ -47,8 +49,33 @@ MonoBehaviour:
   playerStats: {fileID: 0}
   allAugments:
   - {fileID: 11400000, guid: b0c1f5e5604f615458896fd354f52d16, type: 2}
+  - {fileID: 11400000, guid: e77541595519301409539639b10333e7, type: 2}
   - {fileID: 11400000, guid: 9b3c2cf6fddf1cb4cafca8a804ca91ac, type: 2}
+  - {fileID: 11400000, guid: 51a9c745ded23414cb060441f8057daa, type: 2}
   optionCount: 3
-  augmentPanel: {fileID: 0}
-  optionParent: {fileID: 0}
-  optionPrefab: {fileID: 0}
+--- !u!114 &8259290248297302196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 602122712591844014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d00b51ebc354720469ce62e3cc86d876, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+--- !u!114 &6813259896320547655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 602122712591844014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce510f5649a076e4291c1f2fbcbe019e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  augmentPanelUI: {fileID: 0}
+  statsPanelUI: {fileID: 0}

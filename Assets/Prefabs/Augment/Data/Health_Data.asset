@@ -12,10 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df63a843032d5c74580d60f822d69123, type: 3}
   m_Name: Health_Data
   m_EditorClassIdentifier: Assembly-CSharp::StatAugmentSO
-  augmentName: Health Augment
-  description: 'Increase Health
+  augmentName: Max HP
+  description: 'Increase Max HP
 
 '
   icon: {fileID: 0}
   type: 1
   value: 20
+  rarity: 0
+  weight: 50

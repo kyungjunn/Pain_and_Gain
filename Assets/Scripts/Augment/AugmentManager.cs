@@ -4,6 +4,8 @@ using System.Linq;
 
 public class AugmentManager : MonoBehaviour
 {
+    public static AugmentManager Instance;
+
     public PlayerStats playerStats;
 
     [Header("All Augments")]
@@ -12,36 +14,55 @@ public class AugmentManager : MonoBehaviour
     [Header("Settings")]
     public int optionCount = 3;
 
-    [Header("UI")]
-    public GameObject augmentPanel;
-    public Transform optionParent;
-    public AugmentOptionUI optionPrefab;
-
-    public void ShowRandomAugments()
+    private void Awake()
     {
-        augmentPanel.SetActive(true);
+        Instance = this;
+    }
 
-        // 기존 UI 제거
-        foreach (Transform child in optionParent)
+    public List<StatAugmentSO> GetRandomAugments()
+    {
+        List<StatAugmentSO> result =
+            new List<StatAugmentSO>();
+
+        List<StatAugmentSO> pool =
+            new List<StatAugmentSO>(allAugments);
+
+        for (int i = 0; i < optionCount; i++)
         {
-            Destroy(child.gameObject);
+            StatAugmentSO selected =
+                GetWeightedRandom(pool);
+
+            result.Add(selected);
+
+            // 중복 제거
+            pool.Remove(selected);
         }
 
-        List<StatAugmentSO> selected =
-            allAugments
-            .OrderBy(x => Random.value)
-            .Take(optionCount)
-            .ToList();
+        return result;
+    }
 
-        foreach (var augment in selected)
+    private StatAugmentSO GetWeightedRandom(
+        List<StatAugmentSO> pool)
+    {
+        int totalWeight =
+            pool.Sum(x => x.weight);
+
+        int random =
+            Random.Range(0, totalWeight);
+
+        int current = 0;
+
+        foreach (var augment in pool)
         {
-            AugmentOptionUI ui =
-                Instantiate(optionPrefab, optionParent);
+            current += augment.weight;
 
-            ui.Setup(augment, this);
+            if (random < current)
+            {
+                return augment;
+            }
         }
 
-        Time.timeScale = 0f;
+        return pool[0];
     }
 
     public void ApplyAugment(StatAugmentSO augment)
@@ -50,9 +71,5 @@ public class AugmentManager : MonoBehaviour
             augment.type,
             augment.value
         );
-
-        augmentPanel.SetActive(false);
-
-        Time.timeScale = 1f;
     }
 }
