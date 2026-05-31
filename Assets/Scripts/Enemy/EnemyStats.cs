@@ -20,6 +20,11 @@ public class EnemyStats : ScriptableObject
     [SerializeField] private float detectionRange = 12f;
     [SerializeField] private float repathRate = 0.15f;
 
+    [Header("Patrol")]
+    [SerializeField] private float patrolRadius = 8f;
+    [SerializeField] private float patrolWaitTime = 0.3f;
+    [SerializeField] private float patrolPointTolerance = 0.7f;
+
     [Header("Attack")]
     [SerializeField] private float attackRange = 1.8f;
     [SerializeField] private float attackCooldown = 1.2f;
@@ -32,6 +37,9 @@ public class EnemyStats : ScriptableObject
     public float RotationSpeed => rotationSpeed;
     public float DetectionRange => detectionRange;
     public float RepathRate => repathRate;
+    public float PatrolRadius => patrolRadius;
+    public float PatrolWaitTime => patrolWaitTime;
+    public float PatrolPointTolerance => patrolPointTolerance;
     public float AttackRange => attackRange;
     public float AttackCooldown => attackCooldown;
 
@@ -44,6 +52,9 @@ public class EnemyStats : ScriptableObject
         rotationSpeed = Mathf.Max(0.1f, rotationSpeed);
         detectionRange = Mathf.Max(0.1f, detectionRange);
         repathRate = Mathf.Max(0.02f, repathRate);
+        patrolRadius = Mathf.Max(0.1f, patrolRadius);
+        patrolWaitTime = Mathf.Max(0f, patrolWaitTime);
+        patrolPointTolerance = Mathf.Max(0.1f, patrolPointTolerance);
         attackRange = Mathf.Max(0.1f, attackRange);
         attackCooldown = Mathf.Max(0.1f, attackCooldown);
     }

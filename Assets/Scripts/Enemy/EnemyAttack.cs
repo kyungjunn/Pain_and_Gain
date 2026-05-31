@@ -7,10 +7,16 @@ public class EnemyAttack : MonoBehaviour
     [SerializeField] private float attackRange = 1.8f;
     [SerializeField] private float attackCooldown = 1.2f;
 
+    private EnemyAnimator enemyAnimator;
     private float nextAttackTime;
 
     public float AttackRange => stats != null ? stats.AttackRange : attackRange;
     private float AttackCooldown => stats != null ? stats.AttackCooldown : attackCooldown;
+
+    private void Awake()
+    {
+        enemyAnimator = GetComponent<EnemyAnimator>();
+    }
 
     // 공격 가능한 거리와 쿨타임이면 대상에게 피해 적용
     public bool TryAttack(Transform target)
@@ -27,16 +33,24 @@ public class EnemyAttack : MonoBehaviour
             return false;
         }
 
+        nextAttackTime = Time.time + AttackCooldown;
+        enemyAnimator?.PlayAttack();
+
+        IDamageable damageable = FindDamageable(target);
+        damageable?.TakeDamage();
+        return true;
+    }
+
+    private IDamageable FindDamageable(Transform target)
+    {
         IDamageable damageable = target.GetComponentInParent<IDamageable>();
 
-        if (damageable == null)
+        if (damageable != null)
         {
-            return false;
+            return damageable;
         }
 
-        nextAttackTime = Time.time + AttackCooldown;
-        damageable.TakeDamage();
-        return true;
+        return target.GetComponentInChildren<IDamageable>();
     }
 
     private void OnValidate()
