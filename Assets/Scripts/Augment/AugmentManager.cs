@@ -6,10 +6,10 @@ public class AugmentManager : MonoBehaviour
 {
     public static AugmentManager Instance;
 
-    public PlayerStats playerStats;
+    private PlayerStats playerStats;
 
     [Header("All Augments")]
-    public List<StatAugmentSO> allAugments; 
+    public List<StatAugmentSO> allAugments;
 
     [Header("Settings")]
     public int optionCount = 3;
@@ -17,6 +17,20 @@ public class AugmentManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+    }
+    private void OnEnable()
+    {
+        SpawnManager.OnPlayerSpawned += HandlePlayerSpawned;
+    }
+    private void OnDisable()
+    {
+        SpawnManager.OnPlayerSpawned -= HandlePlayerSpawned;
+    }
+
+    // 플레이어 스폰 시 실행되는 콜백함수
+    private void HandlePlayerSpawned(GameObject playerObject)
+    {
+        playerStats = playerObject.GetComponent<PlayerStats>();
     }
 
     public List<StatAugmentSO> GetRandomAugments()
@@ -46,6 +60,11 @@ public class AugmentManager : MonoBehaviour
     {
         // 전체 weight 합 
         int totalWeight = pool.Sum(x => x.weight);
+        // 예외 처리
+        if (totalWeight <= 0)
+        {
+            return pool[0];
+        }
 
         int random = Random.Range(0, totalWeight);
 
@@ -68,6 +87,12 @@ public class AugmentManager : MonoBehaviour
 
     public void ApplyAugment(StatAugmentSO augment)
     {
+        if (playerStats == null)
+        {
+            Debug.LogError("PlayerStats 바인딩 안됨.");
+            return;
+        }
+
         playerStats.ApplyStat(augment.type, augment.value);
     }
 }

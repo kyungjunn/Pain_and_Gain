@@ -19,8 +19,6 @@ public class PlayerLevelSystem : MonoBehaviour
     public Action onExpChanged; // 경험치 변경 이벤트
     public Action onLevelUp; // 레벨업 이벤트
 
-    public AugmentManager augmentManager;
-
     public void AddExp(int amount)
     {
         currentExp += amount;
@@ -45,14 +43,20 @@ public class PlayerLevelSystem : MonoBehaviour
         // 레벨업 이벤트 호출
         onLevelUp?.Invoke();
 
-        // 랜덤 증강 선택지 생성
-        List<StatAugmentSO> augments = augmentManager.GetRandomAugments();
+        if (AugmentManager.Instance != null)
+        {
+            // 랜덤 증강 선택지 생성
+            List<StatAugmentSO> augments = AugmentManager.Instance.GetRandomAugments();
 
-        // 증강 선택 UI 열기
-        UIManager.Instance.OpenAugmentPanel(augments);
+            // 증강 선택 UI 열기
+            UIManager.Instance.OpenAugmentPanel(augments);
+        }
+        else
+        {
+            Debug.LogError("AugmentManager 인스턴스 찾을 수 없음!");
+        }
 
         Debug.Log($"레벨업! 다음 레벨 요구 경험치: {requiredExp}");
-
     }
 
     public float GetExpPercent()
