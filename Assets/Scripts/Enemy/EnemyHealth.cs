@@ -12,8 +12,11 @@ public class EnemyHealth : MonoBehaviour
     public int CurrentHealth { get; private set; }
     public bool IsDead { get; private set; }
 
+    private EnemyAnimator enemyAnimator;
+
     private void Awake()
     {
+        enemyAnimator = GetComponent<EnemyAnimator>();
         CurrentHealth = MaxHealth;
     }
 
@@ -30,13 +33,17 @@ public class EnemyHealth : MonoBehaviour
         if (CurrentHealth == 0)
         {
             Die();
+            return;
         }
+
+        enemyAnimator?.PlayHit();
     }
 
     // 사망 시 이동과 충돌을 끄고 오브젝트 제거
     private void Die()
     {
         IsDead = true;
+        enemyAnimator?.PlayDeath();
 
         if (TryGetComponent(out NavMeshAgent agent))
         {

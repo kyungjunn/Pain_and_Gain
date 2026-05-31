@@ -11,6 +11,7 @@ public class EnemyAI : MonoBehaviour
     public enum EnemyState
     {
         Idle,
+        Patrol,
         Chase,
         Attack,
         Dead
@@ -22,12 +23,20 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float detectionRange = 12f;
     [SerializeField] private float rotationSpeed = 12f;
     [SerializeField] private float repathRate = 0.15f;
+    [SerializeField] private bool patrolWhenTargetMissing = true;
+    [SerializeField] private float patrolRadius = 8f;
+    [SerializeField] private float patrolWaitTime = 0.3f;
+    [SerializeField] private float patrolPointTolerance = 0.7f;
+    [SerializeField] private int patrolSampleAttempts = 8;
 
     private NavMeshAgent agent;
     private EnemyAttack enemyAttack;
     private EnemyHealth enemyHealth;
     private EnemyState currentState;
+    private Vector3 patrolAnchorPosition;
     private float nextRepathTime;
+    private float nextPatrolTime;
+    private bool waitingForNextPatrolPoint;
 
     public EnemyState CurrentState => currentState;
 
@@ -57,7 +66,7 @@ public class EnemyAI : MonoBehaviour
         if (target == null)
         {
             FindTarget();
-            Idle();
+            Patrol();
             return;
         }
 
@@ -78,7 +87,7 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        Idle();
+        Patrol();
     }
 
     public void SetTarget(Transform newTarget)
@@ -107,6 +116,68 @@ public class EnemyAI : MonoBehaviour
     {
         SetState(EnemyState.Idle);
         StopAgent();
+    }
+
+    // 플레이어가 탐지 범위 밖이면 시작 지점 주변을 랜덤 정찰
+    private void Patrol()
+    {
+        if (!patrolWhenTargetMissing)
+        {
+            Idle();
+            return;
+        }
+
+        bool justEnteredPatrol = currentState != EnemyState.Patrol;
+        SetState(EnemyState.Patrol);
+
+        if (!CanUseAgent())
+        {
+            return;
+        }
+
+        agent.isStopped = false;
+
+        if (justEnteredPatrol)
+        {
+            patrolAnchorPosition = transform.position;
+            waitingForNextPatrolPoint = false;
+            nextPatrolTime = Time.time;
+
+            if (agent.hasPath)
+            {
+                agent.ResetPath();
+            }
+        }
+
+        if (agent.pathPending)
+        {
+            return;
+        }
+
+        if (!HasReachedDestination())
+        {
+            waitingForNextPatrolPoint = false;
+            return;
+        }
+
+        if (!waitingForNextPatrolPoint)
+        {
+            nextPatrolTime = justEnteredPatrol ? Time.time : Time.time + PatrolWaitTime;
+            waitingForNextPatrolPoint = true;
+        }
+
+        if (Time.time < nextPatrolTime)
+        {
+            return;
+        }
+
+        if (TrySetRandomPatrolDestination())
+        {
+            waitingForNextPatrolPoint = false;
+            return;
+        }
+
+        nextPatrolTime = Time.time + PatrolWaitTime;
     }
 
     // NavMeshAgent를 이용해 플레이어 추적
@@ -168,11 +239,60 @@ public class EnemyAI : MonoBehaviour
         {
             agent.ResetPath();
         }
+
+        waitingForNextPatrolPoint = false;
     }
 
     private bool CanUseAgent()
     {
         return agent != null && agent.enabled && agent.isOnNavMesh;
+    }
+
+    private bool HasReachedDestination()
+    {
+        if (!agent.hasPath || agent.pathStatus == NavMeshPathStatus.PathInvalid)
+        {
+            return true;
+        }
+
+        if (float.IsInfinity(agent.remainingDistance))
+        {
+            return true;
+        }
+
+        float reachedDistance = Mathf.Max(PatrolPointTolerance, agent.stoppingDistance + 0.1f);
+        return agent.remainingDistance <= reachedDistance;
+    }
+
+    private bool TrySetRandomPatrolDestination()
+    {
+        float currentPatrolRadius = PatrolRadius;
+
+        for (int i = 0; i < patrolSampleAttempts; i++)
+        {
+            Vector2 randomPoint = Random.insideUnitCircle * currentPatrolRadius;
+            Vector3 samplePosition = patrolAnchorPosition + new Vector3(randomPoint.x, 0f, randomPoint.y);
+
+            if (!NavMesh.SamplePosition(samplePosition, out NavMeshHit hit, 2f, agent.areaMask))
+            {
+                continue;
+            }
+
+            float sqrTolerance = PatrolPointTolerance * PatrolPointTolerance;
+
+            if ((hit.position - transform.position).sqrMagnitude <= sqrTolerance)
+            {
+                continue;
+            }
+
+            if (agent.SetDestination(hit.position))
+            {
+                patrolAnchorPosition = transform.position;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // 현재 상태 갱신
@@ -184,6 +304,9 @@ public class EnemyAI : MonoBehaviour
     private float DetectionRange => stats != null ? stats.DetectionRange : detectionRange;
     private float RotationSpeed => stats != null ? stats.RotationSpeed : rotationSpeed;
     private float RepathRate => stats != null ? stats.RepathRate : repathRate;
+    private float PatrolRadius => stats != null && stats.PatrolRadius > 0f ? stats.PatrolRadius : patrolRadius;
+    private float PatrolWaitTime => Mathf.Max(0f, stats != null ? stats.PatrolWaitTime : patrolWaitTime);
+    private float PatrolPointTolerance => Mathf.Max(0.1f, stats != null ? stats.PatrolPointTolerance : patrolPointTolerance);
 
     // EnemyStats 데이터가 있으면 NavMeshAgent에 이동 설정 적용
     private void ApplyStatsToAgent()
@@ -203,6 +326,10 @@ public class EnemyAI : MonoBehaviour
         detectionRange = Mathf.Max(0.1f, detectionRange);
         rotationSpeed = Mathf.Max(0.1f, rotationSpeed);
         repathRate = Mathf.Max(0.02f, repathRate);
+        patrolRadius = Mathf.Max(0.1f, patrolRadius);
+        patrolWaitTime = Mathf.Max(0f, patrolWaitTime);
+        patrolPointTolerance = Mathf.Max(0.1f, patrolPointTolerance);
+        patrolSampleAttempts = Mathf.Max(1, patrolSampleAttempts);
 
         if (Application.isPlaying)
         {
