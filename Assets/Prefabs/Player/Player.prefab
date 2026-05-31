@@ -126,7 +126,7 @@ GameObject:
   - component: {fileID: 995269720023628889}
   - component: {fileID: 1481412354457338367}
   m_Layer: 0
-  m_Name: InitPlayer
+  m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -237,7 +237,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLook
   cameraPivot: {fileID: 7734939027387009807}
-  sensitivity: 50
+  sensitivity: 10
   upClamp: 20
   downClamp: -30
 --- !u!114 &1970539729057562251
@@ -252,7 +252,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64757352fd8040e4f8bb33ad465e11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  moveSpeed: 10
+  moveSpeed: 5
   cameraTransform: {fileID: 7734939027387009807}
 --- !u!114 &3149081206460350233
 MonoBehaviour:
@@ -300,7 +300,6 @@ MonoBehaviour:
   currentExp: 0
   requiredExp: 100
   levelUpExp: 1.2
-  augmentManager: {fileID: 0}
 --- !u!114 &1481412354457338367
 MonoBehaviour:
   m_ObjectHideFlags: 0
