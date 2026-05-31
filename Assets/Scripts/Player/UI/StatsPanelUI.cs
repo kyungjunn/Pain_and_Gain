@@ -3,7 +3,7 @@ using TMPro;
 
 public class StatsPanelUI : MonoBehaviour
 {
-    public PlayerStats playerStat;
+    private PlayerStats playerStats;
 
     public TextMeshProUGUI damageText;
     public TextMeshProUGUI hpText;
@@ -11,22 +11,40 @@ public class StatsPanelUI : MonoBehaviour
     public TextMeshProUGUI attackSpeedText;
     public TextMeshProUGUI defenseText;
 
-    private void Start()
+    private void OnEnable()
     {
-        playerStat.onStatsChanged += Refresh;
-        Refresh();
+        SpawnManager.OnPlayerSpawned += InitializeUI;
+    }
+    private void OnDisable()
+    {
+        SpawnManager.OnPlayerSpawned -= InitializeUI;
+        if (playerStats != null)
+        {
+            playerStats.onStatsChanged -= Refresh;
+        }
+    }
+
+    // 플레이어 스폰 시 자동 실행
+    private void InitializeUI(GameObject playerObject)
+    {
+        playerStats = playerObject.GetComponent<PlayerStats>();
+        if (playerStats != null)
+        {
+            playerStats.onStatsChanged += Refresh;
+            Refresh();
+        }
     }
 
     public void Refresh()
     {
-        damageText.text = $"AttackDamage : {playerStat.AttackDamage}";
+        damageText.text = $"AttackDamage : {playerStats.AttackDamage}";
 
-        hpText.text = $"HP : {playerStat.HP}";
+        hpText.text = $"HP : {playerStats.HP}";
 
-        moveSpeedText.text = $"Speed : {playerStat.MoveSpeed}";
+        moveSpeedText.text = $"Speed : {playerStats.MoveSpeed}";
 
-        attackSpeedText.text = $"AttackSpeed : {playerStat.AttackSpeed}";
+        attackSpeedText.text = $"AttackSpeed : {playerStats.AttackSpeed}";
 
-        defenseText.text = $"Defense : {playerStat.Defense}";
+        defenseText.text = $"Defense : {playerStats.Defense}";
     }
 }
