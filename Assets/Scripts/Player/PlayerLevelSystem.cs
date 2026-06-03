@@ -43,6 +43,12 @@ public class PlayerLevelSystem : MonoBehaviour
         // 레벨업 이벤트 호출
         onLevelUp?.Invoke();
 
+        // 레벨업 오디오 추가
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayLevelUp();
+        }
+
         if (AugmentManager.Instance != null)
         {
             // 랜덤 증강 선택지 생성
