@@ -54,6 +54,10 @@ public class AugmentOptionUI : MonoBehaviour
 
     public void OnClick()
     {
+        AudioManager.Instance.PlayLevelUp();
+
+        AugmentManager.Instance.ApplyAugment(currentAugment);
+
         AugmentManager.Instance.ApplyAugment(currentAugment);
 
         UIManager.Instance.CloseAugmentPanel();

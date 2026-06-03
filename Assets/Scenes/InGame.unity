@@ -1224,7 +1224,7 @@ MonoBehaviour:
   playerAttackClip: {fileID: 0}
   playerHitClip: {fileID: 0}
   enemyDeathClip: {fileID: 0}
-  levelUpClip: {fileID: 0}
+  levelUpClip: {fileID: 8300000, guid: c2aa156fb923e489692bfcb373b51ca0, type: 3}
 --- !u!82 &1853777044
 AudioSource:
   m_ObjectHideFlags: 0
