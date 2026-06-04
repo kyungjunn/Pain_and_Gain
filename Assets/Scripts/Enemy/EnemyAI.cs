@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System;
+using Unity.VisualScripting;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(EnemyAttack))]
@@ -18,7 +20,7 @@ public class EnemyAI : MonoBehaviour
     }
 
     [SerializeField] private EnemyStats stats;
-    [SerializeField] private Transform target;
+    private Transform target;
     [SerializeField] private string playerTag = "Player";
     [SerializeField] private float detectionRange = 12f;
     [SerializeField] private float rotationSpeed = 12f;
@@ -49,9 +51,24 @@ public class EnemyAI : MonoBehaviour
         ApplyStatsToAgent();
     }
 
+    // 플레이어 스폰 시 이벤트 구독.
+    private void OnEnable()
+    {
+        SpawnManager.OnPlayerSpawned += AssignTarget;
+    }
+
+    private void OnDisable()
+    {
+        SpawnManager.OnPlayerSpawned -= AssignTarget;
+    }
+
     private void Start()
     {
-        FindTarget();
+        if (target == null)
+        {
+            FindTarget();
+            Debug.Log("Start Find Target");
+        }
     }
 
     private void Update()
@@ -65,34 +82,51 @@ public class EnemyAI : MonoBehaviour
 
         if (target == null)
         {
-            FindTarget();
+            //FindTarget();
             Patrol();
+            Debug.Log("Target null");
+
             return;
         }
 
         float sqrDistance = (target.position - transform.position).sqrMagnitude;
         float attackRange = enemyAttack.AttackRange;
+        float currentDetectionRange = DetectionRange;
+
 
         if (sqrDistance <= attackRange * attackRange)
         {
             Attack();
-            return;
+            Debug.Log("Enemy Attack");
+
+            //return;
         }
-
-        float currentDetectionRange = DetectionRange;
-
-        if (sqrDistance <= currentDetectionRange * currentDetectionRange)
+        else if (sqrDistance <= currentDetectionRange * currentDetectionRange)
         {
             Chase();
-            return;
-        }
+            Debug.Log("Enemy Chase");
 
-        Patrol();
+            //return;
+        }
+        else
+        {
+            Patrol();
+        }
     }
 
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
+    }
+
+    // 플레이어 스폰 시 타겟 설정
+    private void AssignTarget(GameObject player)
+    {
+        if (player != null)
+        {
+            target = player.transform;
+            Debug.Log("플레이어 타겟 설정");
+        }
     }
 
     // Player 태그를 가진 오브젝트를 추적 대상으로 설정
@@ -108,6 +142,8 @@ public class EnemyAI : MonoBehaviour
         if (player != null)
         {
             target = player.transform;
+            Debug.Log("Find Target ");
+
         }
     }
 
@@ -270,7 +306,7 @@ public class EnemyAI : MonoBehaviour
 
         for (int i = 0; i < patrolSampleAttempts; i++)
         {
-            Vector2 randomPoint = Random.insideUnitCircle * currentPatrolRadius;
+            Vector2 randomPoint = UnityEngine.Random.insideUnitCircle * currentPatrolRadius;
             Vector3 samplePosition = patrolAnchorPosition + new Vector3(randomPoint.x, 0f, randomPoint.y);
 
             if (!NavMesh.SamplePosition(samplePosition, out NavMeshHit hit, 2f, agent.areaMask))
