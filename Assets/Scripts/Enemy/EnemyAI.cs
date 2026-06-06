@@ -84,7 +84,7 @@ public class EnemyAI : MonoBehaviour
             // 밑에서 이미 범위로 감지 중이기 때문에 매 프레임 타겟 설정하는 코드 주석처리
             //FindTarget();
             Patrol();
-            Debug.Log("Target null");
+            //Debug.Log("Target null");
 
             return;
         }
@@ -97,14 +97,14 @@ public class EnemyAI : MonoBehaviour
         if (sqrDistance <= attackRange * attackRange)
         {
             Attack();
-            Debug.Log("Enemy Attack");
+            //Debug.Log("Enemy Attack");
 
             //return;
         }
         else if (sqrDistance <= currentDetectionRange * currentDetectionRange)
         {
             Chase();
-            Debug.Log("Enemy Chase");
+            //Debug.Log("Enemy Chase");
 
             //return;
         }
@@ -142,7 +142,7 @@ public class EnemyAI : MonoBehaviour
         if (player != null)
         {
             target = player.transform;
-            Debug.Log("Find Target ");
+            //Debug.Log("Find Target ");
 
         }
     }

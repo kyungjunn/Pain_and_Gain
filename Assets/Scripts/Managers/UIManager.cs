@@ -8,6 +8,7 @@ public class UIManager : MonoBehaviour
     [Header("Panels")]
     public AugmentPanelUI augmentPanelUI;
     public StatsPanelUI statsPanelUI;
+    public LoadingPanelUI loadingPanelUI;
 
     private void Awake()
     {
@@ -20,6 +21,24 @@ public class UIManager : MonoBehaviour
             Destroy(gameObject);
         }
 
+    }
+
+    public void ShowLoadingUI(bool isShow)
+    {
+        if (loadingPanelUI == null)
+        {
+            return;
+        }
+
+        if (isShow)
+        {
+            loadingPanelUI.ResetLoadingUI();
+            loadingPanelUI.gameObject.SetActive(true);
+        }
+        else
+        {
+            loadingPanelUI.gameObject.SetActive(false);
+        }
     }
 
     public void OpenAugmentPanel(List<StatAugmentSO> augments)

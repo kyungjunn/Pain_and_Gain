@@ -32,13 +32,41 @@ public class GameManager : MonoBehaviour
     private IEnumerator LoadMapAndSpawnRoutine()
     {
         // UI Manager 에서 로딩 UI 시작
-        //if (UIManager.Instance != null)
-        //{
-        //    UIManager.Instance.ShowLoadingUI(true);
-        //}
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowLoadingUI(true);
+        }
 
         // 맵 씬을 비동기 + 추가 모드로 로드
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(mapSceneName, LoadSceneMode.Additive);
+        asyncLoad.allowSceneActivation = false;
+
+        // 맵 로딩 상태를 게이지에 반영
+        while (asyncLoad.progress < 0.9f)
+        {
+            if (UIManager.Instance != null && UIManager.Instance.loadingPanelUI != null)
+            {
+                float progress = Mathf.Clamp01(asyncLoad.progress / 0.9f);
+                UIManager.Instance.loadingPanelUI.SetTargetProgress(progress);
+            }
+            yield return null;
+        }
+
+        if (UIManager.Instance != null && UIManager.Instance.loadingPanelUI != null)
+        {
+            UIManager.Instance.loadingPanelUI.SetTargetProgress(1f);
+        }
+
+        // 게이지가 다 찰 때까지 대기
+        if (UIManager.Instance != null && UIManager.Instance.loadingPanelUI != null)
+        {
+            while (!UIManager.Instance.loadingPanelUI.IsLoadingVisualDone)
+            {
+                yield return null;
+            }
+        }
+
+        asyncLoad.allowSceneActivation = true;
 
         // 맵 로딩이 끝날 때까지 대기
         while (!asyncLoad.isDone)
@@ -56,11 +84,13 @@ public class GameManager : MonoBehaviour
             SpawnManager.Instance.SpawnAll();
         }
 
+        yield return new WaitForSecondsRealtime(0.2f);
+
         // 로딩 완료 후 로딩 UI 닫기
-        //if(UIManager.Instance != null)
-        //{
-        //    UIManager.Instance.ShowLoadingUI(false);
-        //}
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowLoadingUI(false);
+        }
     }
 
     public void PauseGame()
