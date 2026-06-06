@@ -61,6 +61,6 @@ public class PlayerLevelSystem : MonoBehaviour
 
     public float GetExpPercent()
     {
-        return currentExp / requiredExp;
+        return (float)currentExp / requiredExp;
     }
 }
