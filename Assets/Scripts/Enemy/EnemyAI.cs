@@ -67,7 +67,6 @@ public class EnemyAI : MonoBehaviour
         if (target == null)
         {
             FindTarget();
-            Debug.Log("Start Find Target");
         }
     }
 
@@ -82,6 +81,7 @@ public class EnemyAI : MonoBehaviour
 
         if (target == null)
         {
+            // 밑에서 이미 범위로 감지 중이기 때문에 매 프레임 타겟 설정하는 코드 주석처리
             //FindTarget();
             Patrol();
             Debug.Log("Target null");
@@ -125,7 +125,7 @@ public class EnemyAI : MonoBehaviour
         if (player != null)
         {
             target = player.transform;
-            Debug.Log("플레이어 타겟 설정");
+            //Debug.Log("플레이어 타겟 설정");
         }
     }
 
