@@ -16,7 +16,7 @@ MonoBehaviour:
   description: 'Increase Max HP
 
 '
-  icon: {fileID: 0}
+  icon: {fileID: -1938600377, guid: 63294de887d537f4a81f80aa9c866cdd, type: 3}
   type: 1
   value: 20
   rarity: 0
