@@ -6,11 +6,21 @@ public class PlayerMovement : MonoBehaviour
     public float moveSpeed = 5f; // 플레이어 이동속도
     public Transform cameraTransform;
 
+    public float jumpForce = 5f;
+    private Rigidbody rb;
     private PlayerInput playerInput;
+
+    // 현재 땅에 닿아있으면 true, 공중이면 false를 반환하는 함수
+    public bool CheckGrounded()
+    {
+        // 캐릭터 중심에서 아래쪽으로 1.1f 길이의 레이저를 쏴서 땅이 있는지 확인합니다.
+        return Physics.Raycast(transform.position, Vector3.down, 1.1f);
+    }
 
     void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
+        rb = GetComponent<Rigidbody>();
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -45,6 +55,15 @@ public class PlayerMovement : MonoBehaviour
         move = move.normalized;
 
         transform.Translate(move * moveSpeed * Time.deltaTime, Space.World);
+    }
+
+    public void Jump()
+    {
+        if (CheckGrounded()) 
+        {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
     }
 }
     

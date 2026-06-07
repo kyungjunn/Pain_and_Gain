@@ -1,0 +1,77 @@
+using UnityEngine;
+using UnityEngine.AI;
+
+[RequireComponent(typeof(Animator))]
+[RequireComponent(typeof(NavMeshAgent))]
+// Enemy AI 상태와 NavMeshAgent 이동 값을 Animator 파라미터에 반영
+public class EnemyAnimator : MonoBehaviour
+{
+    [SerializeField] private Animator animator;
+    [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private float moveSpeedDampTime = 0.1f;
+
+    private static readonly int MoveSpeedHash = Animator.StringToHash("MoveSpeed");
+    private static readonly int AttackHash = Animator.StringToHash("Attack");
+    private static readonly int HitHash = Animator.StringToHash("Hit");
+    private static readonly int DeathHash = Animator.StringToHash("Death");
+
+    private void Awake()
+    {
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+
+        if (agent == null)
+        {
+            agent = GetComponent<NavMeshAgent>();
+        }
+    }
+
+    private void Update()
+    {
+        if (animator == null || agent == null)
+        {
+            return;
+        }
+
+        float moveSpeed = 0f;
+
+        if (agent.enabled && agent.speed > 0.01f)
+        {
+            moveSpeed = Mathf.Clamp01(agent.velocity.magnitude / agent.speed);
+        }
+
+        animator.SetFloat(MoveSpeedHash, moveSpeed, moveSpeedDampTime, Time.deltaTime);
+    }
+
+    public void PlayAttack()
+    {
+        SetTrigger(AttackHash);
+    }
+
+    public void PlayHit()
+    {
+        SetTrigger(HitHash);
+    }
+
+    public void PlayDeath()
+    {
+        SetTrigger(DeathHash);
+    }
+
+    private void SetTrigger(int triggerHash)
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        animator.SetTrigger(triggerHash);
+    }
+
+    private void OnValidate()
+    {
+        moveSpeedDampTime = Mathf.Max(0f, moveSpeedDampTime);
+    }
+}

@@ -1,0 +1,61 @@
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "New Enemy Stats", menuName = "Game/Enemy Stats")]
+// 적 종류별 능력치를 저장하는 데이터
+public class EnemyStats : ScriptableObject
+{
+    [Header("Info")]
+    [SerializeField] private string enemyName = "Enemy";
+
+    [Header("Health")]
+    [SerializeField] private int maxHealth = 100;
+
+    [Header("Movement")]
+    [SerializeField] private float moveSpeed = 3.5f;
+    [SerializeField] private float acceleration = 8f;
+    [SerializeField] private float stoppingDistance = 1.5f;
+    [SerializeField] private float rotationSpeed = 12f;
+
+    [Header("Detection")]
+    [SerializeField] private float detectionRange = 12f;
+    [SerializeField] private float repathRate = 0.15f;
+
+    [Header("Patrol")]
+    [SerializeField] private float patrolRadius = 8f;
+    [SerializeField] private float patrolWaitTime = 0.3f;
+    [SerializeField] private float patrolPointTolerance = 0.7f;
+
+    [Header("Attack")]
+    [SerializeField] private float attackRange = 1.8f;
+    [SerializeField] private float attackCooldown = 1.2f;
+
+    public string EnemyName => enemyName;
+    public int MaxHealth => maxHealth;
+    public float MoveSpeed => moveSpeed;
+    public float Acceleration => acceleration;
+    public float StoppingDistance => stoppingDistance;
+    public float RotationSpeed => rotationSpeed;
+    public float DetectionRange => detectionRange;
+    public float RepathRate => repathRate;
+    public float PatrolRadius => patrolRadius;
+    public float PatrolWaitTime => patrolWaitTime;
+    public float PatrolPointTolerance => patrolPointTolerance;
+    public float AttackRange => attackRange;
+    public float AttackCooldown => attackCooldown;
+
+    private void OnValidate()
+    {
+        maxHealth = Mathf.Max(1, maxHealth);
+        moveSpeed = Mathf.Max(0.1f, moveSpeed);
+        acceleration = Mathf.Max(0.1f, acceleration);
+        stoppingDistance = Mathf.Max(0f, stoppingDistance);
+        rotationSpeed = Mathf.Max(0.1f, rotationSpeed);
+        detectionRange = Mathf.Max(0.1f, detectionRange);
+        repathRate = Mathf.Max(0.02f, repathRate);
+        patrolRadius = Mathf.Max(0.1f, patrolRadius);
+        patrolWaitTime = Mathf.Max(0f, patrolWaitTime);
+        patrolPointTolerance = Mathf.Max(0.1f, patrolPointTolerance);
+        attackRange = Mathf.Max(0.1f, attackRange);
+        attackCooldown = Mathf.Max(0.1f, attackCooldown);
+    }
+}
