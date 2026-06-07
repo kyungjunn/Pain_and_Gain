@@ -41,6 +41,8 @@ public class PlayerController : MonoBehaviour
             {
                 anim.SetTrigger("Attack"); 
             }
+
+            AudioManager.Instance.PlayPlayerAttack(); //공격시 audio 추가 
             
             input.AttackTriggered = false; 
         }

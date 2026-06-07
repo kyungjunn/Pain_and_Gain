@@ -902,9 +902,9 @@ MonoBehaviour:
   uiClickClip: {fileID: 0}
   gameStartClip: {fileID: 0}
   gameOverClip: {fileID: 0}
-  playerAttackClip: {fileID: 8300000, guid: 76fec2fb6f5b84898b881413995e1d88, type: 3}
+  playerAttackClip: {fileID: 0}
   playerHitClip: {fileID: 0}
-  enemyDeathClip: {fileID: 8300000, guid: 8806dd10525b54cfa910128d195d678b, type: 3}
+  enemyDeathClip: {fileID: 0}
   levelUpClip: {fileID: 8300000, guid: c2aa156fb923e489692bfcb373b51ca0, type: 3}
 --- !u!82 &1853777044
 AudioSource:

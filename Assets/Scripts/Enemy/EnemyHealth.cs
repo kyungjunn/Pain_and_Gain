@@ -45,6 +45,11 @@ public class EnemyHealth : MonoBehaviour
         IsDead = true;
         enemyAnimator?.PlayDeath();
 
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayEnemyDeath();
+        } //적 죽을 시 효과음 추가
+
         if (TryGetComponent(out NavMeshAgent agent))
         {
             agent.enabled = false;
