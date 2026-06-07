@@ -10,15 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df63a843032d5c74580d60f822d69123, type: 3}
-  m_Name: Lengend_Data
+  m_Name: MoveSpeed_Data
   m_EditorClassIdentifier: Assembly-CSharp::StatAugmentSO
-  augmentName: Damage
-  description: 'Legend Increase Attack Damage
-
+  augmentName: Move Speed
+  description: 'Increase Move Speed
 
 '
-  icon: {fileID: 0}
-  type: 0
-  value: 1000
-  rarity: 3
-  weight: 10
+  icon: {fileID: -689709967, guid: 63294de887d537f4a81f80aa9c866cdd, type: 3}
+  type: 2
+  value: 20
+  rarity: 0
+  weight: 50

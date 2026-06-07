@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 63294de887d537f4a81f80aa9c866cdd
+guid: 33efa4e685ca6a14189667ccfce49f13
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,79 +97,79 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: InGame_Back
+      name: InGame_Armor
       rect:
         serializedVersion: 2
-        x: 7
-        y: 215
-        width: 163
-        height: 142
+        x: 568
+        y: 231
+        width: 88
+        height: 88
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 94a34b8ba29b410418fb7a713152d6fe
-      internalID: 1567432313
+      spriteID: cd0f0a0cbc343cb4bb7e7770b5939ee4
+      internalID: -2115205925
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: InGame_ExpBack
+      name: Increase_Defense
       rect:
         serializedVersion: 2
-        x: 363
-        y: 286
-        width: 299
-        height: 62
+        x: 467
+        y: 236
+        width: 87
+        height: 84
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e519049d490c76d45a0e2c7f2828c4c7
-      internalID: 747834433
+      spriteID: e961525b75d7fa44eb55089ce0693f2b
+      internalID: 1351438921
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: InGame_ExpFill
+      name: InGame_Defense
+      rect:
+        serializedVersion: 2
+        x: 23
+        y: 227
+        width: 106
+        height: 102
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 12f8617570b191049ba0b5cd281b92e2
+      internalID: 924647901
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InGame_FirstKit
       rect:
         serializedVersion: 2
         x: 367
-        y: 237
-        width: 195
-        height: 31
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 9152944d16c2a234cb6c058664a0c861
-      internalID: 1582292110
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: AttackDamage
-      rect:
-        serializedVersion: 2
-        x: 259
-        y: 293
-        width: 57
-        height: 57
+        y: 235
+        width: 95
+        height: 85
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -178,52 +178,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1b4503864cf8474478bab2628cc80673
-      internalID: 1476883250
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Health
-      rect:
-        serializedVersion: 2
-        x: 175
-        y: 293
-        width: 71
-        height: 60
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 35aa525c09240ce43a6e4d13fbe489e5
-      internalID: -1938600377
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: MoveSpeed
-      rect:
-        serializedVersion: 2
-        x: 178
-        y: 227
-        width: 66
-        height: 52
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: c8a028b979134c54298b859e885eca50
-      internalID: -689709967
+      spriteID: caa28a3c663ce194e95801b91fb98a8a
+      internalID: 2021724909
       vertices: []
       indices: 
       edges: []
@@ -232,7 +188,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 8924fe30edb16114ebc01b11018296d3
+    spriteID: aa99f13c9799e304899590030f99fccf
     internalID: 0
     vertices: []
     indices: 
@@ -242,12 +198,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      AttackDamage: 1476883250
-      Health: -1938600377
-      InGame_Back: 1567432313
-      InGame_ExpBack: 747834433
-      InGame_ExpFill: 1582292110
-      MoveSpeed: -689709967
+      InGame_Armor: -2115205925
+      InGame_Defense: 924647901
+      InGame_FirstKit: 2021724909
+      Increase_Defense: 1351438921
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
