@@ -1005,8 +1005,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86d3cb5c4c493ee4ca4c48d14c3ad553, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::AugmentPanelUI
+  selectionDelay: 0.35
   optionUIs:
   - {fileID: 4406737560795609572}
   - {fileID: 4446721911443454386}
