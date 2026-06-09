@@ -10,6 +10,8 @@ public class EnemyAnimator : MonoBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private float moveSpeedDampTime = 0.1f;
 
+    private EnemyAttack enemyAttack;
+
     private static readonly int MoveSpeedHash = Animator.StringToHash("MoveSpeed");
     private static readonly int AttackHash = Animator.StringToHash("Attack");
     private static readonly int HitHash = Animator.StringToHash("Hit");
@@ -26,6 +28,8 @@ public class EnemyAnimator : MonoBehaviour
         {
             agent = GetComponent<NavMeshAgent>();
         }
+
+        enemyAttack = GetComponent<EnemyAttack>();
     }
 
     private void Update()
@@ -37,6 +41,7 @@ public class EnemyAnimator : MonoBehaviour
 
         float moveSpeed = 0f;
 
+        // 실제 이동 속도를 0~1 값으로 변환해 이동 애니메이션에 전달
         if (agent.enabled && agent.speed > 0.01f)
         {
             moveSpeed = Mathf.Clamp01(agent.velocity.magnitude / agent.speed);
@@ -58,6 +63,17 @@ public class EnemyAnimator : MonoBehaviour
     public void PlayDeath()
     {
         SetTrigger(DeathHash);
+    }
+
+    public void ApplyAttackDamageFromAnimationEvent()
+    {
+        enemyAttack?.ApplyAttackDamageFromAnimationEvent();
+    }
+
+    // 일부 공격 클립이 OnAttackHit 이벤트 이름을 사용해도 같은 타격 처리로 연결
+    public void OnAttackHit()
+    {
+        enemyAttack?.OnAttackHit();
     }
 
     private void SetTrigger(int triggerHash)

@@ -1,14 +1,17 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "New Enemy Stats", menuName = "Game/Enemy Stats")]
-// 적 종류별 능력치를 저장하는 데이터
+// 적 종류별 능력치를 저장하는 ScriptableObject
 public class EnemyStats : ScriptableObject
 {
     [Header("Info")]
     [SerializeField] private string enemyName = "Enemy";
 
     [Header("Health")]
-    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private int maxHealth = 20;
+
+    [Header("Reward")]
+    [SerializeField] private int expReward = 1000;
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 3.5f;
@@ -26,11 +29,13 @@ public class EnemyStats : ScriptableObject
     [SerializeField] private float patrolPointTolerance = 0.7f;
 
     [Header("Attack")]
+    [SerializeField] private int attackDamage = 10;
     [SerializeField] private float attackRange = 1.8f;
     [SerializeField] private float attackCooldown = 1.2f;
 
     public string EnemyName => enemyName;
     public int MaxHealth => maxHealth;
+    public int ExpReward => expReward;
     public float MoveSpeed => moveSpeed;
     public float Acceleration => acceleration;
     public float StoppingDistance => stoppingDistance;
@@ -40,12 +45,15 @@ public class EnemyStats : ScriptableObject
     public float PatrolRadius => patrolRadius;
     public float PatrolWaitTime => patrolWaitTime;
     public float PatrolPointTolerance => patrolPointTolerance;
+    public int AttackDamage => attackDamage;
     public float AttackRange => attackRange;
     public float AttackCooldown => attackCooldown;
 
     private void OnValidate()
     {
+        // 인스펙터에서 잘못된 값이 들어가도 런타임 계산이 깨지지 않도록 보정
         maxHealth = Mathf.Max(1, maxHealth);
+        expReward = Mathf.Max(0, expReward);
         moveSpeed = Mathf.Max(0.1f, moveSpeed);
         acceleration = Mathf.Max(0.1f, acceleration);
         stoppingDistance = Mathf.Max(0f, stoppingDistance);
@@ -55,6 +63,7 @@ public class EnemyStats : ScriptableObject
         patrolRadius = Mathf.Max(0.1f, patrolRadius);
         patrolWaitTime = Mathf.Max(0f, patrolWaitTime);
         patrolPointTolerance = Mathf.Max(0.1f, patrolPointTolerance);
+        attackDamage = Mathf.Max(1, attackDamage);
         attackRange = Mathf.Max(0.1f, attackRange);
         attackCooldown = Mathf.Max(0.1f, attackCooldown);
     }
