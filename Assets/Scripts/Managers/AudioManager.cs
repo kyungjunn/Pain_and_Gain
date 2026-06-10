@@ -16,6 +16,7 @@ public class AudioManager : MonoBehaviour
     public AudioClip gameOverClip;
     public AudioClip playerAttackClip;
     public AudioClip playerHitClip;
+    public AudioClip enemyHitClip;
     public AudioClip enemyDeathClip;
     public AudioClip levelUpClip;
 
@@ -79,6 +80,11 @@ public class AudioManager : MonoBehaviour
     public void PlayPlayerHit()
     {
         PlaySFX(playerHitClip);
+    }
+
+    public void PlayEnemyHit()
+    {
+        PlaySFX(enemyHitClip);
     }
 
     public void PlayEnemyDeath()

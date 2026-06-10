@@ -7,14 +7,17 @@ public abstract class ItemBase : MonoBehaviour, IInteractable
 
     public ItemData ItemData => itemData;
 
+    [ContextMenu("강제 상호작용 테스트 버튼")]
     public virtual void Interact() 
     {
-        // 기본 기능
+        Debug.Log($"[아이템] {itemData.ItemName} 과(와) 상호작용 했습니다");
+
+        ApplyEffect(null);
     }
 
     public virtual string GetInteractText()
     {
-        return "상호작용"; // 반드시 문자열을 반환해야함.
+        return $"{itemData.ItemName} 획득";
     }
 
     protected abstract void ApplyEffect(GameObject player);

@@ -6,11 +6,16 @@ public class IntroUIController : MonoBehaviour
 {
     [Header("버튼 컴포넌트 설정")]
     [SerializeField] private Button gameStartButton;
-    [SerializeField] private Button optionsButton;
+    [SerializeField] private Button optionButton;
     [SerializeField] private Button quitButton;
+    [SerializeField] private Button ExitButton;
+
 
     [Header("다음 씬 이름")]
     [SerializeField] private string nextSceneName = "InGame";
+
+    [Header("패널 설정")]
+    [SerializeField] private GameObject OptionPanel;
 
     private void Awake()
     {
@@ -38,9 +43,13 @@ public class IntroUIController : MonoBehaviour
         SceneManager.LoadScene(nextSceneName);
     }
 
-    private void OnOptionsClicked()
+    private void OnOptionClicked()
     {
-        Debug.Log("세팅(옵션) 창 열기 (추후 구현 예정)");
+        OptionPanel.SetActive(true);
+    }
+    private void OnExitClicked()
+    {
+        OptionPanel.SetActive(false);
     }
 
     private void OnQuitClicked()

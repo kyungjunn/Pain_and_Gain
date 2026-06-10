@@ -99,6 +99,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpawnManager
   playerPrefab: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
   enemyPrefab: {fileID: 7102015375107000001, guid: 51e0b0826579490cb6a7a4586c53f528, type: 3}
+  enemySpawnEntries:
+  - prefab: {fileID: 7102015375107000001, guid: 51e0b0826579490cb6a7a4586c53f528, type: 3}
+    minPlayerLevel: 1
+    spawnWeight: 8
+    allowInitialSpawn: 1
+    maxAliveCount: 0
+    additionalWeightPerLevel: 0
+    maxSpawnWeight: 0
+    forceSpawnOnUnlock: 0
+  - prefab: {fileID: 7251402081766339373, guid: 7fffae1d74d94ba18a7d47c2d836a611, type: 3}
+    minPlayerLevel: 3
+    spawnWeight: 2
+    allowInitialSpawn: 0
+    maxAliveCount: 1
+    additionalWeightPerLevel: 1
+    maxSpawnWeight: 5
+    forceSpawnOnUnlock: 1
+  spawnEnemiesOnStart: 1
+  spawnAllEnemyPointsOnStart: 1
+  initialEnemyCount: 0
+  enableEnemyAutoSpawn: 1
+  enemySpawnInterval: 5
+  enemiesPerSpawn: 1
+  maxAliveEnemies: 12
+  minSpawnDistanceFromPlayer: 8
+  maxSpawnDistanceFromPlayer: 60
+  spawnPointPickAttempts: 12
 --- !u!114 &2351206812373026201
 MonoBehaviour:
   m_ObjectHideFlags: 0
