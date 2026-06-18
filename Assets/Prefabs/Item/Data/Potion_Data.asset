@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f48d20bd739d8f488f4a6f8eae3199d, type: 3}
   m_Name: Potion_Data
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: 
+  itemName: "\uD68C\uBCF5 \uBB3C\uC57D"
   itemDescription: 
-  itemType: 0
+  itemType: 1
   rarity: 
   itemIcon: {fileID: 0}
   itemPrefab: {fileID: 0}
   bonusAttackDamage: 0
-  hpRecoveryAmount: 0
+  hpRecoveryAmount: 30
