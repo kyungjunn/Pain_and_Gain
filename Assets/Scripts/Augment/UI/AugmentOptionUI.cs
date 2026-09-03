@@ -14,18 +14,18 @@ public class AugmentOptionUI : MonoBehaviour
     public TextMeshProUGUI descText;
     public TextMeshProUGUI rarityText;
 
-    private StatAugmentSO currentAugment;
+    private AugmentSO currentAugment;
 
     private void Awake()
     {
         CacheButton();
     }
 
-    public void Setup(StatAugmentSO augment)
+    public void Setup(AugmentSO augment)
     {
         currentAugment = augment;
 
-        titleText.text = $"{augment.augmentName} +{augment.value}";
+        titleText.text = augment.GetDisplayName();
         descText.text = augment.description;
         rarityText.text = augment.rarity.ToString();
         iconImage.sprite = augment.icon;

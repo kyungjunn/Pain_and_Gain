@@ -11,7 +11,7 @@ public class AugmentPanelUI : MonoBehaviour
 
     private Coroutine enableSelectionRoutine;
 
-    public void Setup(List<StatAugmentSO> augments)
+    public void Setup(List<AugmentSO> augments)
     {
         if (enableSelectionRoutine != null)
         {

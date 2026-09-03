@@ -9,7 +9,7 @@ public class AugmentManager : MonoBehaviour
     private PlayerStats playerStats;
 
     [Header("All Augments")]
-    public List<StatAugmentSO> allAugments;
+    public List<AugmentSO> allAugments;
 
     [Header("Settings")]
     public int optionCount = 3;
@@ -33,17 +33,17 @@ public class AugmentManager : MonoBehaviour
         playerStats = playerObject.GetComponent<PlayerStats>();
     }
 
-    public List<StatAugmentSO> GetRandomAugments()
+    public List<AugmentSO> GetRandomAugments()
     {
         // 최종 증강 리스트
-        List<StatAugmentSO> result = new List<StatAugmentSO>();
+        List<AugmentSO> result = new List<AugmentSO>();
 
         // 원본 훼손하지 않기 위한 복사본
-        List<StatAugmentSO> pool = new List<StatAugmentSO>(allAugments);
+        List<AugmentSO> pool = new List<AugmentSO>(allAugments);
 
         for (int i = 0; i < optionCount; i++)
         {
-            StatAugmentSO selected = GetWeightedRandom(pool);
+            AugmentSO selected = GetWeightedRandom(pool);
 
             // 리스트에 추가
             result.Add(selected);
@@ -56,7 +56,7 @@ public class AugmentManager : MonoBehaviour
     }
 
     // 가중치 기반 랜덤 선택 함수
-    private StatAugmentSO GetWeightedRandom(List<StatAugmentSO> pool)
+    private AugmentSO GetWeightedRandom(List<AugmentSO> pool)
     {
         // 전체 weight 합 
         int totalWeight = pool.Sum(x => x.weight);
@@ -85,7 +85,7 @@ public class AugmentManager : MonoBehaviour
         return pool[0];
     }
 
-    public void ApplyAugment(StatAugmentSO augment)
+    public void ApplyAugment(AugmentSO augment)
     {
         if (playerStats == null)
         {
@@ -93,6 +93,9 @@ public class AugmentManager : MonoBehaviour
             return;
         }
 
-        playerStats.ApplyStat(augment.type, augment.value);
+        if (augment is StatAugmentSO stat)
+        {
+            playerStats.ApplyStat(stat.type, stat.value);
+        }
     }
 }

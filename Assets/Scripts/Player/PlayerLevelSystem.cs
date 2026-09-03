@@ -46,7 +46,7 @@ public class PlayerLevelSystem : MonoBehaviour
         if (AugmentManager.Instance != null)
         {
             // 랜덤 증강 선택지 생성
-            List<StatAugmentSO> augments = AugmentManager.Instance.GetRandomAugments();
+            List<AugmentSO> augments = AugmentManager.Instance.GetRandomAugments();
 
             // 증강 선택 UI 열기
             UIManager.Instance.OpenAugmentPanel(augments);
