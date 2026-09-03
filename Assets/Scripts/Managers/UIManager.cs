@@ -11,7 +11,7 @@ public class UIManager : MonoBehaviour
     public StatsPanelUI statsPanelUI;
     public LoadingPanelUI loadingPanelUI;
 
-    private readonly Queue<List<StatAugmentSO>> pendingAugmentPanels = new Queue<List<StatAugmentSO>>();
+    private readonly Queue<List<AugmentSO>> pendingAugmentPanels = new Queue<List<AugmentSO>>();
     private bool isAugmentPanelOpen;
 
     private void Awake()
@@ -45,7 +45,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void OpenAugmentPanel(List<StatAugmentSO> augments)
+    public void OpenAugmentPanel(List<AugmentSO> augments)
     {
         if (augmentPanelUI == null || augments == null)
         {
@@ -62,7 +62,7 @@ public class UIManager : MonoBehaviour
         ShowAugmentPanel(augments);
     }
 
-    private void ShowAugmentPanel(List<StatAugmentSO> augments)
+    private void ShowAugmentPanel(List<AugmentSO> augments)
     {
         isAugmentPanelOpen = true;
         augmentPanelUI.gameObject.SetActive(true);
