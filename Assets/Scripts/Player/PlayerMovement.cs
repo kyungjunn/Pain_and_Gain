@@ -3,12 +3,16 @@ using UnityEngine;
 [RequireComponent(typeof(PlayerInput))]
 public class PlayerMovement : MonoBehaviour
 {
-    public float moveSpeed = 5f; // 플레이어 이동속도
+    public float moveSpeed = 5f; // 플레이어 이동속도 (PlayerStats가 없을 때만 사용)
     public Transform cameraTransform;
 
     public float jumpForce = 5f;
     private Rigidbody rb;
     private PlayerInput playerInput;
+    private PlayerStats stats;
+
+    // 이동속도 증강/페널티가 실제 이동에 반영되도록 PlayerStats를 우선 사용
+    private float MoveSpeed => stats != null ? stats.MoveSpeed : moveSpeed;
 
     // 현재 땅에 닿아있으면 true, 공중이면 false를 반환하는 함수
     public bool CheckGrounded()
@@ -21,6 +25,7 @@ public class PlayerMovement : MonoBehaviour
     {
         playerInput = GetComponent<PlayerInput>();
         rb = GetComponent<Rigidbody>();
+        stats = GetComponent<PlayerStats>();
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -54,7 +59,7 @@ public class PlayerMovement : MonoBehaviour
         // 대각선 속도 보정
         move = move.normalized;
 
-        transform.Translate(move * moveSpeed * Time.deltaTime, Space.World);
+        transform.Translate(move * MoveSpeed * Time.deltaTime, Space.World);
     }
 
     public void Jump()
