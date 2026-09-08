@@ -14,10 +14,11 @@ GameObject:
   - component: {fileID: 6813259896320547655}
   - component: {fileID: 5361852199608403466}
   - component: {fileID: 2351206812373026201}
+  - component: {fileID: 5081865081350110725}
   - component: {fileID: 8997208331547504212}
   - component: {fileID: 5029168141564522794}
   m_Layer: 0
-  m_Name: AugmentManager
+  m_Name: Managers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -144,11 +145,26 @@ MonoBehaviour:
   uiClickClip: {fileID: 0}
   gameStartClip: {fileID: 0}
   gameOverClip: {fileID: 0}
-  playerAttackClip: {fileID: 0}
+  playerAttackClip: {fileID: 8300000, guid: 76fec2fb6f5b84898b881413995e1d88, type: 3}
   playerHitClip: {fileID: 0}
   enemyHitClip: {fileID: 0}
-  enemyDeathClip: {fileID: 0}
+  enemyDeathClip: {fileID: 8300000, guid: 38e779b7f269c41bd8bf6c6f53c552be, type: 3}
   levelUpClip: {fileID: 8300000, guid: c2aa156fb923e489692bfcb373b51ca0, type: 3}
+--- !u!114 &5081865081350110725
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 602122712591844014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cb5a20ea4b0cb8429a4ab580c1b9c0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestManager
+  quests: []
+  firstQuestDelay: 12
+  questCooldown: 45
 --- !u!82 &8997208331547504212
 AudioSource:
   m_ObjectHideFlags: 0

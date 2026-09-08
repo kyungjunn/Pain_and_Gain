@@ -768,14 +768,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2351206812373026201, guid: 4b469607cbd28e348974a7774e442e1d, type: 3}
-      propertyPath: enemyDeathClip
+    - target: {fileID: 5081865081350110725, guid: 4b469607cbd28e348974a7774e442e1d, type: 3}
+      propertyPath: quests.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5081865081350110725, guid: 4b469607cbd28e348974a7774e442e1d, type: 3}
+      propertyPath: 'quests.Array.data[0]'
       value: 
-      objectReference: {fileID: 8300000, guid: 38e779b7f269c41bd8bf6c6f53c552be, type: 3}
-    - target: {fileID: 2351206812373026201, guid: 4b469607cbd28e348974a7774e442e1d, type: 3}
-      propertyPath: playerAttackClip
-      value: 
-      objectReference: {fileID: 8300000, guid: 76fec2fb6f5b84898b881413995e1d88, type: 3}
+      objectReference: {fileID: 11400000, guid: 6a144991c3784314793144c6917d33ca, type: 2}
     - target: {fileID: 6813259896320547655, guid: 4b469607cbd28e348974a7774e442e1d, type: 3}
       propertyPath: statsPanelUI
       value: 
