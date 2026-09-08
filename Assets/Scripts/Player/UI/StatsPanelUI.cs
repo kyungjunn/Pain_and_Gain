@@ -75,30 +75,36 @@ public class StatsPanelUI : MonoBehaviour
 
         if (damageText != null)
         {
-            damageText.text = $"AttackDamage : {playerStats.AttackDamage}";
+            damageText.text = $"AttackDamage : {FormatStat(playerStats.AttackDamage)}";
         }
 
         if (hpText != null)
         {
             hpText.text = playerHealth != null
                 ? $"HP : {playerHealth.CurrentHealth} / {playerHealth.MaxHealth}"
-                : $"HP : {playerStats.HP}";
+                : $"HP : {FormatStat(playerStats.HP)}";
         }
 
         if (moveSpeedText != null)
         {
-            moveSpeedText.text = $"Speed : {playerStats.MoveSpeed}";
+            moveSpeedText.text = $"Speed : {FormatStat(playerStats.MoveSpeed)}";
         }
 
         if (attackSpeedText != null)
         {
-            attackSpeedText.text = $"AttackSpeed : {playerStats.AttackSpeed}";
+            attackSpeedText.text = $"AttackSpeed : {FormatStat(playerStats.AttackSpeed)}";
         }
 
         if (defenseText != null)
         {
-            defenseText.text = $"Defense : {playerStats.Defense}";
+            defenseText.text = $"Defense : {FormatStat(playerStats.Defense)}";
         }
+    }
+
+    // 정수 표시
+    private static string FormatStat(float value)
+    {
+        return Mathf.RoundToInt(value).ToString();
     }
 
     private void UnbindPlayer()
