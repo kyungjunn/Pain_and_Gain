@@ -19,6 +19,7 @@ public class FireAuraSkill : AugmentSkill
     private readonly HashSet<EnemyHealth> damagedEnemies = new HashSet<EnemyHealth>();
 
     private PlayerStats playerStats;
+    private PlayerDamageDealer damageDealer;
     private Material sphereMaterial;
     private float orbitAngle;
     private float damageTimer;
@@ -26,6 +27,7 @@ public class FireAuraSkill : AugmentSkill
     protected override void OnApply()
     {
         playerStats = Player.GetComponent<PlayerStats>();
+        damageDealer = Player.GetComponent<PlayerDamageDealer>();
         sphereMaterial = CreateSphereMaterial();
         SyncSphereCount();
     }
@@ -37,16 +39,30 @@ public class FireAuraSkill : AugmentSkill
 
     protected override void OnRemove()
     {
+        for (int i = 0; i < spheres.Count; i++)
+        {
+            if (spheres[i] != null)
+            {
+                Destroy(spheres[i].gameObject);
+            }
+        }
+
         spheres.Clear();
 
         if (sphereMaterial != null)
         {
             Destroy(sphereMaterial);
+            sphereMaterial = null;
         }
     }
 
     private void Update()
     {
+        if (Time.timeScale <= 0f)
+        {
+            return;
+        }
+
         orbitAngle = Mathf.Repeat(orbitAngle + orbitSpeed * Time.deltaTime, 360f);
         UpdateSpherePositions();
 
@@ -182,7 +198,14 @@ public class FireAuraSkill : AugmentSkill
                 EnemyHealth enemy = hitBuffer[hitIndex].GetComponentInParent<EnemyHealth>();
                 if (enemy != null && damagedEnemies.Add(enemy))
                 {
-                    enemy.TakeDamage(damage);
+                    if (damageDealer != null)
+                    {
+                        damageDealer.DealDamage(enemy, damage, PlayerDamageType.Skill);
+                    }
+                    else
+                    {
+                        enemy.TakeDamage(damage);
+                    }
                 }
             }
         }

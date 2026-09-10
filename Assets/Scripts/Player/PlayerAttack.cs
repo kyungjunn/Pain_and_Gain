@@ -17,6 +17,7 @@ public class PlayerAttack : MonoBehaviour
 
     private readonly List<EnemyHealth> attackTargets = new List<EnemyHealth>();
     private readonly HashSet<EnemyHealth> uniqueTargets = new HashSet<EnemyHealth>();
+    private PlayerDamageDealer damageDealer;
     private float nextAttackTime;
 
     private float AttackDamage => stats != null ? stats.AttackDamage : 10f;
@@ -28,6 +29,8 @@ public class PlayerAttack : MonoBehaviour
         {
             stats = GetComponent<PlayerStats>();
         }
+
+        damageDealer = GetComponent<PlayerDamageDealer>();
     }
 
     public bool TryAttack()
@@ -48,9 +51,21 @@ public class PlayerAttack : MonoBehaviour
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(AttackDamage * areaDamageMultiplier));
 
+        if (damageDealer == null)
+        {
+            damageDealer = GetComponent<PlayerDamageDealer>();
+        }
+
         for (int i = 0; i < targetCount; i++)
         {
-            attackTargets[i].TakeDamage(damage);
+            if (damageDealer != null)
+            {
+                damageDealer.DealDamage(attackTargets[i], damage, PlayerDamageType.BasicAttack);
+            }
+            else
+            {
+                attackTargets[i].TakeDamage(damage);
+            }
         }
 
         return true;

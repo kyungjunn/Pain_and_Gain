@@ -22,6 +22,17 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.Instance != null && GameManager.Instance.IsPaused)
+        {
+            if (input != null)
+            {
+                input.AttackTriggered = false;
+                input.JumpTriggered = false;
+            }
+
+            return;
+        }
+
         movement.Move(input.MoveInput);
 
         bool isGrounded = movement.CheckGrounded();
@@ -60,6 +71,11 @@ public class PlayerController : MonoBehaviour
         if (!TryGetComponent(out PlayerHealth _))
         {
             gameObject.AddComponent<PlayerHealth>();
+        }
+
+        if (!TryGetComponent(out PlayerDamageDealer _))
+        {
+            gameObject.AddComponent<PlayerDamageDealer>();
         }
 
         if (!TryGetComponent(out playerAttack))

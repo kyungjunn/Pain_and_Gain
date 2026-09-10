@@ -2,15 +2,20 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
+public enum SkillAcquireStatus
+{
+    Invalid,
+    AlreadyMax,
+    Instantiated,
+    Stacked
+}
+
 // 플레이어가 보유한 스킬 증강 관리.
-// 이 딕셔너리가 곧 보유 목록이자 박탈 후보 풀이다. 별도 이력 리스트는 두지 않는다.
 public class PlayerAugments : MonoBehaviour
 {
     private readonly Dictionary<SkillAugmentSO, AugmentSkill> ownedSkills = new Dictionary<SkillAugmentSO, AugmentSkill>();
 
     public IReadOnlyCollection<SkillAugmentSO> OwnedSkills => ownedSkills.Keys;
-
-    // 스킬 획득/박탈 이벤트
     public Action onSkillsChanged;
 
     public bool HasSkill(SkillAugmentSO so)
@@ -35,29 +40,42 @@ public class PlayerAugments : MonoBehaviour
             : 0;
     }
 
-    // 처음 획득하면 프리팹을 생성하고, 중복 획득하면 기존 스킬의 스택을 올린다.
-    public void AddSkill(SkillAugmentSO so)
+    public SkillAcquireStatus TryAcquireLoadedSkill(SkillAugmentSO so, GameObject prefab)
     {
-        if (so == null || so.skillPrefab == null || IsAtMaxStacks(so))
+        if (so == null)
         {
-            return;
+            return SkillAcquireStatus.Invalid;
         }
 
-        if (ownedSkills.TryGetValue(so, out AugmentSkill ownedSkill))
+        if (IsAtMaxStacks(so))
+        {
+            return SkillAcquireStatus.AlreadyMax;
+        }
+
+        if (ownedSkills.TryGetValue(so, out AugmentSkill ownedSkill) && ownedSkill != null)
         {
             ownedSkill.AddStack();
             onSkillsChanged?.Invoke();
-            return;
+            return SkillAcquireStatus.Stacked;
         }
 
-        AugmentSkill skill = Instantiate(so.skillPrefab, transform);
-        skill.Apply(gameObject);
-        ownedSkills.Add(so, skill);
+        if (prefab == null || prefab.GetComponent<AugmentSkill>() == null)
+        {
+            return SkillAcquireStatus.Invalid;
+        }
 
+        AugmentSkill skill = Instantiate(prefab, transform).GetComponent<AugmentSkill>();
+        if (skill == null)
+        {
+            return SkillAcquireStatus.Invalid;
+        }
+
+        skill.Apply(gameObject);
+        ownedSkills[so] = skill;
         onSkillsChanged?.Invoke();
+        return SkillAcquireStatus.Instantiated;
     }
 
-    // 보유 스킬 중 랜덤 1개의 스택을 제거하고, 마지막 스택이면 오브젝트를 Destroy한다.
     public bool TryRemoveRandomSkill(out SkillAugmentSO removed)
     {
         removed = null;
@@ -78,11 +96,38 @@ public class PlayerAugments : MonoBehaviour
 
             if (skill != null)
             {
+                skill.Release();
                 Destroy(skill.gameObject);
             }
         }
 
         onSkillsChanged?.Invoke();
         return true;
+    }
+
+    public void ReleaseAll()
+    {
+        foreach (KeyValuePair<SkillAugmentSO, AugmentSkill> pair in ownedSkills)
+        {
+            if (pair.Value != null)
+            {
+                pair.Value.Release();
+                Destroy(pair.Value.gameObject);
+            }
+        }
+
+        ownedSkills.Clear();
+        onSkillsChanged?.Invoke();
+    }
+
+    private void OnDestroy()
+    {
+        ReleaseAll();
+
+        AugmentResourceLoader host = AugmentResourceLoader.Instance;
+        if (host != null)
+        {
+            host.NotifyPlayerUnavailable(gameObject);
+        }
     }
 }

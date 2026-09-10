@@ -2,7 +2,6 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 
-// 증강 카드 하나의 표시와 선택 처리를 담당
 public class AugmentOptionUI : MonoBehaviour
 {
     [SerializeField] private Button button;
@@ -15,22 +14,50 @@ public class AugmentOptionUI : MonoBehaviour
     public TextMeshProUGUI rarityText;
 
     private AugmentSO currentAugment;
+    private AugmentPanelUI panel;
 
     private void Awake()
     {
         CacheButton();
+        panel = GetComponentInParent<AugmentPanelUI>(true);
     }
 
     public void Setup(AugmentSO augment)
     {
         currentAugment = augment;
 
-        titleText.text = augment.GetDisplayName();
-        descText.text = augment.description;
-        rarityText.text = augment.rarity.ToString();
-        iconImage.sprite = augment.icon;
+        if (titleText != null)
+        {
+            titleText.text = augment != null ? augment.GetDisplayName() : string.Empty;
+        }
 
-        SetRarityColor(augment.rarity);
+        if (descText != null)
+        {
+            descText.text = augment != null ? augment.description : string.Empty;
+        }
+
+        if (rarityText != null)
+        {
+            rarityText.text = augment != null ? augment.rarity.ToString() : string.Empty;
+        }
+
+        if (iconImage != null)
+        {
+            iconImage.sprite = augment != null ? augment.icon : null;
+        }
+
+        if (augment != null)
+        {
+            SetRarityColor(augment.rarity);
+        }
+    }
+
+    public AugmentSO CurrentAugment => currentAugment;
+
+    public void Clear()
+    {
+        currentAugment = null;
+        Setup(null);
     }
 
     public void SetInteractable(bool interactable)
@@ -45,20 +72,22 @@ public class AugmentOptionUI : MonoBehaviour
 
     private void SetRarityColor(RarityType rarity)
     {
+        if (backgroundImage == null)
+        {
+            return;
+        }
+
         switch (rarity)
         {
             case RarityType.Common:
                 backgroundImage.color = Color.white;
                 break;
-
             case RarityType.Rare:
                 backgroundImage.color = Color.blue;
                 break;
-
             case RarityType.Epic:
                 backgroundImage.color = new Color(0.6f, 0f, 1f);
                 break;
-
             case RarityType.Legendary:
                 backgroundImage.color = new Color(1f, 0.5f, 0f);
                 break;
@@ -69,31 +98,17 @@ public class AugmentOptionUI : MonoBehaviour
     {
         CacheButton();
 
-        // 선택 유예 시간 동안 들어온 클릭은 무시
         if (button != null && !button.interactable)
         {
             return;
         }
 
-        if (currentAugment == null)
+        if (panel == null)
         {
-            return;
+            panel = GetComponentInParent<AugmentPanelUI>(true);
         }
 
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlayLevelUp();
-        }
-
-        if (AugmentManager.Instance != null)
-        {
-            AugmentManager.Instance.ApplyAugment(currentAugment);
-        }
-
-        if (UIManager.Instance != null)
-        {
-            UIManager.Instance.CloseAugmentPanel();
-        }
+        panel?.Select(currentAugment);
     }
 
     private void CacheButton()

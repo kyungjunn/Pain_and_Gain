@@ -20,5 +20,5 @@ MonoBehaviour:
   icon: {fileID: 0}
   rarity: 0
   weight: 50
-  skillPrefab: {fileID: 2224223236322109138, guid: f323734c8f5013b4f8952bc9dc0fa7f2, type: 3}
+  skillResourcePath: Augments/Skills/FireAuraSkill
   maxStacks: 0
