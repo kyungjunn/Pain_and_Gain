@@ -8,11 +8,11 @@ public class PlayerLook : MonoBehaviour
     public float downClamp = -30f;
 
     private float xRotation = 0f;
-    private PlayerInput input;
+    private PlayerInputHandler input;
 
     void Awake()
     {
-        input = GetComponent<PlayerInput>();
+        input = GetComponent<PlayerInputHandler>();
     }
 
     void Start()
