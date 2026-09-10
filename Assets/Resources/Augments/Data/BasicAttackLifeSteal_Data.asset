@@ -10,11 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2d21b0a5b884f3244b9eedba57b89c77, type: 3}
-  m_Name: Giant_Data
+  m_Name: BasicAttackLifeSteal_Data
   m_EditorClassIdentifier: Assembly-CSharp::SkillAugmentSO
-  augmentName: Giant
-  description: Player becomes 1.5x larger
+  augmentName: 기본 공격 흡혈
+  description: 기본 공격으로 준 실제 피해의 3%만큼 체력을 회복합니다. 중첩마다 흡혈률이 2% 증가합니다.
   icon: {fileID: 0}
   rarity: 1
   weight: 30
-  skillPrefab: {fileID: 8804760740075206544, guid: 4863b6eff375e344ca34b22c01e1ec97, type: 3}
+  skillResourcePath: Augments/Skills/BasicAttackLifeStealSkill
+  maxStacks: 5

@@ -13,7 +13,6 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        // 싱글톤
         if (Instance == null)
         {
             Instance = this;
@@ -22,26 +21,40 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
-
     }
+
     private void Start()
     {
         StartCoroutine(LoadMapAndSpawnRoutine());
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+
+        AugmentResourceLoader host = AugmentResourceLoader.Instance;
+        host?.RequestEndCombatSession();
+    }
+
     private IEnumerator LoadMapAndSpawnRoutine()
     {
-        // UI Manager 에서 로딩 UI 시작
+        AugmentResourceLoader host = AugmentResourceLoader.EnsureInstance();
+        if (host != null)
+        {
+            yield return host.EndCombatSession();
+        }
+
         if (UIManager.Instance != null)
         {
             UIManager.Instance.ShowLoadingUI(true);
         }
 
-        // 맵 씬을 비동기 + 추가 모드로 로드
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(mapSceneName, LoadSceneMode.Additive);
         asyncLoad.allowSceneActivation = false;
 
-        // 맵 로딩 상태를 게이지에 반영
         while (asyncLoad.progress < 0.9f)
         {
             if (UIManager.Instance != null && UIManager.Instance.loadingPanelUI != null)
@@ -55,11 +68,6 @@ public class GameManager : MonoBehaviour
         if (UIManager.Instance != null && UIManager.Instance.loadingPanelUI != null)
         {
             UIManager.Instance.loadingPanelUI.SetTargetProgress(1f);
-        }
-
-        // 게이지가 다 찰 때까지 대기
-        if (UIManager.Instance != null && UIManager.Instance.loadingPanelUI != null)
-        {
             while (!UIManager.Instance.loadingPanelUI.IsLoadingVisualDone)
             {
                 yield return null;
@@ -68,17 +76,20 @@ public class GameManager : MonoBehaviour
 
         asyncLoad.allowSceneActivation = true;
 
-        // 맵 로딩이 끝날 때까지 대기
         while (!asyncLoad.isDone)
         {
             yield return null;
         }
 
-        // 맵을 주요 활성화 씬으로 설정
         Scene loadedScene = SceneManager.GetSceneByName(mapSceneName);
         SceneManager.SetActiveScene(loadedScene);
 
-        // 스폰매니저의 스폰함수 호출
+        if (host != null)
+        {
+            host.BeginSession(gameObject.scene, loadedScene);
+            yield return host.InitializeMetadata();
+        }
+
         if (SpawnManager.Instance != null)
         {
             SpawnManager.Instance.SpawnAll();
@@ -86,7 +97,6 @@ public class GameManager : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(0.2f);
 
-        // 로딩 완료 후 로딩 UI 닫기
         if (UIManager.Instance != null)
         {
             UIManager.Instance.ShowLoadingUI(false);
@@ -97,8 +107,6 @@ public class GameManager : MonoBehaviour
     {
         IsPaused = true;
         Time.timeScale = 0f;
-
-        // 마우스 표시
         SetCursor(true);
     }
 
@@ -106,12 +114,9 @@ public class GameManager : MonoBehaviour
     {
         IsPaused = false;
         Time.timeScale = 1f;
-
-        // 마우스 숨김, 고정
         SetCursor(false);
     }
 
-    // 커서 설정
     public void SetCursor(bool visible)
     {
         Cursor.visible = visible;

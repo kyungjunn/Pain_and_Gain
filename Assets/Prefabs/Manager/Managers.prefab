@@ -51,13 +51,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec1ba9ba852c21c49bceb339e25c4b74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AugmentManager
-  allAugments:
-  - {fileID: 11400000, guid: b0c1f5e5604f615458896fd354f52d16, type: 2}
-  - {fileID: 11400000, guid: e77541595519301409539639b10333e7, type: 2}
-  - {fileID: 11400000, guid: 9b3c2cf6fddf1cb4cafca8a804ca91ac, type: 2}
-  - {fileID: 11400000, guid: 51a9c745ded23414cb060441f8057daa, type: 2}
-  - {fileID: 11400000, guid: 169ddef1bd3d3634582979236b49bae2, type: 2}
-  - {fileID: 11400000, guid: c1ebf2eac1e7458498ea2a8dc34ad28c, type: 2}
   optionCount: 3
 --- !u!114 &8259290248297302196
 MonoBehaviour:
@@ -162,7 +155,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4cb5a20ea4b0cb8429a4ab580c1b9c0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestManager
-  quests: []
+  quests:
+  - {fileID: 11400000, guid: 6a144991c3784314793144c6917d33ca, type: 2}
   firstQuestDelay: 12
   questCooldown: 45
 --- !u!82 &8997208331547504212

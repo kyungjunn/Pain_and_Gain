@@ -25,6 +25,17 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.Instance != null && GameManager.Instance.IsPaused)
+        {
+            if (input != null)
+            {
+                input.AttackTriggered = false;
+                input.JumpTriggered = false;
+            }
+
+            return;
+        }
+
         if (stateManager.CurrentState == PlayerState.Dead)
         {
             return;
@@ -72,6 +83,11 @@ public class PlayerController : MonoBehaviour
         if (!TryGetComponent(out PlayerHealth _))
         {
             gameObject.AddComponent<PlayerHealth>();
+        }
+
+        if (!TryGetComponent(out PlayerDamageDealer _))
+        {
+            gameObject.AddComponent<PlayerDamageDealer>();
         }
 
         if (!TryGetComponent(out playerAttack))

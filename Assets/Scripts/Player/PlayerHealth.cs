@@ -80,6 +80,19 @@ public class PlayerHealth : LivingEntity
         }
     }
 
+    public int Heal(int amount)
+    {
+        if (IsDead || amount <= 0 || CurrentHealth >= MaxHealth)
+        {
+            return 0;
+        }
+
+        int previousHealth = CurrentHealth;
+        CurrentHealth = Mathf.Min(CurrentHealth + amount, MaxHealth);
+        onHealthChanged?.Invoke();
+        return CurrentHealth - previousHealth;
+    }
+
     private int Defense => stats != null ? Mathf.RoundToInt(stats.Defense) : 0;
 
     private void HandleStatsChanged()

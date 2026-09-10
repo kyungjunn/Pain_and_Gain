@@ -96,7 +96,12 @@ public class SpawnManager : MonoBehaviour
         int randomIndex = UnityEngine.Random.Range(0, spawnPoints.Length);
         Transform selectedSpawn = spawnPoints[randomIndex].transform;
 
+        GameObject previousPlayer = spawnedPlayer;
         spawnedPlayer = Instantiate(playerPrefab, selectedSpawn.position, selectedSpawn.rotation);
+        if (previousPlayer != null)
+        {
+            AugmentResourceLoader.EnsureInstance()?.NotifyPlayerReplaced(previousPlayer);
+        }
         OnPlayerSpawned?.Invoke(spawnedPlayer);
         BindPlayerLevelSystem(spawnedPlayer);
     }

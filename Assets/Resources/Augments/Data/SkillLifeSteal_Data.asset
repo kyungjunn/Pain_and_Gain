@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d21b0a5b884f3244b9eedba57b89c77, type: 3}
+  m_Name: SkillLifeSteal_Data
+  m_EditorClassIdentifier: Assembly-CSharp::SkillAugmentSO
+  augmentName: 스킬 피해 흡혈
+  description: 스킬로 준 실제 피해의 3%만큼 체력을 회복합니다. 중첩마다 흡혈률이 2% 증가합니다.
+  icon: {fileID: 0}
+  rarity: 1
+  weight: 30
+  skillResourcePath: Augments/Skills/SkillLifeStealSkill
+  maxStacks: 5
