@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[RequireComponent(typeof(PlayerInput))]
 public class PlayerMovement : MonoBehaviour
 {
     public float moveSpeed = 5f; // 플레이어 이동속도 (PlayerStats가 없을 때만 사용)
@@ -8,7 +7,6 @@ public class PlayerMovement : MonoBehaviour
 
     public float jumpForce = 5f;
     private Rigidbody rb;
-    private PlayerInput playerInput;
     private PlayerStats stats;
 
     // 이동속도 증강/페널티가 실제 이동에 반영되도록 PlayerStats를 우선 사용
@@ -23,7 +21,6 @@ public class PlayerMovement : MonoBehaviour
 
     void Awake()
     {
-        playerInput = GetComponent<PlayerInput>();
         rb = GetComponent<Rigidbody>();
         stats = GetComponent<PlayerStats>();
     }

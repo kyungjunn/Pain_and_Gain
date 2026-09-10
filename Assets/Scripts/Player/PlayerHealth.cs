@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 // 플레이어 현재 체력, 피격, 레벨업 회복을 관리
@@ -15,6 +15,7 @@ public class PlayerHealth : LivingEntity
 
     private int cachedMaxHealth;
     private PlayerLevelSystem levelSystem;
+    private PlayerStateManager stateManager;
 
     private void Awake()
     {
@@ -24,6 +25,8 @@ public class PlayerHealth : LivingEntity
         }
 
         levelSystem = GetComponent<PlayerLevelSystem>();
+        stateManager = GetComponent<PlayerStateManager>();
+
         cachedMaxHealth = MaxHealth;
         CurrentHealth = cachedMaxHealth;
     }
@@ -106,6 +109,8 @@ public class PlayerHealth : LivingEntity
     private void Die()
     {
         IsDead = true;
+
+        stateManager?.ChangeState(PlayerState.Dead);
 
         if (!disableControlsOnDeath)
         {
