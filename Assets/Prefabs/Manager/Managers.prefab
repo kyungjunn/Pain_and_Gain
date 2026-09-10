@@ -58,6 +58,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 51a9c745ded23414cb060441f8057daa, type: 2}
   - {fileID: 11400000, guid: 169ddef1bd3d3634582979236b49bae2, type: 2}
   - {fileID: 11400000, guid: c1ebf2eac1e7458498ea2a8dc34ad28c, type: 2}
+  - {fileID: 11400000, guid: 8e7dfe7b765b556408ee32d6c7959529, type: 2}
   optionCount: 3
 --- !u!114 &8259290248297302196
 MonoBehaviour:

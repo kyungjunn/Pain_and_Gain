@@ -50,10 +50,10 @@ public class AugmentManager : MonoBehaviour
         // 원본 훼손하지 않기 위한 복사본
         List<AugmentSO> pool = new List<AugmentSO>(allAugments);
 
-        // 스킬은 중복 획득이 의미 없으므로 이미 보유한 스킬은 추첨 풀에서 제외
+        // 최대 스택에 도달한 스킬만 추첨 풀에서 제외
         if (playerAugments != null)
         {
-            pool.RemoveAll(x => x is SkillAugmentSO skill && playerAugments.HasSkill(skill));
+            pool.RemoveAll(x => x is SkillAugmentSO skill && playerAugments.IsAtMaxStacks(skill));
         }
 
         for (int i = 0; i < optionCount && pool.Count > 0; i++)

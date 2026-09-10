@@ -18,11 +18,35 @@ public class PlayerAugments : MonoBehaviour
         return so != null && ownedSkills.ContainsKey(so);
     }
 
-    // 스킬 프리팹을 플레이어 밑에 생성하고 등록
+    public bool IsAtMaxStacks(SkillAugmentSO so)
+    {
+        if (so == null || !ownedSkills.TryGetValue(so, out AugmentSkill skill))
+        {
+            return false;
+        }
+
+        return so.maxStacks > 0 && skill.StackCount >= so.maxStacks;
+    }
+
+    public int GetSkillStackCount(SkillAugmentSO so)
+    {
+        return so != null && ownedSkills.TryGetValue(so, out AugmentSkill skill)
+            ? skill.StackCount
+            : 0;
+    }
+
+    // 처음 획득하면 프리팹을 생성하고, 중복 획득하면 기존 스킬의 스택을 올린다.
     public void AddSkill(SkillAugmentSO so)
     {
-        if (so == null || so.skillPrefab == null || ownedSkills.ContainsKey(so))
+        if (so == null || so.skillPrefab == null || IsAtMaxStacks(so))
         {
+            return;
+        }
+
+        if (ownedSkills.TryGetValue(so, out AugmentSkill ownedSkill))
+        {
+            ownedSkill.AddStack();
+            onSkillsChanged?.Invoke();
             return;
         }
 
@@ -33,7 +57,7 @@ public class PlayerAugments : MonoBehaviour
         onSkillsChanged?.Invoke();
     }
 
-    // 보유 스킬 중 랜덤 1개를 Destroy. 원복은 AugmentSkill.OnDestroy가 담당한다.
+    // 보유 스킬 중 랜덤 1개의 스택을 제거하고, 마지막 스택이면 오브젝트를 Destroy한다.
     public bool TryRemoveRandomSkill(out SkillAugmentSO removed)
     {
         removed = null;
@@ -47,11 +71,15 @@ public class PlayerAugments : MonoBehaviour
         removed = keys[UnityEngine.Random.Range(0, keys.Count)];
 
         AugmentSkill skill = ownedSkills[removed];
-        ownedSkills.Remove(removed);
 
-        if (skill != null)
+        if (skill == null || !skill.TryRemoveStack())
         {
-            Destroy(skill.gameObject);
+            ownedSkills.Remove(removed);
+
+            if (skill != null)
+            {
+                Destroy(skill.gameObject);
+            }
         }
 
         onSkillsChanged?.Invoke();

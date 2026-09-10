@@ -8,12 +8,33 @@ public abstract class AugmentSkill : MonoBehaviour
 {
     // 효과 적용 대상 플레이어
     protected GameObject Player { get; private set; }
+    public int StackCount { get; private set; }
 
     // PlayerAugments가 Instantiate 직후 호출
     public void Apply(GameObject player)
     {
         Player = player;
+        StackCount = 1;
         OnApply();
+    }
+
+    public void AddStack()
+    {
+        StackCount++;
+        OnStackChanged();
+    }
+
+    // 마지막 스택이면 false를 반환하며 PlayerAugments가 오브젝트를 제거한다.
+    public bool TryRemoveStack()
+    {
+        if (StackCount <= 1)
+        {
+            return false;
+        }
+
+        StackCount--;
+        OnStackChanged();
+        return true;
     }
 
     private void OnDestroy()
@@ -30,4 +51,8 @@ public abstract class AugmentSkill : MonoBehaviour
 
     // OnApply의 원복. 구독 해제, 스케일 복구 등
     protected abstract void OnRemove();
+
+    protected virtual void OnStackChanged()
+    {
+    }
 }
