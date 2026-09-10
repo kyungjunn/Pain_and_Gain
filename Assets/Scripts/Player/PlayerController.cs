@@ -2,10 +2,12 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    private PlayerInput input;
+    
+    private PlayerInputHandler input;
     private PlayerMovement movement;
     private PlayerAttack playerAttack;
     private Animator anim;
+    private PlayerStateManager stateManager;
 
     private void Awake()
     {
@@ -14,10 +16,11 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
-        input = GetComponent<PlayerInput>();
+        input = GetComponent<PlayerInputHandler>();
         movement = GetComponent<PlayerMovement>();
         playerAttack = GetComponent<PlayerAttack>();
         anim = GetComponentInChildren<Animator>();
+        stateManager = GetComponent<PlayerStateManager>();
     }
 
     private void Update()
@@ -33,9 +36,16 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        if (stateManager.CurrentState == PlayerState.Dead)
+        {
+            return;
+        }
+
         movement.Move(input.MoveInput);
 
         bool isGrounded = movement.CheckGrounded();
+
+        UpdateMovementState(isGrounded);
 
         if (anim != null)
         {
@@ -45,6 +55,8 @@ public class PlayerController : MonoBehaviour
 
         if (input.AttackTriggered)
         {
+            stateManager.ChangeState(PlayerState.Attack);
+
             if (anim != null)
             {
                 anim.SetTrigger("Attack");
@@ -81,6 +93,57 @@ public class PlayerController : MonoBehaviour
         if (!TryGetComponent(out playerAttack))
         {
             playerAttack = gameObject.AddComponent<PlayerAttack>();
+        }
+    }
+
+    private void UpdateMovementState(bool isGrounded)
+    {
+        if (stateManager.CurrentState == PlayerState.Dead)
+        {
+            return;
+        }
+
+        if (stateManager.CurrentState == PlayerState.Attack)
+        {
+            return;
+        }
+
+        if (!isGrounded)
+        {
+            stateManager.ChangeState(PlayerState.Jump);
+            return;
+        }
+
+        if (input.MoveInput.sqrMagnitude > 0.01f)
+        {
+            stateManager.ChangeState(PlayerState.Move);
+        }
+        else
+        {
+            stateManager.ChangeState(PlayerState.Idle);
+        }
+    }
+
+    public void EndAttackState()
+    {
+        if (stateManager.CurrentState == PlayerState.Dead)
+        {
+            return;
+        }
+
+        bool isGrounded = movement.CheckGrounded();
+
+        if (!isGrounded)
+        {
+            stateManager.ChangeState(PlayerState.Jump);
+        }
+        else if (input.MoveInput.sqrMagnitude > 0.01f)
+        {
+            stateManager.ChangeState(PlayerState.Move);
+        }
+        else
+        {
+            stateManager.ChangeState(PlayerState.Idle);
         }
     }
 }
