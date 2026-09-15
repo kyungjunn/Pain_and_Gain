@@ -50,7 +50,6 @@ public class AugmentResourceLoader : MonoBehaviour
     private Scene mapScene;
     private GameObject currentPlayer;
     private Coroutine endRoutine;
-    private bool metadataReady;
 
     public static AugmentResourceLoader Instance => instance;
 
@@ -111,7 +110,6 @@ public class AugmentResourceLoader : MonoBehaviour
         failedDefinitions.Clear();
         prefabCache.Clear();
         inFlight.Clear();
-        metadataReady = false;
         sessionId = nextSessionId++;
         state = AugmentSessionState.Starting;
     }
@@ -156,7 +154,6 @@ public class AugmentResourceLoader : MonoBehaviour
             catalog.Add(augment);
         }
 
-        metadataReady = true;
         state = AugmentSessionState.Active;
         yield return null;
     }
@@ -352,7 +349,6 @@ public class AugmentResourceLoader : MonoBehaviour
         prefabCache.Clear();
         catalog.Clear();
         failedDefinitions.Clear();
-        metadataReady = false;
         inGameScene = default;
         mapScene = default;
 
