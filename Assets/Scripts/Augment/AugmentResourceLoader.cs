@@ -4,36 +4,45 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// 증강 시스템의 생명주기
 public enum AugmentSessionState
 {
-    Idle,
-    Starting,
-    Active,
-    Ending
+    Idle,       // 전투 X
+    Starting,   // 전투 준비
+    Active,     // 전투 진행
+    Ending      // 전투 끝
 }
 
+// 증강 적용 결과
 public enum AugmentApplyStatus
 {
-    Applied,
-    Stacked,
-    Failed,
-    Stale,
-    AlreadyMax,
-    Invalid
+    Applied,        // 증강 적용
+    Stacked,        // 스킬 중첩 증가
+    Failed,         // 적용 실패
+    Stale,          // 기간 만료 요청
+    AlreadyMax,     // 중첩 최대치
+    Invalid         // 잘못된 요청
 }
 
 // 선택한 스킬 프리팹 요청, 전투 캐시, 세션 토큰, 종료 drain만 소유하는 전용 호스트.
 public class AugmentResourceLoader : MonoBehaviour
 {
+    // 영구 호스트
     private static AugmentResourceLoader instance;
     private static bool isQuitting;
 
+    // 증강 목록
     private readonly List<AugmentSO> catalog = new List<AugmentSO>();
+    // 전투 제외 목록
     private readonly HashSet<AugmentSO> failedDefinitions = new HashSet<AugmentSO>();
+    // 프리팹 캐시
     private readonly Dictionary<string, GameObject> prefabCache = new Dictionary<string, GameObject>();
+    // 로딩 요청
     private readonly Dictionary<string, ResourceRequest> inFlight = new Dictionary<string, ResourceRequest>();
+    // 종료 대기 요청
     private readonly List<ResourceRequest> drainingRequests = new List<ResourceRequest>();
 
+    // 세션 정보
     private AugmentSessionState state = AugmentSessionState.Idle;
     private int sessionId;
     private int nextSessionId = 1;
@@ -56,35 +65,6 @@ public class AugmentResourceLoader : MonoBehaviour
     {
         instance = null;
         isQuitting = false;
-    }
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    private static void Bootstrap()
-    {
-        EnsureInstance();
-    }
-
-    public static AugmentResourceLoader EnsureInstance()
-    {
-        if (isQuitting)
-        {
-            return instance;
-        }
-
-        if (instance != null)
-        {
-            return instance;
-        }
-
-        AugmentResourceLoader existing = FindFirstObjectByType<AugmentResourceLoader>(FindObjectsInactive.Include);
-        if (existing != null)
-        {
-            instance = existing;
-            return existing;
-        }
-
-        GameObject host = new GameObject(nameof(AugmentResourceLoader));
-        return host.AddComponent<AugmentResourceLoader>();
     }
 
     private void Awake()
@@ -115,6 +95,7 @@ public class AugmentResourceLoader : MonoBehaviour
         isQuitting = true;
     }
 
+    // 전투 세션 시작
     public void BeginSession(Scene inGame, Scene map)
     {
         if (state != AugmentSessionState.Idle)
@@ -135,6 +116,7 @@ public class AugmentResourceLoader : MonoBehaviour
         state = AugmentSessionState.Starting;
     }
 
+    // 증강 메타데이터 로드
     public IEnumerator InitializeMetadata()
     {
         if (state != AugmentSessionState.Starting)
@@ -179,6 +161,7 @@ public class AugmentResourceLoader : MonoBehaviour
         yield return null;
     }
 
+    // 플레이어 연결
     public void BindPlayer(GameObject player)
     {
         if (state == AugmentSessionState.Active)
@@ -197,6 +180,7 @@ public class AugmentResourceLoader : MonoBehaviour
 
     public void NotifyPlayerUnavailable(GameObject player)
     {
+        // 이 플레이어(로더에 연결된)가 니 플레이어가 맞으면
         if (player != null && player == currentPlayer)
         {
             RequestEndCombatSession();
@@ -221,6 +205,7 @@ public class AugmentResourceLoader : MonoBehaviour
         }
     }
 
+    // 후보 목록 생성
     public List<AugmentSO> CreateCandidatePool(PlayerAugments playerAugments)
     {
         List<AugmentSO> pool = new List<AugmentSO>(catalog.Count);
@@ -249,6 +234,7 @@ public class AugmentResourceLoader : MonoBehaviour
         return prefabCache.TryGetValue(path, out prefab) && prefab != null;
     }
 
+    // 스킬 프리팹 로드
     public IEnumerator LoadSkillPrefab(string path, int expectedSessionId, Action<GameObject, string> completed)
     {
         if (!BelongsToSession(expectedSessionId))
@@ -304,6 +290,7 @@ public class AugmentResourceLoader : MonoBehaviour
         }
     }
 
+    // 전투 세션 종료 요청
     public void RequestEndCombatSession()
     {
         if (isQuitting && instance == null)
@@ -322,6 +309,7 @@ public class AugmentResourceLoader : MonoBehaviour
         }
     }
 
+    // 로딩 정리 및 캐시 해제
     private IEnumerator EndRoutine()
     {
         state = AugmentSessionState.Ending;

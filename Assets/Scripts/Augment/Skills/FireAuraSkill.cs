@@ -5,13 +5,19 @@ using UnityEngine;
 public class FireAuraSkill : AugmentSkill
 {
     [Header("Orbit")]
+    // 궤도 반경
     [SerializeField] private float orbitRadius = 2.5f;
+    // 초당 회전각
     [SerializeField] private float orbitSpeed = 120f;
+    // 구체 크기
     [SerializeField] private float sphereScale = 0.3f;
 
     [Header("Damage")]
+    // 타격 반경
     [SerializeField] private float damageRadius = 0.35f;
+    // 타격 주기
     [SerializeField] private float damageInterval = 0.5f;
+    // 공격력 계수
     [SerializeField] private float attackDamageRatio = 0.35f;
 
     private readonly List<Transform> spheres = new List<Transform>();
@@ -74,6 +80,7 @@ public class FireAuraSkill : AugmentSkill
         }
     }
 
+    // 구체 수 동기화
     private void SyncSphereCount()
     {
         while (spheres.Count < StackCount)
@@ -149,6 +156,7 @@ public class FireAuraSkill : AugmentSkill
         return material;
     }
 
+    // 등간격 궤도 배치
     private void UpdateSpherePositions()
     {
         if (spheres.Count == 0)
@@ -172,6 +180,7 @@ public class FireAuraSkill : AugmentSkill
         }
     }
 
+    // 범위 피해 판정
     private void DamageNearbyEnemies()
     {
         int damage = Mathf.Max(1, Mathf.RoundToInt(

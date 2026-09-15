@@ -100,7 +100,7 @@ public class SpawnManager : MonoBehaviour
         spawnedPlayer = Instantiate(playerPrefab, selectedSpawn.position, selectedSpawn.rotation);
         if (previousPlayer != null)
         {
-            AugmentResourceLoader.EnsureInstance()?.NotifyPlayerReplaced(previousPlayer);
+            AugmentResourceLoader.Instance?.NotifyPlayerReplaced(previousPlayer);
         }
         OnPlayerSpawned?.Invoke(spawnedPlayer);
         BindPlayerLevelSystem(spawnedPlayer);

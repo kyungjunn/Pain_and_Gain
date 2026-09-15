@@ -97,7 +97,7 @@ public class UIManager : MonoBehaviour
 
         isAugmentPanelOpen = true;
         currentTicketId = nextTicketId++;
-        int sessionId = AugmentResourceLoader.EnsureInstance()?.SessionId ?? 0;
+        int sessionId = AugmentResourceLoader.Instance?.SessionId ?? 0;
         var options = AugmentManager.Instance.GetRandomAugments();
         augmentPanelUI.gameObject.SetActive(true);
 

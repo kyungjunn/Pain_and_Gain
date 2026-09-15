@@ -4,8 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+// 증강 선택 패널.
 public class AugmentPanelUI : MonoBehaviour
 {
+    // 패널 진행 상태
     private enum PanelState
     {
         Closed,
@@ -15,12 +17,17 @@ public class AugmentPanelUI : MonoBehaviour
         Exhausted
     }
 
+    // 선택 방지 시간
     [SerializeField] private float selectionDelay = 0.35f;
+    // 상태 안내
     [SerializeField] private TextMeshProUGUI statusText;
+    // 선택 건너뛰기
     [SerializeField] private Button skipButton;
 
+    // 증강 선택지
     public List<AugmentOptionUI> optionUIs;
 
+    // 현재 선택 정보
     private PanelState state = PanelState.Closed;
     private Coroutine enableSelectionRoutine;
     private Coroutine applyRoutine;
@@ -39,6 +46,7 @@ public class AugmentPanelUI : MonoBehaviour
         }
     }
 
+    // 선택지 초기화
     public void Setup(List<AugmentSO> augments, int session, int ticket)
     {
         StopRoutines();
@@ -52,6 +60,7 @@ public class AugmentPanelUI : MonoBehaviour
         enableSelectionRoutine = StartCoroutine(EnableSelectionAfterDelay());
     }
 
+    // 선택지 소진 표시
     public void ShowExhausted(string message, int session, int ticket)
     {
         StopRoutines();
@@ -65,6 +74,7 @@ public class AugmentPanelUI : MonoBehaviour
         SetAllInteractable(false);
     }
 
+    // 증강 선택
     public void Select(AugmentSO augment)
     {
         if (state != PanelState.Ready || augment == null || consumed)
@@ -85,6 +95,7 @@ public class AugmentPanelUI : MonoBehaviour
         applyRoutine = StartCoroutine(ApplySelected(augment));
     }
 
+    // 선택 증강 적용
     private IEnumerator ApplySelected(AugmentSO augment)
     {
         AugmentApplyStatus status = AugmentApplyStatus.Failed;
@@ -138,6 +149,7 @@ public class AugmentPanelUI : MonoBehaviour
         enableSelectionRoutine = StartCoroutine(EnableSelectionAfterDelay());
     }
 
+    // 현재 선택 건너뛰기
     public void SkipCurrentTicket()
     {
         if (consumed || state != PanelState.Exhausted)
@@ -149,6 +161,7 @@ public class AugmentPanelUI : MonoBehaviour
         UIManager.Instance?.CompleteCurrentTicket();
     }
 
+    // 패널 상태 무효화
     public void Invalidate()
     {
         StopRoutines();
@@ -159,6 +172,7 @@ public class AugmentPanelUI : MonoBehaviour
         SetSkipVisible(false);
     }
 
+    // 지연 후 입력 허용
     private IEnumerator EnableSelectionAfterDelay()
     {
         yield return new WaitForSecondsRealtime(selectionDelay);
@@ -173,6 +187,7 @@ public class AugmentPanelUI : MonoBehaviour
         SetAllInteractable(true);
     }
 
+    // 선택지 표시
     private void ShowOptions(List<AugmentSO> augments)
     {
         for (int i = 0; i < optionUIs.Count; i++)
@@ -246,6 +261,7 @@ public class AugmentPanelUI : MonoBehaviour
         }
     }
 
+    // 실행 중 코루틴 정리
     private void StopRoutines()
     {
         if (enableSelectionRoutine != null)
@@ -271,6 +287,7 @@ public class AugmentPanelUI : MonoBehaviour
         selectionDelay = Mathf.Max(0f, selectionDelay);
     }
 
+    // 상태 UI 확보
     private void EnsureStatusControls()
     {
         if (statusText == null)
