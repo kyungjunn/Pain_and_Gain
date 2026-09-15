@@ -5,18 +5,23 @@ using System.Linq;
 
 public struct StatReduceResult
 {
+    // 감소 스탯
     public AugmentType type;
+    // 감소 수치
     public float amount;
 }
 
+// 증강 추첨 및 적용.
 public class AugmentManager : MonoBehaviour
 {
     public static AugmentManager Instance;
 
+    // 플레이어 구성 요소
     private PlayerStats playerStats;
     private PlayerAugments playerAugments;
 
     [Header("Settings")]
+    // 선택지 개수
     public int optionCount = 3;
 
     private void Awake()
@@ -45,22 +50,25 @@ public class AugmentManager : MonoBehaviour
         host?.RequestEndCombatSession();
     }
 
+    // 플레이어 연결
     private void HandlePlayerSpawned(GameObject playerObject)
     {
         playerStats = playerObject.GetComponent<PlayerStats>();
         playerAugments = playerObject.GetComponent<PlayerAugments>();
-        AugmentResourceLoader.EnsureInstance()?.BindPlayer(playerObject);
+        AugmentResourceLoader.Instance?.BindPlayer(playerObject);
     }
 
+    // 증강 선택지 추첨
     public List<AugmentSO> GetRandomAugments()
     {
         return GetRandomAugments(null);
     }
 
+    // 기존 선택지 유지 추첨
     public List<AugmentSO> GetRandomAugments(IReadOnlyCollection<AugmentSO> keepVisible)
     {
         List<AugmentSO> result = new List<AugmentSO>();
-        AugmentResourceLoader host = AugmentResourceLoader.EnsureInstance();
+        AugmentResourceLoader host = AugmentResourceLoader.Instance;
         if (host == null || !host.IsActiveSession)
         {
             return result;
@@ -89,6 +97,7 @@ public class AugmentManager : MonoBehaviour
         return result;
     }
 
+    // 가중치 추첨
     private AugmentSO GetWeightedRandom(List<AugmentSO> pool)
     {
         int totalWeight = pool.Sum(x => x.weight);
@@ -112,9 +121,11 @@ public class AugmentManager : MonoBehaviour
         return pool[0];
     }
 
+    // 증강 적용
     public IEnumerator ApplyAugmentRoutine(AugmentSO augment, int sessionId, int ticketId, System.Action<AugmentApplyStatus, string> completed)
     {
-        AugmentResourceLoader host = AugmentResourceLoader.EnsureInstance();
+        // 현재 전투가 맞는지 확인 (Loader 가 없거나 현재 전투의 SessionId 와 다르면 적용 X => Stale)
+        AugmentResourceLoader host = AugmentResourceLoader.Instance;
         if (host == null || !host.BelongsToSession(sessionId))
         {
             completed?.Invoke(AugmentApplyStatus.Stale, null);
@@ -123,6 +134,7 @@ public class AugmentManager : MonoBehaviour
 
         switch (augment)
         {
+            // 스탯 증강 적용
             case StatAugmentSO stat:
                 if (playerStats == null)
                 {
@@ -134,6 +146,7 @@ public class AugmentManager : MonoBehaviour
                 completed?.Invoke(AugmentApplyStatus.Applied, null);
                 yield break;
 
+            // 스킬 증강 적용
             case SkillAugmentSO skill:
                 if (playerAugments == null)
                 {
@@ -141,12 +154,14 @@ public class AugmentManager : MonoBehaviour
                     yield break;
                 }
 
+                // 최대 중첩 상태라면 => AlreadyMax
                 if (playerAugments.IsAtMaxStacks(skill))
                 {
                     completed?.Invoke(AugmentApplyStatus.AlreadyMax, null);
                     yield break;
                 }
 
+                // 이미 보유중인 스킬이라면 => 스택 증가
                 if (playerAugments.HasSkill(skill))
                 {
                     SkillAcquireStatus stacked = playerAugments.TryAcquireLoadedSkill(skill, null);
@@ -157,18 +172,21 @@ public class AugmentManager : MonoBehaviour
                 string path = skill.SkillResourcePath;
                 GameObject prefab = null;
                 string error = null;
+                // 처음 획득하는 스킬이면 프리팹 비동기 로딩
                 yield return host.LoadSkillPrefab(path, sessionId, (loaded, loadError) =>
                 {
                     prefab = loaded;
                     error = loadError;
                 });
 
+                // 로딩 후 세션과 플레이어 다시 확인
                 if (!host.BelongsToSession(sessionId) || playerAugments == null)
                 {
                     completed?.Invoke(AugmentApplyStatus.Stale, null);
                     yield break;
                 }
 
+                // 로드 실패시 증강 목록에서 제거
                 if (prefab == null)
                 {
                     host.ExcludeFromCombat(skill);
@@ -176,6 +194,7 @@ public class AugmentManager : MonoBehaviour
                     yield break;
                 }
 
+                // 정상적 로드됐으면 플레이어 자식으로 생성
                 SkillAcquireStatus status = playerAugments.TryAcquireLoadedSkill(skill, prefab);
                 if (status == SkillAcquireStatus.Invalid)
                 {
@@ -190,6 +209,7 @@ public class AugmentManager : MonoBehaviour
                     yield break;
                 }
 
+                // AugmentApplyStatus로 결과 반환
                 completed?.Invoke(status == SkillAcquireStatus.Stacked ? AugmentApplyStatus.Stacked : AugmentApplyStatus.Applied, null);
                 yield break;
 
@@ -199,6 +219,7 @@ public class AugmentManager : MonoBehaviour
         }
     }
 
+    // 무작위 스킬 제거
     public SkillAugmentSO RemoveRandomSkill()
     {
         if (playerAugments == null)
@@ -209,6 +230,7 @@ public class AugmentManager : MonoBehaviour
         return playerAugments.TryRemoveRandomSkill(out SkillAugmentSO removed) ? removed : null;
     }
 
+    // 무작위 스탯 감소
     public StatReduceResult? ReduceRandomStat(float minRatio, float maxRatio)
     {
         if (playerStats == null)

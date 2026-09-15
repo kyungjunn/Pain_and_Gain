@@ -3,12 +3,16 @@ using UnityEngine;
 // 지정된 피해 종류로 준 실제 피해의 일정 비율만큼 체력을 회복한다.
 public class LifeStealSkill : AugmentSkill
 {
+    // 피해 분류
     [SerializeField] private PlayerDamageType damageType;
+    // 기본 흡혈률
     [SerializeField, Min(0f)] private float baseLifeStealRatio = 0.03f;
+    // 중첩 증가율
     [SerializeField, Min(0f)] private float ratioPerAdditionalStack = 0.02f;
 
     private PlayerDamageDealer damageDealer;
     private PlayerHealth playerHealth;
+    // 소수 회복량
     private float pendingHealing;
 
     protected override void OnApply()
@@ -33,6 +37,7 @@ public class LifeStealSkill : AugmentSkill
         }
     }
 
+    // 실제 피해 수신
     private void HandleDamageDealt(int damage, PlayerDamageType dealtDamageType)
     {
         if (dealtDamageType != damageType || playerHealth == null)

@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator LoadMapAndSpawnRoutine()
     {
-        AugmentResourceLoader host = AugmentResourceLoader.EnsureInstance();
+        AugmentResourceLoader host = AugmentResourceLoader.Instance;
         if (host != null)
         {
             yield return host.EndCombatSession();
