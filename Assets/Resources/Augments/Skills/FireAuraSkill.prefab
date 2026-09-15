@@ -44,9 +44,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e22c8f7b49952741bd83c0285050488, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FireAuraSkill
+  fireEffectPrefab: {fileID: 5099431166652583641, guid: 483ee4ed66303b840950a162b3897037, type: 3}
+  effectScale: 0.3
   orbitRadius: 2.5
   orbitSpeed: 120
-  sphereScale: 0.3
-  damageRadius: 0.35
   damageInterval: 0.5
   attackDamageRatio: 0.35
