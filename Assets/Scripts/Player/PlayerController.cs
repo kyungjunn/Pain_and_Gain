@@ -55,19 +55,25 @@ public class PlayerController : MonoBehaviour
 
         if (input.AttackTriggered)
         {
-            stateManager.ChangeState(PlayerState.Attack);
-
-            if (anim != null)
+            // 공격 중 입력은 소비만 한다. Trigger를 다시 쌓으면 공격 종료 직후
+            // 애니메이션만 재시작되고 발사체와 공격 판정이 어긋날 수 있다.
+            if (stateManager.CurrentState != PlayerState.Attack)
             {
-                anim.SetTrigger("Attack");
+                stateManager.ChangeState(PlayerState.Attack);
+
+                if (anim != null)
+                {
+                    anim.SetTrigger("Attack");
+                }
+
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayPlayerAttack();
+                }
+
+                playerAttack?.TryAttack();
             }
 
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayPlayerAttack();
-            }
-
-            playerAttack?.TryAttack();
             input.AttackTriggered = false;
         }
 
