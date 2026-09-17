@@ -34,7 +34,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "BasicAttack",
+                    "name": "Attack",
                     "type": "Button",
                     "id": "eda6bccc-de34-4d2e-b4cc-480a688c0871",
                     "expectedControlType": "",
@@ -164,7 +164,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "BasicAttack",
+                    "action": "Attack",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
