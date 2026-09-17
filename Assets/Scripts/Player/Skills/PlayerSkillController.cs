@@ -1,3 +1,4 @@
+// 캐릭터 고유 Q/E/R 시전.
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -5,21 +6,26 @@ using UnityEngine.InputSystem;
 public sealed class PlayerSkillController : MonoBehaviour
 {
     [Header("Skills")]
-    [SerializeField] private PlayerSkillSO basicAttack;
+    // Q 스킬
     [SerializeField] private PlayerSkillSO skillQ;
+    // E 스킬
     [SerializeField] private PlayerSkillSO skillE;
+    // R 궁극기
     [SerializeField] private PlayerSkillSO ultimate;
 
     [Header("References")]
+    // 시전 위치
     [SerializeField] private Transform skillOrigin;
+    // 스킬 애니메이터
     [SerializeField] private Animator animator;
 
     private PlayerStats stats;
     private PlayerDamageDealer damageDealer;
     private PlayerUltimateGauge ultimateGauge;
     private PlayerStateManager stateManager;
-    private float basicReadyTime;
+    // Q 재사용 가능 시각
     private float qReadyTime;
+    // E 재사용 가능 시각
     private float eReadyTime;
 
     public Transform SkillOrigin => skillOrigin;
@@ -36,47 +42,44 @@ public sealed class PlayerSkillController : MonoBehaviour
             animator = GetComponentInChildren<Animator>();
     }
 
-    public void OnBasicAttack(InputValue value)
-    {
-        if (value.isPressed)
-            TryCast(basicAttack, ref basicReadyTime, PlayerDamageType.BasicAttack, false);
-    }
-
+    // Q 입력
     public void OnSkillQ(InputValue value)
     {
         if (value.isPressed)
-            TryCast(skillQ, ref qReadyTime, PlayerDamageType.Skill, true);
+            TryCast(skillQ, ref qReadyTime);
     }
 
+    // E 입력
     public void OnSkillE(InputValue value)
     {
         if (value.isPressed)
-            TryCast(skillE, ref eReadyTime, PlayerDamageType.Skill, true);
+            TryCast(skillE, ref eReadyTime);
     }
 
+    // R 입력. 게이지 풀일 때만 시전.
     public void OnUltimate(InputValue value)
     {
-        if (!value.isPressed || IsSkillCasting() || ultimate == null || !ultimateGauge.IsFull)
+        if (!value.isPressed || !CanCast() || IsSkillCasting() || ultimate == null || !ultimateGauge.IsFull)
             return;
 
         if (ultimate.Cast(this, PlayerDamageType.Skill) && ultimateGauge.TryConsume())
             PlayAnimation(ultimate);
     }
 
+    // 쿨다운 확인 후 시전
     private void TryCast(
         PlayerSkillSO skill,
-        ref float readyTime,
-        PlayerDamageType damageType,
-        bool canInterruptBasicAttack)
+        ref float readyTime)
     {
-        bool animationBlocked = canInterruptBasicAttack ? IsSkillCasting() : IsAttacking();
-        if (animationBlocked || skill == null || Time.time < readyTime || !skill.Cast(this, damageType))
+        if (!CanCast() || IsSkillCasting() || skill == null || Time.time < readyTime ||
+            !skill.Cast(this, PlayerDamageType.Skill))
             return;
 
         readyTime = Time.time + skill.Cooldown;
         PlayAnimation(skill);
     }
 
+    // 스킬 애니메이션
     private void PlayAnimation(PlayerSkillSO skill)
     {
         stateManager?.ChangeState(PlayerState.Attack);
@@ -85,21 +88,16 @@ public sealed class PlayerSkillController : MonoBehaviour
             animator.SetTrigger(skill.AnimationTrigger);
     }
 
-    private bool IsAttacking()
+    // 일시정지/사망 차단
+    private bool CanCast()
     {
-        if (stateManager != null && stateManager.CurrentState == PlayerState.Attack)
-            return true;
-
-        if (animator == null)
+        if (GameManager.Instance != null && GameManager.Instance.IsPaused)
             return false;
 
-        AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(0);
-        if (IsAttackState(current))
-            return true;
-
-        return animator.IsInTransition(0) && IsAttackState(animator.GetNextAnimatorStateInfo(0));
+        return stateManager == null || stateManager.CurrentState != PlayerState.Dead;
     }
 
+    // 스킬 모션 중 중복 시전 차단
     private bool IsSkillCasting()
     {
         if (animator == null)
@@ -112,11 +110,7 @@ public sealed class PlayerSkillController : MonoBehaviour
         return animator.IsInTransition(0) && IsSkillState(animator.GetNextAnimatorStateInfo(0));
     }
 
-    private static bool IsAttackState(AnimatorStateInfo state)
-    {
-        return state.IsName("Attack") || IsSkillState(state);
-    }
-
+    // 스킬 상태명
     private static bool IsSkillState(AnimatorStateInfo state)
     {
         return state.IsName("SkillQ") ||
