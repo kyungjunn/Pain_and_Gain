@@ -5,7 +5,7 @@ public class PlayerController : MonoBehaviour
     
     private PlayerInputHandler input;
     private PlayerMovement movement;
-    private PlayerAttack playerAttack;
+    private IPlayerBasicAttack playerAttack;
     private Animator anim;
     private PlayerStateManager stateManager;
 
@@ -18,7 +18,7 @@ public class PlayerController : MonoBehaviour
     {
         input = GetComponent<PlayerInputHandler>();
         movement = GetComponent<PlayerMovement>();
-        playerAttack = GetComponent<PlayerAttack>();
+        playerAttack = GetComponent<IPlayerBasicAttack>();
         anim = GetComponentInChildren<Animator>();
         stateManager = GetComponent<PlayerStateManager>();
     }
@@ -55,19 +55,25 @@ public class PlayerController : MonoBehaviour
 
         if (input.AttackTriggered)
         {
-            stateManager.ChangeState(PlayerState.Attack);
-
-            if (anim != null)
+            // 공격 중 입력은 소비만 한다. Trigger를 다시 쌓으면 공격 종료 직후
+            // 애니메이션만 재시작되고 발사체와 공격 판정이 어긋날 수 있다.
+            if (stateManager.CurrentState != PlayerState.Attack &&
+                playerAttack != null && playerAttack.TryAttack())
             {
-                anim.SetTrigger("Attack");
+                stateManager.ChangeState(PlayerState.Attack);
+
+                if (anim != null)
+                {
+                    anim.SetTrigger("Attack");
+                }
+
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayPlayerAttack();
+                }
+
             }
 
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayPlayerAttack();
-            }
-
-            playerAttack?.TryAttack();
             input.AttackTriggered = false;
         }
 
@@ -90,10 +96,6 @@ public class PlayerController : MonoBehaviour
             gameObject.AddComponent<PlayerDamageDealer>();
         }
 
-        if (!TryGetComponent(out playerAttack))
-        {
-            playerAttack = gameObject.AddComponent<PlayerAttack>();
-        }
     }
 
     private void UpdateMovementState(bool isGrounded)

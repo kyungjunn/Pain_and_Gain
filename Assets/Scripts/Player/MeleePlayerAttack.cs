@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // 플레이어 전방 범위 안의 적을 찾아 광역 피해를 적용
-public class PlayerAttack : MonoBehaviour
+[RequireComponent(typeof(PlayerDamageDealer))]
+public class MeleePlayerAttack : MonoBehaviour, IPlayerBasicAttack
 {
     [SerializeField] private PlayerStats stats;
     [SerializeField] private Transform attackOrigin;
@@ -35,6 +36,16 @@ public class PlayerAttack : MonoBehaviour
 
     public bool TryAttack()
     {
+        if (damageDealer == null)
+        {
+            damageDealer = GetComponent<PlayerDamageDealer>();
+        }
+
+        if (damageDealer == null)
+        {
+            return false;
+        }
+
         if (Time.time < nextAttackTime)
         {
             return false;
@@ -44,28 +55,11 @@ public class PlayerAttack : MonoBehaviour
 
         int targetCount = FindAttackTargets(attackTargets);
 
-        if (targetCount == 0)
-        {
-            return false;
-        }
-
         int damage = Mathf.Max(1, Mathf.RoundToInt(AttackDamage * areaDamageMultiplier));
-
-        if (damageDealer == null)
-        {
-            damageDealer = GetComponent<PlayerDamageDealer>();
-        }
 
         for (int i = 0; i < targetCount; i++)
         {
-            if (damageDealer != null)
-            {
-                damageDealer.DealDamage(attackTargets[i], damage, PlayerDamageType.BasicAttack);
-            }
-            else
-            {
-                attackTargets[i].TakeDamage(damage);
-            }
+            damageDealer.DealDamage(attackTargets[i], damage, PlayerDamageType.BasicAttack);
         }
 
         return true;
