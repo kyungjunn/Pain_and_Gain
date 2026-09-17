@@ -180,11 +180,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
---- !u!4 &1044634057 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-  m_PrefabInstance: {fileID: 1044634054}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1503649569
 GameObject:
   m_ObjectHideFlags: 0
@@ -196,7 +191,6 @@ GameObject:
   - component: {fileID: 1503649573}
   - component: {fileID: 1503649572}
   - component: {fileID: 1503649571}
-  - component: {fileID: 1503649570}
   - component: {fileID: 1503649574}
   - component: {fileID: 1503649575}
   m_Layer: 0
@@ -206,21 +200,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1503649570
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1503649569}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27617421136493c45b6b38b96f9c799d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WizardTestCamera
-  target: {fileID: 1044634057}
-  offset: {x: 0, y: 5.5, z: -8}
-  followSpeed: 8
 --- !u!81 &1503649571
 AudioListener:
   m_ObjectHideFlags: 0
