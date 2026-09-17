@@ -1,7 +1,8 @@
+// 직선 이동 후 적 충돌 시 피해.
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
-public sealed class SkillProjectile : MonoBehaviour
+public sealed class DamageProjectile : MonoBehaviour
 {
     private PlayerDamageDealer damageDealer;
     private PlayerDamageType damageType;
@@ -13,6 +14,7 @@ public sealed class SkillProjectile : MonoBehaviour
     private Rigidbody body;
     private bool initialized;
 
+    // 발사 설정
     public void Initialize(PlayerDamageDealer dealer, PlayerDamageType type, int value,
         float speed, float distance, Vector3 direction)
     {
@@ -31,6 +33,7 @@ public sealed class SkillProjectile : MonoBehaviour
         body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
     }
 
+    // 이동 / 사거리 종료
     private void FixedUpdate()
     {
         if (!initialized)
@@ -42,15 +45,17 @@ public sealed class SkillProjectile : MonoBehaviour
             Destroy(gameObject);
     }
 
+    // 적 적중
     private void OnTriggerEnter(Collider other)
     {
-        if (!initialized || other.transform.root == damageDealer.transform)
+        if (!initialized || damageDealer == null || other.transform.root == damageDealer.transform)
             return;
 
         EnemyHealth enemy = other.GetComponentInParent<EnemyHealth>();
         if (enemy == null)
             return;
 
+        initialized = false;
         damageDealer.DealDamage(enemy, damage, damageType);
         Destroy(gameObject);
     }

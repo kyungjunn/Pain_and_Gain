@@ -96,7 +96,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 775d1fd405fd5e54ba2fe1cfdf919cb1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SkillProjectile
+  m_EditorClassIdentifier: Assembly-CSharp::DamageProjectile
 --- !u!1001 &6586472749092094847
 PrefabInstance:
   m_ObjectHideFlags: 0
