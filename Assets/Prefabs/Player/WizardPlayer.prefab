@@ -41,27 +41,51 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1437247322214806549, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_Interpolate
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1437247322214806549, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_CollisionDetection
-      value: 1
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481412354457338367, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: baseAttackSpeed
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3149081206460350233, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_Actions
       value: 
       objectReference: {fileID: -944628639613478452, guid: 17cbef0dacf2bf74c9695786fd5e1183, type: 3}
+    - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: skillE
+      value: 
+      objectReference: {fileID: 11400000, guid: 8f076d10ee1ce044b9b0c1ccde52b860, type: 2}
+    - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: skillQ
+      value: 
+      objectReference: {fileID: 11400000, guid: 5173df8d2f874d94fb3c7a0127948568, type: 2}
+    - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: animator
+      value: 
+      objectReference: {fileID: 4894778275282390338}
+    - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: ultimate
+      value: 
+      objectReference: {fileID: 11400000, guid: c811eb7740bd30c46aef69bd2b9aef50, type: 2}
+    - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: skillOrigin
+      value: 
+      objectReference: {fileID: 4413666459328201243}
     - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.35757
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.07
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_LocalRotation.w
@@ -95,9 +119,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: WizardPlayer
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6849721137458735246, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
     m_RemovedGameObjects:
     - {fileID: 2673165450848761863, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+    - {fileID: 4493575499223856402, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       insertIndex: -1
@@ -108,52 +134,27 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3991594976654332886}
-    - targetCorrespondingSourceObject: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 5045825948939248505}
-    - targetCorrespondingSourceObject: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 7277637484353210961}
     - targetCorrespondingSourceObject: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3962547682914665106}
-    - targetCorrespondingSourceObject: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1993278348541788030}
   m_SourcePrefab: {fileID: 100100000, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+--- !u!114 &3124971625832102775 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1481412354457338367, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+  m_PrefabInstance: {fileID: 4598502406054722184}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4938431607362285984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79deaa57ff8ab1a44b0546774f403199, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
 --- !u!1 &4938431607362285984 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
   m_PrefabInstance: {fileID: 4598502406054722184}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &3991594976654332886
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4938431607362285984}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 67dd2b9ec88da9047806f97ac1458e9b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerUltimateGauge
-  maxGauge: 100
-  currentGauge: 0
-  gaugePerDamage: 1
---- !u!114 &5045825948939248505
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4938431607362285984}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ba32adf7d6b4f599b02071462bf1679, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerDamageDealer
 --- !u!114 &7277637484353210961
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -166,7 +167,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6132d18860293a141a160fd53970575e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
-  stats: {fileID: 0}
+  stats: {fileID: 3124971625832102775}
   maxHealth: 100
   disableControlsOnDeath: 0
 --- !u!114 &3962547682914665106
@@ -178,39 +179,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 4938431607362285984}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3a6a4444ac532642bdf49b8e2c0b4b0, type: 3}
+  m_Script: {fileID: 11500000, guid: 9a7736b1849c4651ba8e6dfca10b4bde, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerAttack
-  stats: {fileID: 0}
-  attackOrigin: {fileID: 0}
-  attackRange: 2.2
-  attackAngle: 90
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectilePlayerAttack
+  stats: {fileID: 3124971625832102775}
+  projectilePrefab: {fileID: 3771451090094505498, guid: a6a6f270ba8fc15428c1a3ca2f3de9f6, type: 3}
+  projectileOrigin: {fileID: 4413666459328201243}
+  speed: 14
+  maxDistance: 14
+  damageMultiplier: 1
   attackCooldown: 0.5
-  enemyLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  maxTargets: 0
-  areaDamageMultiplier: 1
-  attackGizmoColor: {r: 1, g: 0.2, b: 0.1, a: 0.75}
-  attackGizmoSegments: 24
---- !u!114 &1993278348541788030
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4938431607362285984}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e446af450beabca48afac95082b1191b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerSkillController
-  basicAttack: {fileID: 11400000, guid: 41aa61fd157b1ab43ad7eac34081a35d, type: 2}
-  skillQ: {fileID: 11400000, guid: 5173df8d2f874d94fb3c7a0127948568, type: 2}
-  skillE: {fileID: 11400000, guid: 8f076d10ee1ce044b9b0c1ccde52b860, type: 2}
-  ultimate: {fileID: 11400000, guid: c811eb7740bd30c46aef69bd2b9aef50, type: 2}
-  skillOrigin: {fileID: 4413666459328201243}
-  animator: {fileID: 4894778275282390338}
 --- !u!4 &5709176531241172293 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
