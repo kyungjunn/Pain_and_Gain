@@ -5,6 +5,9 @@ using UnityEngine.AI;
 // 적의 체력, 사망 처리, 경험치 지급을 관리
 public class EnemyHealth : MonoBehaviour, IDamageable
 {
+    // 퀘스트 처치 알림
+    public static event Action<EnemyHealth> OnEnemyKilled;
+
     [SerializeField] private EnemyStats stats;
     [SerializeField] private int maxHealth = 20;
     [SerializeField] private int expReward = 1000;
@@ -73,6 +76,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         deathHandled = true;
         IsDead = true;
         AwardExpOnce();
+        OnEnemyKilled?.Invoke(this);
         enemyAnimator?.PlayDeath();
 
         if (AudioManager.Instance != null)

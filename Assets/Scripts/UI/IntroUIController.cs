@@ -21,7 +21,7 @@ public class IntroUIController : MonoBehaviour
     {
         // 버튼 컴포넌트가 인스펙터에서 누락됐다면 자동으로 찾아주는 방어 코드
         if (gameStartButton == null) gameStartButton = transform.Find("GameStartButton")?.GetComponent<Button>();
-        if (optionsButton == null) optionsButton = transform.Find("OptionsButton")?.GetComponent<Button>();
+        if (optionButton == null) optionButton = transform.Find("OptionsButton")?.GetComponent<Button>();
         if (quitButton == null) quitButton = transform.Find("QuitButton")?.GetComponent<Button>();
     }
 
@@ -31,8 +31,8 @@ public class IntroUIController : MonoBehaviour
         if (gameStartButton != null)
             gameStartButton.onClick.AddListener(OnGameStartClicked);
 
-        if (optionsButton != null)
-            optionsButton.onClick.AddListener(OnOptionsClicked);
+        if (optionButton != null)
+            optionButton.onClick.AddListener(OnOptionClicked);
 
         if (quitButton != null)
             quitButton.onClick.AddListener(OnQuitClicked);

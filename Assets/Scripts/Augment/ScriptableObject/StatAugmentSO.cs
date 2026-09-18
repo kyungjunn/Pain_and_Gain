@@ -1,23 +1,13 @@
 using UnityEngine;
 
+// 스탯 증강. 클래스명은 기존 에셋의 스크립트 GUID에 물려 있으므로 유지할 것.
 [CreateAssetMenu(fileName = "New Augment",
                  menuName = "Game/Augment")]
-public class StatAugmentSO : ScriptableObject
+public class StatAugmentSO : AugmentSO
 {
-    [Header("Info")] // 기본 정보
-    public string augmentName;
-    [TextArea]
-    public string description;
-
-    public Sprite icon;
-
     [Header("Stat")] // 스탯
     public AugmentType type;
     public float value;
 
-    [Header("Rarity")] // 희귀도
-    public RarityType rarity;
-
-    [Range(1, 100)] // 확률
-    public int weight = 50; // 높을 수록 잘 나옴.
-}   
+    public override string GetDisplayName() => $"{augmentName} +{value}";
+}

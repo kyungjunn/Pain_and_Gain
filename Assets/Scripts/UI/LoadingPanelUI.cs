@@ -17,8 +17,9 @@ public class LoadingPanelUI : MonoBehaviour
     // 랜덤 팁 문구 리스트
     private readonly string[] loadingTips = new string[]
     {
-        "Level up and choose your augments! Combine powerful abilities to fit your playstyle!",
-        "Let's go Pray"
+        "레벨을 올리고 증강을 선택하세요 ! 플레이 스타일에 맞춰 강력한 능력을 조합해 보세요 !",
+        "Let's go Pray !",
+        "꿈을 펼쳐보세요 !"
     };
 
     public void ResetLoadingUI()

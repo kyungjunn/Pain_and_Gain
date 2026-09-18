@@ -1182,7 +1182,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IntroUIController
   gameStartButton: {fileID: 1553574466}
-  optionsButton: {fileID: 766228446}
+  optionButton: {fileID: 0}
   quitButton: {fileID: 328808593}
   ExitButton: {fileID: 1244051203}
   nextSceneName: InGame
@@ -1907,7 +1907,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &667066190
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2337,7 +2337,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IntroUIController
   gameStartButton: {fileID: 1553574466}
-  optionsButton: {fileID: 766228446}
+  optionButton: {fileID: 0}
   quitButton: {fileID: 328808593}
   ExitButton: {fileID: 1244051203}
   nextSceneName: InGame
@@ -3022,7 +3022,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IntroUIController
   gameStartButton: {fileID: 1553574466}
-  optionsButton: {fileID: 766228446}
+  optionButton: {fileID: 0}
   quitButton: {fileID: 328808593}
   ExitButton: {fileID: 1244051203}
   nextSceneName: InGame
@@ -3381,7 +3381,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IntroUIController
   gameStartButton: {fileID: 1553574466}
-  optionsButton: {fileID: 766228446}
+  optionButton: {fileID: 0}
   quitButton: {fileID: 328808593}
   ExitButton: {fileID: 1244051203}
   nextSceneName: InGame

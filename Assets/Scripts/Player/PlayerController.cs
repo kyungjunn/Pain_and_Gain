@@ -2,10 +2,12 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    private PlayerInput input;
+    
+    private PlayerInputHandler input;
     private PlayerMovement movement;
-    private PlayerAttack playerAttack;
+    private IPlayerBasicAttack playerAttack;
     private Animator anim;
+    private PlayerStateManager stateManager;
 
     private void Awake()
     {
@@ -14,17 +16,36 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
-        input = GetComponent<PlayerInput>();
+        input = GetComponent<PlayerInputHandler>();
         movement = GetComponent<PlayerMovement>();
-        playerAttack = GetComponent<PlayerAttack>();
+        playerAttack = GetComponent<IPlayerBasicAttack>();
         anim = GetComponentInChildren<Animator>();
+        stateManager = GetComponent<PlayerStateManager>();
     }
 
     private void Update()
     {
+        if (GameManager.Instance != null && GameManager.Instance.IsPaused)
+        {
+            if (input != null)
+            {
+                input.AttackTriggered = false;
+                input.JumpTriggered = false;
+            }
+
+            return;
+        }
+
+        if (stateManager.CurrentState == PlayerState.Dead)
+        {
+            return;
+        }
+
         movement.Move(input.MoveInput);
 
         bool isGrounded = movement.CheckGrounded();
+
+        UpdateMovementState(isGrounded);
 
         if (anim != null)
         {
@@ -34,17 +55,25 @@ public class PlayerController : MonoBehaviour
 
         if (input.AttackTriggered)
         {
-            if (anim != null)
+            // 공격 중 입력은 소비만 한다. Trigger를 다시 쌓으면 공격 종료 직후
+            // 애니메이션만 재시작되고 발사체와 공격 판정이 어긋날 수 있다.
+            if (stateManager.CurrentState != PlayerState.Attack &&
+                playerAttack != null && playerAttack.TryAttack())
             {
-                anim.SetTrigger("Attack");
+                stateManager.ChangeState(PlayerState.Attack);
+
+                if (anim != null)
+                {
+                    anim.SetTrigger("Attack");
+                }
+
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayPlayerAttack();
+                }
+
             }
 
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayPlayerAttack();
-            }
-
-            playerAttack?.TryAttack();
             input.AttackTriggered = false;
         }
 
@@ -62,9 +91,61 @@ public class PlayerController : MonoBehaviour
             gameObject.AddComponent<PlayerHealth>();
         }
 
-        if (!TryGetComponent(out playerAttack))
+        if (!TryGetComponent(out PlayerDamageDealer _))
         {
-            playerAttack = gameObject.AddComponent<PlayerAttack>();
+            gameObject.AddComponent<PlayerDamageDealer>();
+        }
+
+    }
+
+    private void UpdateMovementState(bool isGrounded)
+    {
+        if (stateManager.CurrentState == PlayerState.Dead)
+        {
+            return;
+        }
+
+        if (stateManager.CurrentState == PlayerState.Attack)
+        {
+            return;
+        }
+
+        if (!isGrounded)
+        {
+            stateManager.ChangeState(PlayerState.Jump);
+            return;
+        }
+
+        if (input.MoveInput.sqrMagnitude > 0.01f)
+        {
+            stateManager.ChangeState(PlayerState.Move);
+        }
+        else
+        {
+            stateManager.ChangeState(PlayerState.Idle);
+        }
+    }
+
+    public void EndAttackState()
+    {
+        if (stateManager.CurrentState == PlayerState.Dead)
+        {
+            return;
+        }
+
+        bool isGrounded = movement.CheckGrounded();
+
+        if (!isGrounded)
+        {
+            stateManager.ChangeState(PlayerState.Jump);
+        }
+        else if (input.MoveInput.sqrMagnitude > 0.01f)
+        {
+            stateManager.ChangeState(PlayerState.Move);
+        }
+        else
+        {
+            stateManager.ChangeState(PlayerState.Idle);
         }
     }
 }
