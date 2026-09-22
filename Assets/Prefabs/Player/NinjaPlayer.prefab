@@ -186,6 +186,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: skillQ
+      value: 
+      objectReference: {fileID: 11400000, guid: c9e6a31d4f0b508c1e3d7f5a9b2c4e6d, type: 2}
+    - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: skillE
       value: 
       objectReference: {fileID: 11400000, guid: b30b59a8640a5bb418508bda62429e1e, type: 2}

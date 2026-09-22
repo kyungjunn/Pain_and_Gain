@@ -10,6 +10,7 @@ public abstract class PlayerSkillSO : ScriptableObject
 
     public float Cooldown => cooldown;
     public string AnimationTrigger => animationTrigger;
+    public virtual bool DefersCooldown => false;
 
     // 스킬 발동. 실패 시 false
     public abstract bool Cast(PlayerSkillController owner, PlayerDamageType damageType);

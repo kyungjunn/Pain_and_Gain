@@ -28,6 +28,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     // E 재사용 가능 시각
     private float eReadyTime;
     private bool movementLocked;
+    private PlayerSkillSO deferredCooldownSkill;
 
     public Transform SkillOrigin => skillOrigin;
     public PlayerStats Stats => stats;
@@ -47,6 +48,20 @@ public sealed class PlayerSkillController : MonoBehaviour
         stateManager = GetComponent<PlayerStateManager>();
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
+    }
+
+    private void Update()
+    {
+        if (deferredCooldownSkill != null &&
+            stateManager != null &&
+            stateManager.CurrentState == PlayerState.Dead)
+            CompleteDeferredSkill(deferredCooldownSkill);
+    }
+
+    private void OnDisable()
+    {
+        if (deferredCooldownSkill != null)
+            CompleteDeferredSkill(deferredCooldownSkill);
     }
 
     // Q 입력
@@ -73,6 +88,11 @@ public sealed class PlayerSkillController : MonoBehaviour
             PlayAnimation(ultimate);
     }
 
+    public void NotifyChannelFinished(PlayerSkillSO skill)
+    {
+        CompleteDeferredSkill(skill);
+    }
+
     // 쿨다운 확인 후 시전
     private void TryCast(
         PlayerSkillSO skill,
@@ -82,8 +102,31 @@ public sealed class PlayerSkillController : MonoBehaviour
             !skill.Cast(this, PlayerDamageType.Skill))
             return;
 
-        readyTime = Time.time + skill.Cooldown;
         PlayAnimation(skill);
+        if (skill.DefersCooldown)
+            deferredCooldownSkill = skill;
+        else
+            readyTime = Time.time + skill.Cooldown;
+    }
+
+    private void CompleteDeferredSkill(PlayerSkillSO skill)
+    {
+        if (skill == null || deferredCooldownSkill != skill)
+            return;
+
+        deferredCooldownSkill = null;
+        if (skill == skillQ)
+            qReadyTime = Time.time + skill.Cooldown;
+        else if (skill == skillE)
+            eReadyTime = Time.time + skill.Cooldown;
+
+        if (animator != null && !string.IsNullOrWhiteSpace(skill.AnimationTrigger))
+        {
+            animator.ResetTrigger(skill.AnimationTrigger);
+            animator.CrossFade("Idle", 0.05f, 0);
+        }
+
+        GetComponent<PlayerController>()?.EndAttackState();
     }
 
     // 스킬 애니메이션
@@ -107,6 +150,9 @@ public sealed class PlayerSkillController : MonoBehaviour
     // 스킬 모션 중 중복 시전 차단
     private bool IsSkillCasting()
     {
+        if (deferredCooldownSkill != null)
+            return true;
+
         if (animator == null)
             return false;
 
