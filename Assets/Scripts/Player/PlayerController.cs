@@ -8,6 +8,8 @@ public class PlayerController : MonoBehaviour
     private IPlayerBasicAttack playerAttack;
     private Animator anim;
     private PlayerStateManager stateManager;
+    private PlayerSkillController skillController;
+    private bool basicAttackActive;
 
     private void Awake()
     {
@@ -21,6 +23,7 @@ public class PlayerController : MonoBehaviour
         playerAttack = GetComponent<IPlayerBasicAttack>();
         anim = GetComponentInChildren<Animator>();
         stateManager = GetComponent<PlayerStateManager>();
+        skillController = GetComponent<PlayerSkillController>();
     }
 
     private void Update()
@@ -41,7 +44,8 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        movement.Move(input.MoveInput);
+        if (skillController == null || !skillController.IsMovementLocked)
+            movement.Move(input.MoveInput);
 
         bool isGrounded = movement.CheckGrounded();
 
@@ -49,7 +53,11 @@ public class PlayerController : MonoBehaviour
 
         if (anim != null)
         {
-            anim.SetFloat("MoveSpeed", input.MoveInput.magnitude);
+            bool isMoving = input.MoveInput.sqrMagnitude > 0.01f;
+            float moveSpeedParameter = !isMoving ? 0f :
+                input.MoveInput.y < -0.01f ? -1f : 1f;
+
+            anim.SetFloat("MoveSpeed", moveSpeedParameter);
             anim.SetFloat("LegSpeed", isGrounded ? 1f : 0f);
         }
 
@@ -61,6 +69,7 @@ public class PlayerController : MonoBehaviour
                 playerAttack != null && playerAttack.TryAttack())
             {
                 stateManager.ChangeState(PlayerState.Attack);
+                basicAttackActive = true;
 
                 if (anim != null)
                 {
@@ -79,7 +88,11 @@ public class PlayerController : MonoBehaviour
 
         if (input.JumpTriggered)
         {
-            movement.Jump();
+            if (movement.Jump() && anim != null)
+            {
+                anim.SetTrigger("Jump");
+            }
+
             input.JumpTriggered = false;
         }
     }
@@ -128,18 +141,21 @@ public class PlayerController : MonoBehaviour
 
     public void EndAttackState()
     {
-        if (stateManager.CurrentState == PlayerState.Dead)
+        basicAttackActive = false;
+
+        if (stateManager == null || stateManager.CurrentState == PlayerState.Dead)
         {
             return;
         }
 
-        bool isGrounded = movement.CheckGrounded();
+        bool isGrounded = movement != null && movement.CheckGrounded();
+        bool moving = input != null && input.MoveInput.sqrMagnitude > 0.01f;
 
         if (!isGrounded)
         {
             stateManager.ChangeState(PlayerState.Jump);
         }
-        else if (input.MoveInput.sqrMagnitude > 0.01f)
+        else if (moving)
         {
             stateManager.ChangeState(PlayerState.Move);
         }
