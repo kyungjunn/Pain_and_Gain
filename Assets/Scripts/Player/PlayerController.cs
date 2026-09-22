@@ -54,10 +54,10 @@ public class PlayerController : MonoBehaviour
         if (anim != null)
         {
             bool isMoving = input.MoveInput.sqrMagnitude > 0.01f;
-            float animationSpeed = !isMoving ? 0f :
-                basicAttackActive ? 0.5f :
-                input.SprintHeld ? 1f : 0.5f;
-            anim.SetFloat("MoveSpeed", animationSpeed);
+            float moveSpeedParameter = !isMoving ? 0f :
+                input.MoveInput.y < -0.01f ? -1f : 1f;
+
+            anim.SetFloat("MoveSpeed", moveSpeedParameter);
             anim.SetFloat("LegSpeed", isGrounded ? 1f : 0f);
         }
 
@@ -88,7 +88,11 @@ public class PlayerController : MonoBehaviour
 
         if (input.JumpTriggered)
         {
-            movement.Jump();
+            if (movement.Jump() && anim != null)
+            {
+                anim.SetTrigger("Jump");
+            }
+
             input.JumpTriggered = false;
         }
     }
@@ -139,18 +143,19 @@ public class PlayerController : MonoBehaviour
     {
         basicAttackActive = false;
 
-        if (stateManager.CurrentState == PlayerState.Dead)
+        if (stateManager == null || stateManager.CurrentState == PlayerState.Dead)
         {
             return;
         }
 
-        bool isGrounded = movement.CheckGrounded();
+        bool isGrounded = movement != null && movement.CheckGrounded();
+        bool moving = input != null && input.MoveInput.sqrMagnitude > 0.01f;
 
         if (!isGrounded)
         {
             stateManager.ChangeState(PlayerState.Jump);
         }
-        else if (input.MoveInput.sqrMagnitude > 0.01f)
+        else if (moving)
         {
             stateManager.ChangeState(PlayerState.Move);
         }
