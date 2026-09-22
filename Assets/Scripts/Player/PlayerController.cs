@@ -8,6 +8,8 @@ public class PlayerController : MonoBehaviour
     private IPlayerBasicAttack playerAttack;
     private Animator anim;
     private PlayerStateManager stateManager;
+    private PlayerSkillController skillController;
+    private bool basicAttackActive;
 
     private void Awake()
     {
@@ -21,6 +23,7 @@ public class PlayerController : MonoBehaviour
         playerAttack = GetComponent<IPlayerBasicAttack>();
         anim = GetComponentInChildren<Animator>();
         stateManager = GetComponent<PlayerStateManager>();
+        skillController = GetComponent<PlayerSkillController>();
     }
 
     private void Update()
@@ -41,7 +44,8 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        movement.Move(input.MoveInput);
+        if (skillController == null || !skillController.IsMovementLocked)
+            movement.Move(input.MoveInput);
 
         bool isGrounded = movement.CheckGrounded();
 
@@ -49,7 +53,11 @@ public class PlayerController : MonoBehaviour
 
         if (anim != null)
         {
-            anim.SetFloat("MoveSpeed", input.MoveInput.magnitude);
+            bool isMoving = input.MoveInput.sqrMagnitude > 0.01f;
+            float animationSpeed = !isMoving ? 0f :
+                basicAttackActive ? 0.5f :
+                input.SprintHeld ? 1f : 0.5f;
+            anim.SetFloat("MoveSpeed", animationSpeed);
             anim.SetFloat("LegSpeed", isGrounded ? 1f : 0f);
         }
 
@@ -61,6 +69,7 @@ public class PlayerController : MonoBehaviour
                 playerAttack != null && playerAttack.TryAttack())
             {
                 stateManager.ChangeState(PlayerState.Attack);
+                basicAttackActive = true;
 
                 if (anim != null)
                 {
@@ -128,6 +137,8 @@ public class PlayerController : MonoBehaviour
 
     public void EndAttackState()
     {
+        basicAttackActive = false;
+
         if (stateManager.CurrentState == PlayerState.Dead)
         {
             return;

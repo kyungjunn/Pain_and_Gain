@@ -8,6 +8,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     public bool AttackTriggered { get; set; }
     public bool JumpTriggered { get; set; }
+    public bool SprintHeld { get; private set; }
 
     public PlayerLevelSystem levelSystem;
 
@@ -35,6 +36,11 @@ public class PlayerInputHandler : MonoBehaviour
         {
             JumpTriggered = true;
         }
+    }
+
+    public void OnSprint(InputValue value)
+    {
+        SprintHeld = value.isPressed;
     }
 
     // 경험치 획득 테스트 input (X)

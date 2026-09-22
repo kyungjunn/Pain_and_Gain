@@ -27,10 +27,17 @@ public sealed class PlayerSkillController : MonoBehaviour
     private float qReadyTime;
     // E 재사용 가능 시각
     private float eReadyTime;
+    private bool movementLocked;
 
     public Transform SkillOrigin => skillOrigin;
     public PlayerStats Stats => stats;
     public PlayerDamageDealer DamageDealer => damageDealer;
+    public bool IsMovementLocked => movementLocked;
+
+    public void SetMovementLocked(bool locked)
+    {
+        movementLocked = locked;
+    }
 
     private void Awake()
     {

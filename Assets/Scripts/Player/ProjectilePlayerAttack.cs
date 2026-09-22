@@ -42,7 +42,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
         DamageProjectile projectile = Instantiate(
             projectilePrefab,
             projectileOrigin.position,
-            projectileOrigin.rotation);
+            projectileOrigin.rotation * projectilePrefab.transform.localRotation);
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(AttackDamage * damageMultiplier));
         projectile.Initialize(
