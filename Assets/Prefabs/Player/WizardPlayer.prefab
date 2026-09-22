@@ -54,7 +54,7 @@ PrefabInstance:
     - target: {fileID: 3149081206460350233, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_Actions
       value: 
-      objectReference: {fileID: -944628639613478452, guid: 17cbef0dacf2bf74c9695786fd5e1183, type: 3}
+      objectReference: {fileID: -944628639613478452, guid: 399686f7689ad924e9dcc1468bb2562e, type: 3}
     - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: skillE
       value: 
