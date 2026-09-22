@@ -101,3 +101,7 @@ InitTestScene*.unity*
 # vscode file
 .vscode/
 Assets/_Recovery/
+
+# Local Unity editor automation
+/Assets/Editor/
+/Assets/Editor.meta
