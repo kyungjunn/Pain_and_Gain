@@ -26,7 +26,7 @@ public class SkillAugmentSO : AugmentSO
         return skillResourcePath.Trim().Replace('\\', '/').Replace(".prefab", string.Empty);
     }
 
-    private void OnValidate()
+    protected virtual void OnValidate()
     {
         maxStacks = Mathf.Max(0, maxStacks);
         skillResourcePath = NormalizedResourcePath();

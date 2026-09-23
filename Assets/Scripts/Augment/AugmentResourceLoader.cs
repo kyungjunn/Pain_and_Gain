@@ -123,7 +123,6 @@ public class AugmentResourceLoader : MonoBehaviour
         }
 
         catalog.Clear();
-        HashSet<string> usedPaths = new HashSet<string>();
         AugmentSO[] loaded = Resources.LoadAll<AugmentSO>("Augments/Data");
         Array.Sort(loaded, (a, b) => string.CompareOrdinal(a != null ? a.name : string.Empty, b != null ? b.name : string.Empty));
 
@@ -144,11 +143,6 @@ public class AugmentResourceLoader : MonoBehaviour
                     continue;
                 }
 
-                if (!usedPaths.Add(path))
-                {
-                    Debug.LogError($"[Augment] 중복 스킬 경로를 제외합니다: {skill.name} -> {path}");
-                    continue;
-                }
             }
 
             catalog.Add(augment);
@@ -210,7 +204,8 @@ public class AugmentResourceLoader : MonoBehaviour
         for (int i = 0; i < catalog.Count; i++)
         {
             AugmentSO augment = catalog[i];
-            if (augment == null || failedDefinitions.Contains(augment))
+            if (augment == null || failedDefinitions.Contains(augment) ||
+                !augment.IsAvailableFor(currentPlayer))
             {
                 continue;
             }

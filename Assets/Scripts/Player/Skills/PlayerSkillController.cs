@@ -35,6 +35,11 @@ public sealed class PlayerSkillController : MonoBehaviour
     public PlayerDamageDealer DamageDealer => damageDealer;
     public bool IsMovementLocked => movementLocked;
 
+    public bool HasSkill(PlayerSkillSO skill)
+    {
+        return skill != null && (skillQ == skill || skillE == skill || ultimate == skill);
+    }
+
     public void SetMovementLocked(bool locked)
     {
         movementLocked = locked;

@@ -18,4 +18,11 @@ public abstract class AugmentSO : ScriptableObject
 
     // 카드 제목. 스탯은 "Damage +5", 스킬은 이름 그대로
     public abstract string GetDisplayName();
+
+    // 현재 플레이어가 이 증강을 획득할 수 있는지 판정한다.
+    // 공용 증강은 기본적으로 모든 플레이어에게 적용된다.
+    public virtual bool IsAvailableFor(GameObject player)
+    {
+        return true;
+    }
 }
