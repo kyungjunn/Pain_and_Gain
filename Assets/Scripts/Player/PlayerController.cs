@@ -2,18 +2,34 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    
+    private static readonly int AttackSpeedParameter = Animator.StringToHash("AttackSpeed");
+
     private PlayerInputHandler input;
     private PlayerMovement movement;
     private IPlayerBasicAttack playerAttack;
     private Animator anim;
     private PlayerStateManager stateManager;
     private PlayerSkillController skillController;
+    private PlayerStats playerStats;
     private bool basicAttackActive;
+    private bool attackSpeedSubscribed;
+    private float appliedAttackSpeed = float.NaN;
 
     private void Awake()
     {
         EnsureCombatComponents();
+        playerStats = GetComponent<PlayerStats>();
+        SubscribeToStats();
+    }
+
+    private void OnEnable()
+    {
+        SubscribeToStats();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeFromStats();
     }
 
     private void Start()
@@ -24,6 +40,7 @@ public class PlayerController : MonoBehaviour
         anim = GetComponentInChildren<Animator>();
         stateManager = GetComponent<PlayerStateManager>();
         skillController = GetComponent<PlayerSkillController>();
+        UpdateAttackAnimationSpeed();
     }
 
     private void Update()
@@ -43,6 +60,8 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
+
+        UpdateAttackAnimationSpeed();
 
         if (skillController == null || !skillController.IsMovementLocked)
             movement.Move(input.MoveInput);
@@ -109,6 +128,48 @@ public class PlayerController : MonoBehaviour
             gameObject.AddComponent<PlayerDamageDealer>();
         }
 
+    }
+
+    private void SubscribeToStats()
+    {
+        if (playerStats == null || attackSpeedSubscribed)
+        {
+            return;
+        }
+
+        playerStats.onStatsChanged += UpdateAttackAnimationSpeed;
+        attackSpeedSubscribed = true;
+    }
+
+    private void UnsubscribeFromStats()
+    {
+        if (playerStats == null || !attackSpeedSubscribed)
+        {
+            return;
+        }
+
+        playerStats.onStatsChanged -= UpdateAttackAnimationSpeed;
+        attackSpeedSubscribed = false;
+    }
+
+    private void UpdateAttackAnimationSpeed()
+    {
+        if (anim == null)
+        {
+            return;
+        }
+
+        float attackSpeed = playerStats != null && playerStats.AttackSpeed > 0f
+            ? playerStats.AttackSpeed
+            : 1f;
+
+        if (Mathf.Approximately(appliedAttackSpeed, attackSpeed))
+        {
+            return;
+        }
+
+        anim.SetFloat(AttackSpeedParameter, attackSpeed);
+        appliedAttackSpeed = attackSpeed;
     }
 
     private void UpdateMovementState(bool isGrounded)
