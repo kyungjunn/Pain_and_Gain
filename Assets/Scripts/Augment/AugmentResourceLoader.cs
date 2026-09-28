@@ -33,6 +33,8 @@ public class AugmentResourceLoader : MonoBehaviour
 
     // 증강 목록
     private readonly List<AugmentSO> catalog = new List<AugmentSO>();
+    // 현재 플레이어가 사용할 수 있는 공용 + 캐릭터 전용 증강 목록
+    private readonly List<AugmentSO> activeCatalog = new List<AugmentSO>();
     // 전투 제외 목록
     private readonly HashSet<AugmentSO> failedDefinitions = new HashSet<AugmentSO>();
     // 프리팹 캐시
@@ -57,6 +59,7 @@ public class AugmentResourceLoader : MonoBehaviour
     public AugmentSessionState State => state;
     public GameObject CurrentPlayer => currentPlayer;
     public IReadOnlyList<AugmentSO> Catalog => catalog;
+    public IReadOnlyList<AugmentSO> ActiveCatalog => activeCatalog;
     public bool IsActiveSession => state == AugmentSessionState.Active;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -107,6 +110,7 @@ public class AugmentResourceLoader : MonoBehaviour
         mapScene = map;
         currentPlayer = null;
         catalog.Clear();
+        activeCatalog.Clear();
         failedDefinitions.Clear();
         prefabCache.Clear();
         inFlight.Clear();
@@ -158,6 +162,27 @@ public class AugmentResourceLoader : MonoBehaviour
         if (state == AugmentSessionState.Active)
         {
             currentPlayer = player;
+            RebuildActiveCatalog();
+        }
+    }
+
+    // 플레이어 선택 시 변하지 않는 캐릭터/보유 스킬 조건을 한 번만 반영한다.
+    private void RebuildActiveCatalog()
+    {
+        activeCatalog.Clear();
+
+        if (currentPlayer == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < catalog.Count; i++)
+        {
+            AugmentSO augment = catalog[i];
+            if (augment != null && augment.IsAvailableFor(currentPlayer))
+            {
+                activeCatalog.Add(augment);
+            }
         }
     }
 
@@ -199,13 +224,12 @@ public class AugmentResourceLoader : MonoBehaviour
     // 후보 목록 생성
     public List<AugmentSO> CreateCandidatePool(PlayerAugments playerAugments)
     {
-        List<AugmentSO> pool = new List<AugmentSO>(catalog.Count);
+        List<AugmentSO> pool = new List<AugmentSO>(activeCatalog.Count);
 
-        for (int i = 0; i < catalog.Count; i++)
+        for (int i = 0; i < activeCatalog.Count; i++)
         {
-            AugmentSO augment = catalog[i];
-            if (augment == null || failedDefinitions.Contains(augment) ||
-                !augment.IsAvailableFor(currentPlayer))
+            AugmentSO augment = activeCatalog[i];
+            if (augment == null || failedDefinitions.Contains(augment))
             {
                 continue;
             }
@@ -319,6 +343,7 @@ public class AugmentResourceLoader : MonoBehaviour
         }
 
         currentPlayer = null;
+        activeCatalog.Clear();
 
         drainingRequests.Clear();
         foreach (KeyValuePair<string, ResourceRequest> pair in inFlight)
@@ -343,6 +368,7 @@ public class AugmentResourceLoader : MonoBehaviour
         drainingRequests.Clear();
         prefabCache.Clear();
         catalog.Clear();
+        activeCatalog.Clear();
         failedDefinitions.Clear();
         inGameScene = default;
         mapScene = default;
