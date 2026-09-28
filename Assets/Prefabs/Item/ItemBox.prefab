@@ -50,8 +50,16 @@ MonoBehaviour:
   availableItems:
   - {fileID: 11400000, guid: 736be7a8bca903349a8acefe09bb48af, type: 2}
   - {fileID: 11400000, guid: d9f43f95ae1909942a8941b0e9b05338, type: 2}
+  equipEffectPrefab: {fileID: 3372678114695592438, guid: c2dae6a2b5fb64748be3cfd398f0e089, type: 3}
+  consumableEffectPrefab: {fileID: 4113264280539911217, guid: 08317e9476adff94d9d38da3a41375c2, type: 3}
   uiPanel: {fileID: 4921135780123367464}
   infoText: {fileID: 6221990794348640086}
+  interactKey: 19
+  declineKey: 31
+  openPromptMessage: "\uC0C1\uC790 \uC5F4\uAE30 (E)"
+  confirmMessage: "\uC0C1\uC790\uB97C \uC5EC\uC2DC\uACA0\uC2B5\uB2C8\uAE4C? (E: \uC608
+    / Q: \uC544\uB2C8\uC624)"
+  emptyBoxMessage: "\uBE48 \uC0C1\uC790\uC785\uB2C8\uB2E4."
 --- !u!65 &2887273411991796888
 BoxCollider:
   m_ObjectHideFlags: 0

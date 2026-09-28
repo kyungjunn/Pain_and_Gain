@@ -15,8 +15,8 @@ MonoBehaviour:
   itemName: "\uD68C\uBCF5 \uBB3C\uC57D"
   itemDescription: 
   itemType: 1
-  rarity: 
+  rarity: 0
   itemIcon: {fileID: 0}
-  itemPrefab: {fileID: 0}
+  itemPrefab: {fileID: 8762782962113962163, guid: 33487c4e769a18c40976ec60df8f6152, type: 3}
   bonusAttackDamage: 0
   hpRecoveryAmount: 30
