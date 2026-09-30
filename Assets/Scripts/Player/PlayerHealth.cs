@@ -14,6 +14,8 @@ public class PlayerHealth : LivingEntity
     public Action onHealthChanged;
 
     private PlayerStateManager stateManager;
+    private Animator animator;
+    private Rigidbody rb;
 
     private void Awake()
     {
@@ -23,6 +25,8 @@ public class PlayerHealth : LivingEntity
         }
 
         stateManager = GetComponent<PlayerStateManager>();
+        animator = GetComponentInChildren<Animator>();
+        rb = GetComponent<Rigidbody>();
 
         CurrentHealth = MaxHealth;
     }
@@ -85,9 +89,30 @@ public class PlayerHealth : LivingEntity
 
     private void Die()
     {
+        if (IsDead)
+        {
+            return;
+        }
+
         IsDead = true;
 
         stateManager?.ChangeState(PlayerState.Dead);
+
+        if (rb != null)
+        {
+            rb.linearVelocity =
+                new Vector3(0f, rb.linearVelocity.y, 0f);
+        }
+
+        if (animator != null)
+        {
+            if (animator.layerCount > 1)
+            {
+                animator.SetLayerWeight(1, 0f);
+            }
+
+            animator.SetTrigger("Die");
+        }
 
         if (!disableControlsOnDeath)
         {
