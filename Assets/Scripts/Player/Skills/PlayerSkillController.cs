@@ -32,11 +32,13 @@ public sealed class PlayerSkillController : MonoBehaviour
     private bool movementLocked;
     private PlayerSkillSO deferredCooldownSkill;
     private Coroutine skillEWeaponRoutine;
+    private NinjaUltimate ninjaUltimate;
 
     public Transform SkillOrigin => skillOrigin;
     public PlayerStats Stats => stats;
     public PlayerDamageDealer DamageDealer => damageDealer;
     public bool IsMovementLocked => movementLocked;
+    public bool IsUltimateDashing => ninjaUltimate != null && ninjaUltimate.IsDashing;
 
     public bool HasSkill(PlayerSkillSO skill)
     {
@@ -54,6 +56,7 @@ public sealed class PlayerSkillController : MonoBehaviour
         damageDealer = GetComponent<PlayerDamageDealer>();
         ultimateGauge = GetComponent<PlayerUltimateGauge>();
         stateManager = GetComponent<PlayerStateManager>();
+        ninjaUltimate = GetComponent<NinjaUltimate>();
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
         if (skillEWeapon != null)
@@ -70,6 +73,7 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void OnDisable()
     {
+        ninjaUltimate?.Cancel();
         if (skillEWeaponRoutine != null)
         {
             StopCoroutine(skillEWeaponRoutine);
@@ -98,11 +102,31 @@ public sealed class PlayerSkillController : MonoBehaviour
     // R 입력. 게이지 풀일 때만 시전.
     public void OnUltimate(InputValue value)
     {
-        if (!value.isPressed || !CanCast() || IsSkillCasting() || ultimate == null || !ultimateGauge.IsFull)
-            return;
+        if (value.isPressed)
+            TryUseUltimate();
+    }
+
+    public bool TryUseUltimate()
+    {
+        if (!CanCast() || IsSkillCasting())
+            return false;
+
+        if (ninjaUltimate != null)
+        {
+            if (ninjaUltimate.IsReady)
+                return ninjaUltimate.TryRecast();
+            return ultimateGauge.IsFull && ninjaUltimate.TryActivate() && ultimateGauge.TryConsume();
+        }
+
+        if (ultimate == null || !ultimateGauge.IsFull)
+            return false;
 
         if (ultimate.Cast(this, PlayerDamageType.Skill) && ultimateGauge.TryConsume())
+        {
             PlayAnimation(ultimate);
+            return true;
+        }
+        return false;
     }
 
     public void NotifyChannelFinished(PlayerSkillSO skill)
@@ -176,6 +200,8 @@ public sealed class PlayerSkillController : MonoBehaviour
     // 스킬 애니메이션
     private void PlayAnimation(PlayerSkillSO skill)
     {
+        if (ninjaUltimate != null && ninjaUltimate.IsReady && animator != null)
+            animator.CrossFadeInFixedTime("Empty", 0.05f, 1);
         stateManager?.ChangeState(PlayerState.Attack);
 
         if (animator != null && !string.IsNullOrWhiteSpace(skill.AnimationTrigger))
@@ -194,6 +220,8 @@ public sealed class PlayerSkillController : MonoBehaviour
     // 스킬 모션 중 중복 시전 차단
     private bool IsSkillCasting()
     {
+        if (ninjaUltimate != null && ninjaUltimate.IsDashing)
+            return true;
         if (deferredCooldownSkill != null)
             return true;
 
