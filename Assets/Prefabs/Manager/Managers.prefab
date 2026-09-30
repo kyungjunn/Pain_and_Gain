@@ -135,6 +135,14 @@ MonoBehaviour:
     additionalWeightPerLevel: 1
     maxSpawnWeight: 5
     forceSpawnOnUnlock: 1
+  - prefab: {fileID: 8302015375107000000, guid: ac772f7131e24e84a539a043852e3294, type: 3}
+    minPlayerLevel: 7
+    spawnWeight: 0
+    allowInitialSpawn: 0
+    maxAliveCount: 1
+    additionalWeightPerLevel: 0
+    maxSpawnWeight: 0
+    forceSpawnOnUnlock: 1
   spawnEnemiesOnStart: 1
   spawnAllEnemyPointsOnStart: 1
   initialEnemyCount: 0
