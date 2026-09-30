@@ -3,16 +3,18 @@ using UnityEngine;
 public class PlayerLook : MonoBehaviour
 {
     public Transform cameraPivot; // 카메라 부모 (CameraPivot)
-    public float sensitivity = 30f;
-    public float upClamp = 20f;
-    public float downClamp = -30f;
+    public float sensitivity = 10f;
+    public float upClamp = 35f;
+    public float downClamp = -40f;
 
     private float xRotation = 0f;
     private PlayerInputHandler input;
+    private PlayerStateManager stateManager;
 
     void Awake()
     {
         input = GetComponent<PlayerInputHandler>();
+        stateManager = GetComponent<PlayerStateManager>();
     }
 
     void Start()
@@ -23,6 +25,12 @@ public class PlayerLook : MonoBehaviour
 
     void Update()
     {
+        if (stateManager != null &&
+            stateManager.CurrentState == PlayerState.Dead)
+        {
+            return;
+        }
+
         Look();
     }
 

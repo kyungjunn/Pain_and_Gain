@@ -8,6 +8,8 @@ public class MeleePlayerAttack : MonoBehaviour, IPlayerBasicAttack
     [SerializeField] private PlayerStats stats;
     [SerializeField] private Transform attackOrigin;
     [SerializeField] private float attackRange = 2.2f;
+    [SerializeField] private float nearWidth = 1.0f;
+    [SerializeField] private float farWidth = 3.0f;
     [SerializeField] private float attackAngle = 90f;
     [SerializeField] private float attackCooldown = 0.5f;
     [SerializeField] private LayerMask enemyLayers = ~0;
@@ -84,15 +86,32 @@ public class MeleePlayerAttack : MonoBehaviour, IPlayerBasicAttack
                 continue;
             }
 
-            Vector3 direction = enemyHealth.transform.position - origin.position;
-            direction.y = 0f;
+            Vector3 localPosition =
+                origin.InverseTransformPoint(
+                    enemyHealth.transform.position
+                );
 
-            if (direction.sqrMagnitude > attackRange * attackRange)
+            float forwardDistance = localPosition.z;
+            float sideDistance = Mathf.Abs(localPosition.x);
+
+            if (forwardDistance < 0f ||
+                forwardDistance > attackRange)
             {
                 continue;
             }
 
-            if (direction.sqrMagnitude > 0.001f && Vector3.Angle(origin.forward, direction) > attackAngle * 0.5f)
+            float t = forwardDistance / attackRange;
+
+            float currentWidth =
+                Mathf.Lerp(
+                    nearWidth,
+                    farWidth,
+                    t
+                );
+
+            float halfWidth = currentWidth * 0.5f;
+
+            if (sideDistance > halfWidth)
             {
                 continue;
             }
