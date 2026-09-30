@@ -132,6 +132,12 @@ public class AugmentManager : MonoBehaviour
             yield break;
         }
 
+        if (augment == null || !augment.IsAvailableFor(playerStats != null ? playerStats.gameObject : null))
+        {
+            completed?.Invoke(AugmentApplyStatus.Invalid, "현재 캐릭터에게 적용할 수 없는 증강입니다.");
+            yield break;
+        }
+
         switch (augment)
         {
             // 스탯 증강 적용

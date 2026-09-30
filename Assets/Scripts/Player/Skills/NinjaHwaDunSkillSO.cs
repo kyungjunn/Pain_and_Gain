@@ -23,8 +23,30 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
             return false;
 
         Transform origin = owner.SkillOrigin;
+        PlayerAugments playerAugments = owner.GetComponent<PlayerAugments>();
+        float combatDamageBonus = playerAugments != null
+            ? playerAugments.GetCombatAugmentValue(PlayerCombatAugmentEffect.SkillDamage, this)
+            : 0f;
+        float combatRangeBonus = playerAugments != null
+            ? playerAugments.GetCombatAugmentValue(PlayerCombatAugmentEffect.SkillRange, this)
+            : 0f;
+        float combatDurationBonus = playerAugments != null
+            ? playerAugments.GetCombatAugmentValue(PlayerCombatAugmentEffect.SkillDuration, this)
+            : 0f;
+        float effectiveDamageMultiplier = damageMultiplier * Mathf.Max(0f, 1f + combatDamageBonus);
+        float effectiveRangeMultiplier = Mathf.Max(0f, 1f + combatRangeBonus);
+        float effectiveDuration = Mathf.Max(0.05f, duration + combatDurationBonus);
+
         GameObject instance = Object.Instantiate(flamethrowerPrefab, origin.position, origin.rotation, origin);
         instance.name = "NinjaHwaDunFlamethrower";
+        instance.transform.localScale *= effectiveRangeMultiplier;
+
+        ParticleSystem[] particleSystems = instance.GetComponentsInChildren<ParticleSystem>(true);
+        for (int i = 0; i < particleSystems.Length; i++)
+        {
+            ParticleSystem.MainModule main = particleSystems[i].main;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+        }
 
         FireBaseScript fire = instance.GetComponent<FireBaseScript>();
         if (fire != null)
@@ -45,9 +67,9 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
         body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(
-            (owner.Stats != null ? owner.Stats.AttackDamage : 10f) * damageMultiplier));
+            (owner.Stats != null ? owner.Stats.AttackDamage : 10f) * effectiveDamageMultiplier));
         NinjaHwaDunChannel channel = instance.AddComponent<NinjaHwaDunChannel>();
-        channel.Initialize(owner, this, damage, tickInterval, duration);
+        channel.Initialize(owner, this, damage, tickInterval, effectiveDuration);
         return true;
     }
 

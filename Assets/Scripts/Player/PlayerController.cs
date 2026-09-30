@@ -2,18 +2,34 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    
+    private static readonly int AttackSpeedParameter = Animator.StringToHash("AttackSpeed");
+
     private PlayerInputHandler input;
     private PlayerMovement movement;
     private IPlayerBasicAttack playerAttack;
     private Animator anim;
     private PlayerStateManager stateManager;
     private PlayerSkillController skillController;
+    private PlayerStats playerStats;
     private bool basicAttackActive;
+    private bool attackSpeedSubscribed;
+    private float appliedAttackSpeed = float.NaN;
 
     private void Awake()
     {
         EnsureCombatComponents();
+        playerStats = GetComponent<PlayerStats>();
+        SubscribeToStats();
+    }
+
+    private void OnEnable()
+    {
+        SubscribeToStats();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeFromStats();
     }
 
     private void Start()
@@ -24,6 +40,7 @@ public class PlayerController : MonoBehaviour
         anim = GetComponentInChildren<Animator>();
         stateManager = GetComponent<PlayerStateManager>();
         skillController = GetComponent<PlayerSkillController>();
+        UpdateAttackAnimationSpeed();
     }
 
     private void Update()
@@ -43,6 +60,8 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
+
+        UpdateAttackAnimationSpeed();
 
         if (skillController == null || !skillController.IsMovementLocked)
             movement.Move(input.MoveInput);
@@ -66,6 +85,7 @@ public class PlayerController : MonoBehaviour
             // 공격 중 입력은 소비만 한다. Trigger를 다시 쌓으면 공격 종료 직후
             // 애니메이션만 재시작되고 발사체와 공격 판정이 어긋날 수 있다.
             if (stateManager.CurrentState != PlayerState.Attack &&
+                (skillController == null || !skillController.IsUltimateDashing) &&
                 playerAttack != null && playerAttack.TryAttack())
             {
                 stateManager.ChangeState(PlayerState.Attack);
@@ -88,7 +108,8 @@ public class PlayerController : MonoBehaviour
 
         if (input.JumpTriggered)
         {
-            if (movement.Jump() && anim != null)
+            if ((skillController == null || !skillController.IsUltimateDashing) &&
+                movement.Jump() && anim != null)
             {
                 anim.SetTrigger("Jump");
             }
@@ -109,6 +130,48 @@ public class PlayerController : MonoBehaviour
             gameObject.AddComponent<PlayerDamageDealer>();
         }
 
+    }
+
+    private void SubscribeToStats()
+    {
+        if (playerStats == null || attackSpeedSubscribed)
+        {
+            return;
+        }
+
+        playerStats.onStatsChanged += UpdateAttackAnimationSpeed;
+        attackSpeedSubscribed = true;
+    }
+
+    private void UnsubscribeFromStats()
+    {
+        if (playerStats == null || !attackSpeedSubscribed)
+        {
+            return;
+        }
+
+        playerStats.onStatsChanged -= UpdateAttackAnimationSpeed;
+        attackSpeedSubscribed = false;
+    }
+
+    private void UpdateAttackAnimationSpeed()
+    {
+        if (anim == null)
+        {
+            return;
+        }
+
+        float attackSpeed = playerStats != null && playerStats.AttackSpeed > 0f
+            ? playerStats.AttackSpeed
+            : 1f;
+
+        if (Mathf.Approximately(appliedAttackSpeed, attackSpeed))
+        {
+            return;
+        }
+
+        anim.SetFloat(AttackSpeedParameter, attackSpeed);
+        appliedAttackSpeed = attackSpeed;
     }
 
     private void UpdateMovementState(bool isGrounded)
@@ -141,6 +204,8 @@ public class PlayerController : MonoBehaviour
 
     public void EndAttackState()
     {
+        if (skillController != null && skillController.IsUltimateDashing)
+            return;
         basicAttackActive = false;
 
         if (stateManager == null || stateManager.CurrentState == PlayerState.Dead)

@@ -5118,6 +5118,7 @@ GameObject:
   - component: {fileID: 5763021708063854728}
   - component: {fileID: 7717691791446946992}
   - component: {fileID: 6849721137458735246}
+  - component: {fileID: 8147291056382947162}
   - component: {fileID: 6742158247835113491}
   - component: {fileID: 3824717015635805572}
   m_Layer: 0
@@ -5410,6 +5411,19 @@ MonoBehaviour:
   areaDamageMultiplier: 1
   attackGizmoColor: {r: 1, g: 0.2, b: 0.1, a: 0.75}
   attackGizmoSegments: 24
+--- !u!114 &8147291056382947162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8888413459189353256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e7c9a1d5f6b4e28a0c1d2e3f4b5a697, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCharacter
+  characterId: 0
 --- !u!114 &6742158247835113491
 MonoBehaviour:
   m_ObjectHideFlags: 0
