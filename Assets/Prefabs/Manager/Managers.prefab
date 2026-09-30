@@ -103,6 +103,30 @@ MonoBehaviour:
     additionalWeightPerLevel: 0
     maxSpawnWeight: 0
     forceSpawnOnUnlock: 0
+  - prefab: {fileID: 5242389692681244209, guid: 0349a14cf5c79924f97da68772881ca7, type: 3}
+    minPlayerLevel: 1
+    spawnWeight: 4
+    allowInitialSpawn: 1
+    maxAliveCount: 4
+    additionalWeightPerLevel: 0
+    maxSpawnWeight: 0
+    forceSpawnOnUnlock: 0
+  - prefab: {fileID: 8231136501089189445, guid: db0c33d51125f8d43949453d9d9465bf, type: 3}
+    minPlayerLevel: 2
+    spawnWeight: 2
+    allowInitialSpawn: 0
+    maxAliveCount: 3
+    additionalWeightPerLevel: 0
+    maxSpawnWeight: 0
+    forceSpawnOnUnlock: 1
+  - prefab: {fileID: 7444731717211906073, guid: 2423d2ec31c6d8946a0a8da882605029, type: 3}
+    minPlayerLevel: 3
+    spawnWeight: 2
+    allowInitialSpawn: 0
+    maxAliveCount: 3
+    additionalWeightPerLevel: 0
+    maxSpawnWeight: 0
+    forceSpawnOnUnlock: 1
   - prefab: {fileID: 7251402081766339373, guid: 7fffae1d74d94ba18a7d47c2d836a611, type: 3}
     minPlayerLevel: 3
     spawnWeight: 2
@@ -118,6 +142,13 @@ MonoBehaviour:
   enemySpawnInterval: 5
   enemiesPerSpawn: 1
   maxAliveEnemies: 12
+  enableDynamicDifficulty: 1
+  difficultyStepDuration: 60
+  spawnIntervalDecreasePerStep: 0.4
+  minimumSpawnInterval: 2.5
+  extraEnemyEverySteps: 3
+  maxEnemiesIncreasePerStep: 2
+  maximumAliveEnemies: 24
   minSpawnDistanceFromPlayer: 8
   maxSpawnDistanceFromPlayer: 60
   spawnPointPickAttempts: 12
@@ -157,6 +188,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::QuestManager
   quests:
   - {fileID: 11400000, guid: 6a144991c3784314793144c6917d33ca, type: 2}
+  - {fileID: 11400000, guid: a36d8d4fef0100d43b3f2fb4827dcb41, type: 2}
   firstQuestDelay: 12
   questCooldown: 45
 --- !u!82 &8997208331547504212
