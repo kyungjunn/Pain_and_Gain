@@ -1,4 +1,5 @@
 // 캐릭터 고유 Q/E/R 시전.
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,6 +19,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     [SerializeField] private Transform skillOrigin;
     // 스킬 애니메이터
     [SerializeField] private Animator animator;
+    [SerializeField] private GameObject skillEWeapon;
 
     private PlayerStats stats;
     private PlayerDamageDealer damageDealer;
@@ -29,6 +31,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     private float eReadyTime;
     private bool movementLocked;
     private PlayerSkillSO deferredCooldownSkill;
+    private Coroutine skillEWeaponRoutine;
 
     public Transform SkillOrigin => skillOrigin;
     public PlayerStats Stats => stats;
@@ -53,6 +56,8 @@ public sealed class PlayerSkillController : MonoBehaviour
         stateManager = GetComponent<PlayerStateManager>();
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
+        if (skillEWeapon != null)
+            skillEWeapon.SetActive(false);
     }
 
     private void Update()
@@ -65,6 +70,13 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void OnDisable()
     {
+        if (skillEWeaponRoutine != null)
+        {
+            StopCoroutine(skillEWeaponRoutine);
+            skillEWeaponRoutine = null;
+        }
+        if (skillEWeapon != null)
+            skillEWeapon.SetActive(false);
         if (deferredCooldownSkill != null)
             CompleteDeferredSkill(deferredCooldownSkill);
     }
@@ -108,10 +120,37 @@ public sealed class PlayerSkillController : MonoBehaviour
             return;
 
         PlayAnimation(skill);
+        if (skill == skillE && skillEWeapon != null && animator != null)
+        {
+            skillEWeapon.SetActive(true);
+            skillEWeaponRoutine = StartCoroutine(HideSkillEWeaponAfterAnimation());
+        }
         if (skill.DefersCooldown)
             deferredCooldownSkill = skill;
         else
             readyTime = Time.time + skill.Cooldown;
+    }
+
+    private IEnumerator HideSkillEWeaponAfterAnimation()
+    {
+        // The trigger is consumed on the next animator update, not during Cast.
+        float enterDeadline = Time.time + 1f;
+        while (!IsEAnimationActive() && Time.time < enterDeadline &&
+               (stateManager == null || stateManager.CurrentState != PlayerState.Dead))
+            yield return null;
+
+        while (IsEAnimationActive() &&
+               (stateManager == null || stateManager.CurrentState != PlayerState.Dead))
+            yield return null;
+
+        skillEWeapon.SetActive(false);
+        skillEWeaponRoutine = null;
+    }
+
+    private bool IsEAnimationActive()
+    {
+        return animator.GetCurrentAnimatorStateInfo(0).IsName("SkillE") ||
+               (animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsName("SkillE"));
     }
 
     private void CompleteDeferredSkill(PlayerSkillSO skill)

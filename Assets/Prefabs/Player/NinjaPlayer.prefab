@@ -167,11 +167,20 @@ PrefabInstance:
       propertyPath: m_Name
       value: Katana1
       objectReference: {fileID: 0}
+    - target: {fileID: 6505477613569017192, guid: 93ea32d10fd404a40b1e250cb5162593, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 93ea32d10fd404a40b1e250cb5162593, type: 3}
+--- !u!1 &7321047713802095310 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6505477613569017192, guid: 93ea32d10fd404a40b1e250cb5162593, type: 3}
+  m_PrefabInstance: {fileID: 4140990872128414241}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &983306558053714933 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3806290833947486676, guid: 93ea32d10fd404a40b1e250cb5162593, type: 3}
@@ -189,6 +198,10 @@ PrefabInstance:
       propertyPath: skillE
       value: 
       objectReference: {fileID: 11400000, guid: b30b59a8640a5bb418508bda62429e1e, type: 2}
+    - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: skillEWeapon
+      value:
+      objectReference: {fileID: 7321047713802095310}
     - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: skillQ
       value: 
