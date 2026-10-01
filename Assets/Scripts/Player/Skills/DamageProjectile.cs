@@ -88,7 +88,7 @@ public sealed class DamageProjectile : MonoBehaviour
         if (explosionRadius <= 0f)
         {
             if (directTarget != null && damageDealer != null)
-                damageDealer.DealDamage(directTarget, damage, damageType);
+                damageDealer.DealDamage(directTarget, damage, damageType, spawnPosition);
             Destroy(gameObject);
             return;
         }
@@ -123,6 +123,6 @@ public sealed class DamageProjectile : MonoBehaviour
     private void ApplyExplosionDamage(EnemyHealth enemy, HashSet<EnemyHealth> hitEnemies)
     {
         if (damageDealer != null && enemy != null && !enemy.IsDead && hitEnemies.Add(enemy))
-            damageDealer.DealDamage(enemy, damage, damageType);
+            damageDealer.DealDamage(enemy, damage, damageType, spawnPosition);
     }
 }
