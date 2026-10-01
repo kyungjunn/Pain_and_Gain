@@ -164,38 +164,22 @@ public sealed class NinjaUltimate : MonoBehaviour
         Vector3 dashStart = transform.position;
         float distance = SafeAtLeast(dashDistance, MinimumDistance, 7f);
         float duration = SafeAtLeast(dashDuration, MinimumDuration, 0.28f);
-        float elapsed = 0f;
         float nextTrailDistance = 0f;
         int trailCount = 0;
         HashSet<EnemyHealth> hitThisTick = new HashSet<EnemyHealth>();
 
         try
         {
-            while (elapsed < duration)
-            {
-                if (IsPlayerDead())
-                    yield break;
-
-                if (IsPaused())
+            // Capture trail progress in local state; the shared movement does not deal damage.
+            yield return SkillDashMovement.Move(transform, direction, distance, duration,
+                (start, end, traveledDistance) =>
                 {
-                    yield return null;
-                    continue;
-                }
+                    SpawnTrailEffects(dashStart, direction, distance, traveledDistance,
+                        ref nextTrailDistance, ref trailCount);
+                }, IsPaused, IsPlayerDead);
 
-                float step = Mathf.Min(Time.deltaTime, duration - elapsed);
-                if (step <= 0f)
-                {
-                    yield return null;
-                    continue;
-                }
-
-                elapsed += step;
-                float traveledDistance = distance * Mathf.Clamp01(elapsed / duration);
-                transform.position = dashStart + direction * traveledDistance;
-                SpawnTrailEffects(dashStart, direction, distance, traveledDistance,
-                    ref nextTrailDistance, ref trailCount);
-                yield return null;
-            }
+            if (IsPlayerDead())
+                yield break;
 
             Vector3 dashEnd = transform.position;
             FinishDashControl();
