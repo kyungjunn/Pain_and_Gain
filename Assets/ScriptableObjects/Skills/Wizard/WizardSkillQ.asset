@@ -12,9 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33c1f900b2a7588428fad59913131873, type: 3}
   m_Name: WizardSkillQ
   m_EditorClassIdentifier: Assembly-CSharp::ProjectileSkillSO
-  cooldown: 2
+  icon: {fileID: 21300000, guid: d3a0c379690e1ba42962a1cb1c6a2498, type: 3}
+  cooldown: 5
   animationTrigger: SkillQ
   projectilePrefab: {fileID: 3771451090094505498, guid: a6a6f270ba8fc15428c1a3ca2f3de9f6, type: 3}
   speed: 12
   maxDistance: 18
   damageMultiplier: 1.5
+  visualScale: 2.5
+  explosionRadius: 2.5

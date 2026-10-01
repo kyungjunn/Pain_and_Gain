@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NinjaPlayer
       objectReference: {fileID: 0}
+    - target: {fileID: 2495826255417891551, guid: a00b95da9253d3945b8d8a9a716728dc, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2959199680095147578, guid: a00b95da9253d3945b8d8a9a716728dc, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -192,67 +196,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a00b95da9253d3945b8d8a9a716728dc, type: 3}
---- !u!1001 &1044634054
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8136377651214141389, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_Name
-      value: SwordPlayer
-      objectReference: {fileID: 0}
-    - target: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
 --- !u!1001 &1094015878
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -799,9 +742,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2563614427876968682, guid: 852dc87735c6c6644ac6dd1b631199e0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2563614427876968682, guid: 852dc87735c6c6644ac6dd1b631199e0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.1000001
+      objectReference: {fileID: 0}
+    - target: {fileID: 2563614427876968682, guid: 852dc87735c6c6644ac6dd1b631199e0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -4.2
+      objectReference: {fileID: 0}
     - target: {fileID: 4938431607362285984, guid: 852dc87735c6c6644ac6dd1b631199e0, type: 3}
       propertyPath: m_Name
       value: WizardPlayer
+      objectReference: {fileID: 0}
+    - target: {fileID: 4938431607362285984, guid: 852dc87735c6c6644ac6dd1b631199e0, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5709176531241172293, guid: 852dc87735c6c6644ac6dd1b631199e0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -983,7 +942,6 @@ SceneRoots:
   - {fileID: 1996464057}
   - {fileID: 1503649573}
   - {fileID: 2000427403}
-  - {fileID: 1044634054}
   - {fileID: 1976126077}
   - {fileID: 1692631442}
   - {fileID: 1094015878}
