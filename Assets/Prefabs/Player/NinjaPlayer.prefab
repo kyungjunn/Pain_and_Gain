@@ -214,6 +214,10 @@ PrefabInstance:
       propertyPath: skillEWeapon
       value: 
       objectReference: {fileID: 7151672425708578633}
+    - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: basicAttackIcon
+      value: 
+      objectReference: {fileID: 21300000, guid: 0f90276510c9ff04fad71c1e0ea4c6b8, type: 3}
     - target: {fileID: 7734939027387009807, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_LocalPosition.y
       value: 2.1

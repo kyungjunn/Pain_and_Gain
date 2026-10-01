@@ -3,6 +3,9 @@ using UnityEngine;
 
 public abstract class PlayerSkillSO : ScriptableObject
 {
+    [SerializeField] private Sprite icon;
+    public Sprite Icon => icon;
+
     // 재사용 대기
     [SerializeField, Min(0f)] private float cooldown = 1f;
     // 애니메이터 트리거

@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33c1f900b2a7588428fad59913131873, type: 3}
-  m_Name: WizardSkillE
+  m_Name: SwordUltimate
   m_EditorClassIdentifier: Assembly-CSharp::ProjectileSkillSO
-  icon: {fileID: 21300000, guid: 3373416481132d449bbe1c832de6dde1, type: 3}
-  cooldown: 4
-  animationTrigger: SkillE
+  icon: {fileID: 21300000, guid: 097e573cbea13584aa113fe8192c11ed, type: 3}
+  cooldown: 0
+  animationTrigger: UltimateR
   projectilePrefab: {fileID: 3771451090094505498, guid: a6a6f270ba8fc15428c1a3ca2f3de9f6, type: 3}
-  speed: 10
-  maxDistance: 12
-  damageMultiplier: 2
+  speed: 16
+  maxDistance: 24
+  damageMultiplier: 4
   visualScale: 1
   explosionRadius: 0

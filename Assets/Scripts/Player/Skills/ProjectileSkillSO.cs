@@ -12,11 +12,13 @@ public sealed class ProjectileSkillSO : PlayerSkillSO
     [SerializeField, Min(0.1f)] private float maxDistance = 15f;
     // 공격력 계수
     [SerializeField, Min(0.1f)] private float damageMultiplier = 1f;
+    [SerializeField, Min(0.1f)] private float visualScale = 1f;
+    [SerializeField, Min(0f)] private float explosionRadius;
 
     // 발사체 생성
     public override bool Cast(PlayerSkillController owner, PlayerDamageType damageType)
     {
-        if (projectilePrefab == null || owner.SkillOrigin == null || owner.DamageDealer == null)
+        if (owner == null || projectilePrefab == null || owner.SkillOrigin == null || owner.DamageDealer == null)
             return false;
 
         DamageProjectile projectile = Instantiate(
@@ -27,7 +29,7 @@ public sealed class ProjectileSkillSO : PlayerSkillSO
         float attackDamage = owner.Stats != null ? owner.Stats.AttackDamage : 10f;
         int damage = Mathf.Max(1, Mathf.RoundToInt(attackDamage * damageMultiplier));
         projectile.Initialize(owner.DamageDealer, damageType, damage, speed, maxDistance,
-            owner.SkillOrigin.forward);
+            owner.SkillOrigin.forward, explosionRadius, visualScale);
         return true;
     }
 }

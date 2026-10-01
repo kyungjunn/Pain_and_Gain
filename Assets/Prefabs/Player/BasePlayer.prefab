@@ -463,6 +463,8 @@ MonoBehaviour:
   skillQ: {fileID: 11400000, guid: 6cb1e31378e3ac74e9680923e30abfd7, type: 2}
   skillE: {fileID: 11400000, guid: 8f076d10ee1ce044b9b0c1ccde52b860, type: 2}
   ultimate: {fileID: 11400000, guid: c811eb7740bd30c46aef69bd2b9aef50, type: 2}
+  basicAttackIcon: {fileID: 21300000, guid: 669cfcd858700924896761e479cbb00e, type: 3}
+  specialUltimateIcon: {fileID: 21300000, guid: 6d3cc222a3f6ce845a11a2ce08c89406, type: 3}
   skillOrigin: {fileID: 8392721146340918369}
   animator: {fileID: 2615114848839448963}
   skillEWeapon: {fileID: 0}

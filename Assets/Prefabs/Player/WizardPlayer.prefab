@@ -70,11 +70,15 @@ PrefabInstance:
     - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: ultimate
       value: 
-      objectReference: {fileID: 11400000, guid: c811eb7740bd30c46aef69bd2b9aef50, type: 2}
+      objectReference: {fileID: 11400000, guid: c47a5e6ce25444209c167ac879b6ec08, type: 2}
     - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: skillOrigin
       value: 
       objectReference: {fileID: 4413666459328201243}
+    - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: basicAttackIcon
+      value: 
+      objectReference: {fileID: 21300000, guid: 2ded78000ebf6134d987312f57606f4d, type: 3}
     - target: {fileID: 7734939027387009807, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_LocalPosition.y
       value: 2.1

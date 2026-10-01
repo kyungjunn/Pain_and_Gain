@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7c4e19b2d8f4e6a9c1b5d3e7f0a2c4b, type: 3}
   m_Name: NinjaHwaDunSkill
   m_EditorClassIdentifier: Assembly-CSharp::NinjaHwaDunSkillSO
+  icon: {fileID: 21300000, guid: e1c3c25782a016e408dbcea1ee592702, type: 3}
   cooldown: 6
   animationTrigger: SkillQ
   flamethrowerPrefab: {fileID: 163286, guid: 50daa816369323b42b56093bb108296f, type: 3}
