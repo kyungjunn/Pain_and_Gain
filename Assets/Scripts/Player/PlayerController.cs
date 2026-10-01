@@ -2,25 +2,45 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    
+    private static readonly int AttackSpeedParameter = Animator.StringToHash("AttackSpeed");
+
     private PlayerInputHandler input;
     private PlayerMovement movement;
-    private PlayerAttack playerAttack;
+    private IPlayerBasicAttack playerAttack;
     private Animator anim;
     private PlayerStateManager stateManager;
+    private PlayerSkillController skillController;
+    private PlayerStats playerStats;
+    private bool basicAttackActive;
+    private bool attackSpeedSubscribed;
+    private float appliedAttackSpeed = float.NaN;
 
     private void Awake()
     {
         EnsureCombatComponents();
+        playerStats = GetComponent<PlayerStats>();
+        SubscribeToStats();
+    }
+
+    private void OnEnable()
+    {
+        SubscribeToStats();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeFromStats();
     }
 
     private void Start()
     {
         input = GetComponent<PlayerInputHandler>();
         movement = GetComponent<PlayerMovement>();
-        playerAttack = GetComponent<PlayerAttack>();
+        playerAttack = GetComponent<IPlayerBasicAttack>();
         anim = GetComponentInChildren<Animator>();
         stateManager = GetComponent<PlayerStateManager>();
+        skillController = GetComponent<PlayerSkillController>();
+        UpdateAttackAnimationSpeed();
     }
 
     private void Update()
@@ -41,7 +61,10 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        movement.Move(input.MoveInput);
+        UpdateAttackAnimationSpeed();
+
+        if (skillController == null || !skillController.IsMovementLocked)
+            movement.Move(input.MoveInput);
 
         bool isGrounded = movement.CheckGrounded();
 
@@ -49,31 +72,48 @@ public class PlayerController : MonoBehaviour
 
         if (anim != null)
         {
-            anim.SetFloat("MoveSpeed", input.MoveInput.magnitude);
+            bool isMoving = input.MoveInput.sqrMagnitude > 0.01f;
+            float moveSpeedParameter = !isMoving ? 0f :
+                input.MoveInput.y < -0.01f ? -1f : 1f;
+
+            anim.SetFloat("MoveSpeed", moveSpeedParameter);
             anim.SetFloat("LegSpeed", isGrounded ? 1f : 0f);
         }
 
         if (input.AttackTriggered)
         {
-            stateManager.ChangeState(PlayerState.Attack);
-
-            if (anim != null)
+            // 공격 중 입력은 소비만 한다. Trigger를 다시 쌓으면 공격 종료 직후
+            // 애니메이션만 재시작되고 발사체와 공격 판정이 어긋날 수 있다.
+            if (stateManager.CurrentState != PlayerState.Attack &&
+                (skillController == null || !skillController.IsUltimateDashing) &&
+                playerAttack != null && playerAttack.TryAttack())
             {
-                anim.SetTrigger("Attack");
+                stateManager.ChangeState(PlayerState.Attack);
+                basicAttackActive = true;
+
+                if (anim != null)
+                {
+                    anim.SetTrigger("Attack");
+                }
+
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayPlayerAttack();
+                }
+
             }
 
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayPlayerAttack();
-            }
-
-            playerAttack?.TryAttack();
             input.AttackTriggered = false;
         }
 
         if (input.JumpTriggered)
         {
-            movement.Jump();
+            if ((skillController == null || !skillController.IsUltimateDashing) &&
+                movement.Jump() && anim != null)
+            {
+                anim.SetTrigger("Jump");
+            }
+
             input.JumpTriggered = false;
         }
     }
@@ -90,10 +130,48 @@ public class PlayerController : MonoBehaviour
             gameObject.AddComponent<PlayerDamageDealer>();
         }
 
-        if (!TryGetComponent(out playerAttack))
+    }
+
+    private void SubscribeToStats()
+    {
+        if (playerStats == null || attackSpeedSubscribed)
         {
-            playerAttack = gameObject.AddComponent<PlayerAttack>();
+            return;
         }
+
+        playerStats.onStatsChanged += UpdateAttackAnimationSpeed;
+        attackSpeedSubscribed = true;
+    }
+
+    private void UnsubscribeFromStats()
+    {
+        if (playerStats == null || !attackSpeedSubscribed)
+        {
+            return;
+        }
+
+        playerStats.onStatsChanged -= UpdateAttackAnimationSpeed;
+        attackSpeedSubscribed = false;
+    }
+
+    private void UpdateAttackAnimationSpeed()
+    {
+        if (anim == null)
+        {
+            return;
+        }
+
+        float attackSpeed = playerStats != null && playerStats.AttackSpeed > 0f
+            ? playerStats.AttackSpeed
+            : 1f;
+
+        if (Mathf.Approximately(appliedAttackSpeed, attackSpeed))
+        {
+            return;
+        }
+
+        anim.SetFloat(AttackSpeedParameter, attackSpeed);
+        appliedAttackSpeed = attackSpeed;
     }
 
     private void UpdateMovementState(bool isGrounded)
@@ -126,18 +204,23 @@ public class PlayerController : MonoBehaviour
 
     public void EndAttackState()
     {
-        if (stateManager.CurrentState == PlayerState.Dead)
+        if (skillController != null && skillController.IsUltimateDashing)
+            return;
+        basicAttackActive = false;
+
+        if (stateManager == null || stateManager.CurrentState == PlayerState.Dead)
         {
             return;
         }
 
-        bool isGrounded = movement.CheckGrounded();
+        bool isGrounded = movement != null && movement.CheckGrounded();
+        bool moving = input != null && input.MoveInput.sqrMagnitude > 0.01f;
 
         if (!isGrounded)
         {
             stateManager.ChangeState(PlayerState.Jump);
         }
-        else if (input.MoveInput.sqrMagnitude > 0.01f)
+        else if (moving)
         {
             stateManager.ChangeState(PlayerState.Move);
         }

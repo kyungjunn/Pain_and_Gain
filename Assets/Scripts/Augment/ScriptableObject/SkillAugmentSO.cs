@@ -6,13 +6,16 @@ using UnityEngine;
 public class SkillAugmentSO : AugmentSO
 {
     [Header("Skill")]
+    // Resources 프리팹 경로
     [SerializeField] private string skillResourcePath;
+    // 0: 무제한
     [Min(0)] public int maxStacks = 1;
 
     public string SkillResourcePath => NormalizedResourcePath();
 
     public override string GetDisplayName() => augmentName;
 
+    // 경로 형식 정리
     public string NormalizedResourcePath()
     {
         if (string.IsNullOrWhiteSpace(skillResourcePath))
@@ -23,7 +26,7 @@ public class SkillAugmentSO : AugmentSO
         return skillResourcePath.Trim().Replace('\\', '/').Replace(".prefab", string.Empty);
     }
 
-    private void OnValidate()
+    protected virtual void OnValidate()
     {
         maxStacks = Mathf.Max(0, maxStacks);
         skillResourcePath = NormalizedResourcePath();

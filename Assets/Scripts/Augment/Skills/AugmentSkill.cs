@@ -4,10 +4,14 @@ using UnityEngine;
 // OnApply에서 효과를 켜고, Release에서 반드시 원복한다.
 public abstract class AugmentSkill : MonoBehaviour
 {
+    // 적용 대상
     protected GameObject Player { get; private set; }
+    // 현재 중첩
     public int StackCount { get; private set; }
+    // 해제 여부
     public bool IsReleased { get; private set; }
 
+    // 최초 적용
     public void Apply(GameObject player)
     {
         Player = player;
@@ -16,12 +20,14 @@ public abstract class AugmentSkill : MonoBehaviour
         OnApply();
     }
 
+    // 중첩 증가
     public void AddStack()
     {
         StackCount++;
         OnStackChanged();
     }
 
+    // 중첩 감소
     public bool TryRemoveStack()
     {
         if (StackCount <= 1)
@@ -34,6 +40,7 @@ public abstract class AugmentSkill : MonoBehaviour
         return true;
     }
 
+    // 효과 해제
     public void Release()
     {
         if (IsReleased)

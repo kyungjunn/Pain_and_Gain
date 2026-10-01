@@ -15,6 +15,8 @@ public class PlayerStats : MonoBehaviour
     private readonly Dictionary<AugmentType, float> augmentBonus = new Dictionary<AugmentType, float>(); // 영구. 퀘스트 페널티로만 감소
     private readonly Dictionary<AugmentType, float> equipBonus = new Dictionary<AugmentType, float>();   // 장비 슬롯 상태에서 재계산
     private readonly Dictionary<AugmentType, float> tempBonus = new Dictionary<AugmentType, float>();    // 시간 만료 버프
+    private readonly Dictionary<object, Dictionary<AugmentType, float>> sourcedTempBonus =
+        new Dictionary<object, Dictionary<AugmentType, float>>();
 
     // 스탯 변경 이벤트
     public Action onStatsChanged;
@@ -90,9 +92,47 @@ public class PlayerStats : MonoBehaviour
         onStatsChanged?.Invoke();
     }
 
+    // Ability-owned temporary bonuses add independently to consumable buffs.
+    public void SetTemporaryBonus(object source, AugmentType type, float value)
+    {
+        if (source == null)
+        {
+            return;
+        }
+
+        if (!sourcedTempBonus.TryGetValue(source, out Dictionary<AugmentType, float> sourceBonus))
+        {
+            sourceBonus = new Dictionary<AugmentType, float>();
+            sourcedTempBonus.Add(source, sourceBonus);
+        }
+
+        sourceBonus[type] = value;
+        onStatsChanged?.Invoke();
+    }
+
+    public void RemoveTemporaryBonuses(object source)
+    {
+        if (source != null && sourcedTempBonus.Remove(source))
+        {
+            onStatsChanged?.Invoke();
+        }
+    }
+
     private float GetTotalBonus(AugmentType type)
     {
-        return GetBonus(augmentBonus, type) + GetBonus(equipBonus, type) + GetBonus(tempBonus, type);
+        return GetBonus(augmentBonus, type) + GetBonus(equipBonus, type) + GetBonus(tempBonus, type) +
+               GetSourcedTemporaryBonus(type);
+    }
+
+    private float GetSourcedTemporaryBonus(AugmentType type)
+    {
+        float total = 0f;
+        foreach (KeyValuePair<object, Dictionary<AugmentType, float>> sourceBonus in sourcedTempBonus)
+        {
+            total += GetBonus(sourceBonus.Value, type);
+        }
+
+        return total;
     }
 
     private static float GetBonus(Dictionary<AugmentType, float> bonus, AugmentType type)

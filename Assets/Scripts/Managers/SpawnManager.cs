@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 // 플레이어와 적 스폰, 레벨 기반 적 해금 스폰을 관리
 public class SpawnManager : MonoBehaviour
@@ -26,6 +27,15 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private int enemiesPerSpawn = 1;
     [SerializeField] private int maxAliveEnemies = 12;
 
+    [Header("Dynamic Difficulty")]
+    [SerializeField] private bool enableDynamicDifficulty = true;
+    [SerializeField] private float difficultyStepDuration = 60f;
+    [SerializeField] private float spawnIntervalDecreasePerStep = 0.4f;
+    [SerializeField] private float minimumSpawnInterval = 2.5f;
+    [SerializeField] private int extraEnemyEverySteps = 3;
+    [SerializeField] private int maxEnemiesIncreasePerStep = 2;
+    [SerializeField] private int maximumAliveEnemies = 24;
+
     [Header("Spawn Distance")]
     [SerializeField] private float minSpawnDistanceFromPlayer = 8f;
     [SerializeField] private float maxSpawnDistanceFromPlayer = 60f;
@@ -38,6 +48,7 @@ public class SpawnManager : MonoBehaviour
     private GameObject spawnedPlayer;
     private PlayerLevelSystem playerLevelSystem;
     private Coroutine enemySpawnRoutine;
+    private float spawnStartTime;
 
     public int AliveEnemyCount
     {
@@ -69,6 +80,7 @@ public class SpawnManager : MonoBehaviour
     public void SpawnAll()
     {
         // 맵 씬 로드가 끝난 뒤 플레이어와 적 스폰을 한 번에 초기화
+        spawnStartTime = Time.time;
         ResetEnemyUnlockSpawns();
         SpawnPlayer();
         CacheEnemySpawnPoints();
@@ -100,7 +112,7 @@ public class SpawnManager : MonoBehaviour
         spawnedPlayer = Instantiate(playerPrefab, selectedSpawn.position, selectedSpawn.rotation);
         if (previousPlayer != null)
         {
-            AugmentResourceLoader.EnsureInstance()?.NotifyPlayerReplaced(previousPlayer);
+            AugmentResourceLoader.Instance?.NotifyPlayerReplaced(previousPlayer);
         }
         OnPlayerSpawned?.Invoke(spawnedPlayer);
         BindPlayerLevelSystem(spawnedPlayer);
@@ -127,6 +139,29 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
+    // 일반 스폰 목록과 별도로 퀘스트 몬스터를 NavMesh 위에 배치
+    public bool TrySpawnQuestEnemy(GameObject prefab, out GameObject enemy)
+    {
+        enemy = null;
+        if (prefab == null) return false;
+        if (enemySpawnPoints.Count == 0) CacheEnemySpawnPoints();
+        if (enemySpawnPoints.Count == 0) return false;
+
+        int start = UnityEngine.Random.Range(0, enemySpawnPoints.Count);
+        for (int pass = 0; pass < 2; pass++)
+        {
+            for (int i = 0; i < enemySpawnPoints.Count; i++)
+            {
+                Transform point = enemySpawnPoints[(start + i) % enemySpawnPoints.Count];
+                if (point == null || (pass == 0 && !IsValidEnemySpawnPoint(point))) continue;
+                if (!NavMesh.SamplePosition(point.position, out NavMeshHit hit, 2f, NavMesh.AllAreas)) continue;
+                enemy = SpawnEnemyAt(point, prefab, hit.position);
+                return enemy != null;
+            }
+        }
+        return false;
+    }
+
     private void SpawnInitialEnemies()
     {
         if (!spawnEnemiesOnStart || !HasAnyEnemyPrefab() || enemySpawnPoints.Count == 0)
@@ -138,7 +173,7 @@ public class SpawnManager : MonoBehaviour
         {
             foreach (Transform spawnPoint in enemySpawnPoints)
             {
-                if (AliveEnemyCount >= maxAliveEnemies)
+                if (AliveEnemyCount >= GetCurrentMaxAliveEnemies())
                 {
                     break;
                 }
@@ -151,7 +186,7 @@ public class SpawnManager : MonoBehaviour
 
         for (int i = 0; i < initialEnemyCount; i++)
         {
-            if (AliveEnemyCount >= maxAliveEnemies)
+            if (AliveEnemyCount >= GetCurrentMaxAliveEnemies())
             {
                 break;
             }
@@ -193,14 +228,17 @@ public class SpawnManager : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(enemySpawnInterval);
+            yield return new WaitForSeconds(GetCurrentSpawnInterval());
 
             if (GameManager.Instance != null && GameManager.Instance.IsPaused)
             {
                 continue;
             }
 
-            for (int i = 0; i < enemiesPerSpawn; i++)
+            // 생존 수 제한으로 미뤄진 레벨 해금 스폰을 일반 스폰보다 먼저 재시도
+            TrySpawnUnlockEnemies();
+
+            for (int i = 0; i < GetCurrentEnemiesPerSpawn(); i++)
             {
                 if (!TrySpawnRandomEnemy())
                 {
@@ -214,7 +252,7 @@ public class SpawnManager : MonoBehaviour
     {
         RemoveInactiveEnemies();
 
-        if (!HasAnyEnemyPrefab() || enemySpawnPoints.Count == 0 || activeEnemies.Count >= maxAliveEnemies)
+        if (!HasAnyEnemyPrefab() || enemySpawnPoints.Count == 0 || activeEnemies.Count >= GetCurrentMaxAliveEnemies())
         {
             return false;
         }
@@ -304,16 +342,17 @@ public class SpawnManager : MonoBehaviour
         return sqrDistance <= maxSqrDistance;
     }
 
-    private void SpawnEnemyAt(Transform spawnPoint, GameObject prefab)
+    private GameObject SpawnEnemyAt(Transform spawnPoint, GameObject prefab, Vector3? position = null)
     {
         if (spawnPoint == null || prefab == null)
         {
-            return;
+            return null;
         }
 
-        GameObject enemy = Instantiate(prefab, spawnPoint.position, spawnPoint.rotation);
+        GameObject enemy = Instantiate(prefab, position ?? spawnPoint.position, spawnPoint.rotation);
         activeEnemies.Add(enemy);
         activeEnemyPrefabs[enemy] = prefab;
+        return enemy;
     }
 
     private void BindPlayerLevelSystem(GameObject playerObject)
@@ -384,7 +423,7 @@ public class SpawnManager : MonoBehaviour
             return false;
         }
 
-        if (playerLevel < entry.MinPlayerLevel)
+        if (activeEnemies.Count >= GetCurrentMaxAliveEnemies() || playerLevel < entry.MinPlayerLevel)
         {
             return false;
         }
@@ -473,6 +512,49 @@ public class SpawnManager : MonoBehaviour
         return 1;
     }
 
+    // 시간은 스폰 빈도와 수에만 반영하고, 적 종류의 해금은 기존 레벨 조건을 사용
+    private int GetDifficultyStep()
+    {
+        if (!enableDynamicDifficulty || difficultyStepDuration <= 0f)
+        {
+            return 0;
+        }
+
+        return Mathf.FloorToInt(Mathf.Max(0f, Time.time - spawnStartTime) / difficultyStepDuration);
+    }
+
+    private float GetCurrentSpawnInterval()
+    {
+        if (!enableDynamicDifficulty)
+        {
+            return enemySpawnInterval;
+        }
+
+        float interval = enemySpawnInterval - GetDifficultyStep() * spawnIntervalDecreasePerStep;
+        return Mathf.Max(minimumSpawnInterval, interval);
+    }
+
+    private int GetCurrentEnemiesPerSpawn()
+    {
+        if (!enableDynamicDifficulty || extraEnemyEverySteps <= 0)
+        {
+            return enemiesPerSpawn;
+        }
+
+        return enemiesPerSpawn + GetDifficultyStep() / extraEnemyEverySteps;
+    }
+
+    private int GetCurrentMaxAliveEnemies()
+    {
+        if (!enableDynamicDifficulty)
+        {
+            return maxAliveEnemies;
+        }
+
+        int currentMaximum = maxAliveEnemies + GetDifficultyStep() * maxEnemiesIncreasePerStep;
+        return Mathf.Min(maximumAliveEnemies, currentMaximum);
+    }
+
     private bool HasAnyEnemyPrefab()
     {
         if (enemyPrefab != null)
@@ -552,6 +634,12 @@ public class SpawnManager : MonoBehaviour
         enemySpawnInterval = Mathf.Max(0.1f, enemySpawnInterval);
         enemiesPerSpawn = Mathf.Max(1, enemiesPerSpawn);
         maxAliveEnemies = Mathf.Max(1, maxAliveEnemies);
+        difficultyStepDuration = Mathf.Max(1f, difficultyStepDuration);
+        spawnIntervalDecreasePerStep = Mathf.Max(0f, spawnIntervalDecreasePerStep);
+        minimumSpawnInterval = Mathf.Clamp(minimumSpawnInterval, 0.1f, enemySpawnInterval);
+        extraEnemyEverySteps = Mathf.Max(1, extraEnemyEverySteps);
+        maxEnemiesIncreasePerStep = Mathf.Max(0, maxEnemiesIncreasePerStep);
+        maximumAliveEnemies = Mathf.Max(maxAliveEnemies, maximumAliveEnemies);
         minSpawnDistanceFromPlayer = Mathf.Max(0f, minSpawnDistanceFromPlayer);
         maxSpawnDistanceFromPlayer = Mathf.Max(0f, maxSpawnDistanceFromPlayer);
         spawnPointPickAttempts = Mathf.Max(1, spawnPointPickAttempts);

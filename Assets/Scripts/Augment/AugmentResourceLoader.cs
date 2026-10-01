@@ -4,36 +4,47 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// 증강 시스템의 생명주기
 public enum AugmentSessionState
 {
-    Idle,
-    Starting,
-    Active,
-    Ending
+    Idle,       // 전투 X
+    Starting,   // 전투 준비
+    Active,     // 전투 진행
+    Ending      // 전투 끝
 }
 
+// 증강 적용 결과
 public enum AugmentApplyStatus
 {
-    Applied,
-    Stacked,
-    Failed,
-    Stale,
-    AlreadyMax,
-    Invalid
+    Applied,        // 증강 적용
+    Stacked,        // 스킬 중첩 증가
+    Failed,         // 적용 실패
+    Stale,          // 기간 만료 요청
+    AlreadyMax,     // 중첩 최대치
+    Invalid         // 잘못된 요청
 }
 
 // 선택한 스킬 프리팹 요청, 전투 캐시, 세션 토큰, 종료 drain만 소유하는 전용 호스트.
 public class AugmentResourceLoader : MonoBehaviour
 {
+    // 영구 호스트
     private static AugmentResourceLoader instance;
     private static bool isQuitting;
 
+    // 증강 목록
     private readonly List<AugmentSO> catalog = new List<AugmentSO>();
+    // 현재 플레이어가 사용할 수 있는 공용 + 캐릭터 전용 증강 목록
+    private readonly List<AugmentSO> activeCatalog = new List<AugmentSO>();
+    // 전투 제외 목록
     private readonly HashSet<AugmentSO> failedDefinitions = new HashSet<AugmentSO>();
+    // 프리팹 캐시
     private readonly Dictionary<string, GameObject> prefabCache = new Dictionary<string, GameObject>();
+    // 로딩 요청
     private readonly Dictionary<string, ResourceRequest> inFlight = new Dictionary<string, ResourceRequest>();
+    // 종료 대기 요청
     private readonly List<ResourceRequest> drainingRequests = new List<ResourceRequest>();
 
+    // 세션 정보
     private AugmentSessionState state = AugmentSessionState.Idle;
     private int sessionId;
     private int nextSessionId = 1;
@@ -41,7 +52,6 @@ public class AugmentResourceLoader : MonoBehaviour
     private Scene mapScene;
     private GameObject currentPlayer;
     private Coroutine endRoutine;
-    private bool metadataReady;
 
     public static AugmentResourceLoader Instance => instance;
 
@@ -49,6 +59,7 @@ public class AugmentResourceLoader : MonoBehaviour
     public AugmentSessionState State => state;
     public GameObject CurrentPlayer => currentPlayer;
     public IReadOnlyList<AugmentSO> Catalog => catalog;
+    public IReadOnlyList<AugmentSO> ActiveCatalog => activeCatalog;
     public bool IsActiveSession => state == AugmentSessionState.Active;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -56,35 +67,6 @@ public class AugmentResourceLoader : MonoBehaviour
     {
         instance = null;
         isQuitting = false;
-    }
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    private static void Bootstrap()
-    {
-        EnsureInstance();
-    }
-
-    public static AugmentResourceLoader EnsureInstance()
-    {
-        if (isQuitting)
-        {
-            return instance;
-        }
-
-        if (instance != null)
-        {
-            return instance;
-        }
-
-        AugmentResourceLoader existing = FindFirstObjectByType<AugmentResourceLoader>(FindObjectsInactive.Include);
-        if (existing != null)
-        {
-            instance = existing;
-            return existing;
-        }
-
-        GameObject host = new GameObject(nameof(AugmentResourceLoader));
-        return host.AddComponent<AugmentResourceLoader>();
     }
 
     private void Awake()
@@ -115,6 +97,7 @@ public class AugmentResourceLoader : MonoBehaviour
         isQuitting = true;
     }
 
+    // 전투 세션 시작
     public void BeginSession(Scene inGame, Scene map)
     {
         if (state != AugmentSessionState.Idle)
@@ -127,14 +110,15 @@ public class AugmentResourceLoader : MonoBehaviour
         mapScene = map;
         currentPlayer = null;
         catalog.Clear();
+        activeCatalog.Clear();
         failedDefinitions.Clear();
         prefabCache.Clear();
         inFlight.Clear();
-        metadataReady = false;
         sessionId = nextSessionId++;
         state = AugmentSessionState.Starting;
     }
 
+    // 증강 메타데이터 로드
     public IEnumerator InitializeMetadata()
     {
         if (state != AugmentSessionState.Starting)
@@ -143,7 +127,6 @@ public class AugmentResourceLoader : MonoBehaviour
         }
 
         catalog.Clear();
-        HashSet<string> usedPaths = new HashSet<string>();
         AugmentSO[] loaded = Resources.LoadAll<AugmentSO>("Augments/Data");
         Array.Sort(loaded, (a, b) => string.CompareOrdinal(a != null ? a.name : string.Empty, b != null ? b.name : string.Empty));
 
@@ -164,26 +147,42 @@ public class AugmentResourceLoader : MonoBehaviour
                     continue;
                 }
 
-                if (!usedPaths.Add(path))
-                {
-                    Debug.LogError($"[Augment] 중복 스킬 경로를 제외합니다: {skill.name} -> {path}");
-                    continue;
-                }
             }
 
             catalog.Add(augment);
         }
 
-        metadataReady = true;
         state = AugmentSessionState.Active;
         yield return null;
     }
 
+    // 플레이어 연결
     public void BindPlayer(GameObject player)
     {
         if (state == AugmentSessionState.Active)
         {
             currentPlayer = player;
+            RebuildActiveCatalog();
+        }
+    }
+
+    // 플레이어 선택 시 변하지 않는 캐릭터/보유 스킬 조건을 한 번만 반영한다.
+    private void RebuildActiveCatalog()
+    {
+        activeCatalog.Clear();
+
+        if (currentPlayer == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < catalog.Count; i++)
+        {
+            AugmentSO augment = catalog[i];
+            if (augment != null && augment.IsAvailableFor(currentPlayer))
+            {
+                activeCatalog.Add(augment);
+            }
         }
     }
 
@@ -197,6 +196,7 @@ public class AugmentResourceLoader : MonoBehaviour
 
     public void NotifyPlayerUnavailable(GameObject player)
     {
+        // 이 플레이어(로더에 연결된)가 니 플레이어가 맞으면
         if (player != null && player == currentPlayer)
         {
             RequestEndCombatSession();
@@ -221,13 +221,14 @@ public class AugmentResourceLoader : MonoBehaviour
         }
     }
 
+    // 후보 목록 생성
     public List<AugmentSO> CreateCandidatePool(PlayerAugments playerAugments)
     {
-        List<AugmentSO> pool = new List<AugmentSO>(catalog.Count);
+        List<AugmentSO> pool = new List<AugmentSO>(activeCatalog.Count);
 
-        for (int i = 0; i < catalog.Count; i++)
+        for (int i = 0; i < activeCatalog.Count; i++)
         {
-            AugmentSO augment = catalog[i];
+            AugmentSO augment = activeCatalog[i];
             if (augment == null || failedDefinitions.Contains(augment))
             {
                 continue;
@@ -249,6 +250,7 @@ public class AugmentResourceLoader : MonoBehaviour
         return prefabCache.TryGetValue(path, out prefab) && prefab != null;
     }
 
+    // 스킬 프리팹 로드
     public IEnumerator LoadSkillPrefab(string path, int expectedSessionId, Action<GameObject, string> completed)
     {
         if (!BelongsToSession(expectedSessionId))
@@ -304,6 +306,7 @@ public class AugmentResourceLoader : MonoBehaviour
         }
     }
 
+    // 전투 세션 종료 요청
     public void RequestEndCombatSession()
     {
         if (isQuitting && instance == null)
@@ -322,6 +325,7 @@ public class AugmentResourceLoader : MonoBehaviour
         }
     }
 
+    // 로딩 정리 및 캐시 해제
     private IEnumerator EndRoutine()
     {
         state = AugmentSessionState.Ending;
@@ -339,6 +343,7 @@ public class AugmentResourceLoader : MonoBehaviour
         }
 
         currentPlayer = null;
+        activeCatalog.Clear();
 
         drainingRequests.Clear();
         foreach (KeyValuePair<string, ResourceRequest> pair in inFlight)
@@ -363,8 +368,8 @@ public class AugmentResourceLoader : MonoBehaviour
         drainingRequests.Clear();
         prefabCache.Clear();
         catalog.Clear();
+        activeCatalog.Clear();
         failedDefinitions.Clear();
-        metadataReady = false;
         inGameScene = default;
         mapScene = default;
 

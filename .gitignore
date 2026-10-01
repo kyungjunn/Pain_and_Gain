@@ -12,7 +12,9 @@
 /[Uu]ser[Ss]ettings/
 *.log
 
-# By default unity supports Blender asset imports, *.blend1 blender files do not need to be commited to version control.
+# Blender source files stay local. Unity imports the FBX/clip instead.
+*.blend
+*.blend.meta
 *.blend1
 *.blend1.meta
 
@@ -101,3 +103,7 @@ InitTestScene*.unity*
 # vscode file
 .vscode/
 Assets/_Recovery/
+
+# Local Unity editor automation
+/Assets/Editor/
+/Assets/Editor.meta

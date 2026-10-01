@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-// 플레이어 현재 체력, 피격, 레벨업 회복을 관리
+// 플레이어 현재 체력, 피격, 회복을 관리
 public class PlayerHealth : LivingEntity
 {
     [SerializeField] private PlayerStats stats;
@@ -13,9 +13,9 @@ public class PlayerHealth : LivingEntity
     public bool IsDead { get; private set; }
     public Action onHealthChanged;
 
-    private int cachedMaxHealth;
-    private PlayerLevelSystem levelSystem;
     private PlayerStateManager stateManager;
+    private Animator animator;
+    private Rigidbody rb;
 
     private void Awake()
     {
@@ -24,8 +24,6 @@ public class PlayerHealth : LivingEntity
             stats = GetComponent<PlayerStats>();
         }
 
-        levelSystem = GetComponent<PlayerLevelSystem>();
-
         stateManager = GetComponent<PlayerStateManager>();
         if (stateManager == null)
         {
@@ -33,8 +31,10 @@ public class PlayerHealth : LivingEntity
             stateManager = FindFirstObjectByType<PlayerStateManager>();
         }
 
-        cachedMaxHealth = MaxHealth;
-        CurrentHealth = cachedMaxHealth;
+        animator = GetComponentInChildren<Animator>();
+        rb = GetComponent<Rigidbody>();
+
+        CurrentHealth = MaxHealth;
     }
 
     private void OnEnable()
@@ -43,16 +43,6 @@ public class PlayerHealth : LivingEntity
         {
             stats.onStatsChanged += HandleStatsChanged;
         }
-
-        if (levelSystem == null)
-        {
-            levelSystem = GetComponent<PlayerLevelSystem>();
-        }
-
-        if (levelSystem != null)
-        {
-            levelSystem.onLevelUp += HandleLevelUp;
-        }
     }
 
     private void OnDisable()
@@ -60,11 +50,6 @@ public class PlayerHealth : LivingEntity
         if (stats != null)
         {
             stats.onStatsChanged -= HandleStatsChanged;
-        }
-
-        if (levelSystem != null)
-        {
-            levelSystem.onLevelUp -= HandleLevelUp;
         }
     }
 
@@ -104,33 +89,36 @@ public class PlayerHealth : LivingEntity
     private void HandleStatsChanged()
     {
         int newMaxHealth = MaxHealth;
-        int healthDifference = newMaxHealth - cachedMaxHealth;
-
-        // HP 증강으로 최대 체력이 늘어난 경우 늘어난 만큼 현재 체력도 보정
-        if (healthDifference > 0)
-        {
-            CurrentHealth += healthDifference;
-        }
-
-        cachedMaxHealth = newMaxHealth;
-        CurrentHealth = Mathf.Clamp(CurrentHealth, 0, cachedMaxHealth);
-        onHealthChanged?.Invoke();
-    }
-
-    private void HandleLevelUp()
-    {
-        // 레벨업 보상으로 즉시 최대 체력까지 회복
-        cachedMaxHealth = MaxHealth;
-        CurrentHealth = cachedMaxHealth;
+        CurrentHealth = Mathf.Clamp(CurrentHealth, 0, newMaxHealth);
         onHealthChanged?.Invoke();
     }
 
     private void Die()
     {
+        if (IsDead)
+        {
+            return;
+        }
+
         IsDead = true;
 
         Debug.Log($"[Health] Die 호출, stateManager 있음: {stateManager != null}");
         stateManager?.ChangeState(PlayerState.Dead);
+
+        if (rb != null)
+        {
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+        }
+
+        if (animator != null)
+        {
+            if (animator.layerCount > 1)
+            {
+                animator.SetLayerWeight(1, 0f);
+            }
+
+            animator.SetTrigger("Die");
+        }
 
         if (!disableControlsOnDeath)
         {

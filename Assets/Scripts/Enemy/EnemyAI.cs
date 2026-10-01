@@ -242,7 +242,14 @@ public class EnemyAI : MonoBehaviour
     {
         SetState(EnemyState.Attack);
         StopAgent();
-        FaceTarget();
+
+        // 보스는 일반 공격 준비 중에만 방향을 돌리고, 강공격과 대기 중에는 후방을 노릴 틈을 준다.
+        if ((!enemyAttack.LockFacingDuringAttack || !enemyAttack.IsAttackCycleActive)
+            && enemyAttack.ShouldFaceTarget)
+        {
+            FaceTarget();
+        }
+
         enemyAttack.TryAttack(target);
     }
 
