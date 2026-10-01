@@ -22,25 +22,15 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
 
     private IEnumerator Dash(PlayerSkillController owner, PlayerDamageType damageType)
     {
-        Transform actor = owner.transform;
-        Vector3 direction = actor.forward;
-        direction.y = 0f;
-        direction.Normalize();
-
         int damage = Mathf.Max(1, Mathf.RoundToInt(owner.Stats.AttackDamage * damageMultiplier));
-        float speed = distance / duration;
-        float elapsed = 0f;
         var hitEnemies = new HashSet<EnemyHealth>();
 
         owner.SetMovementLocked(true);
         try
         {
-            while (elapsed < duration)
-            {
-                float step = Mathf.Min(Time.deltaTime, duration - elapsed);
-                Vector3 start = actor.position;
-                Vector3 end = start + direction * speed * step;
-
+            yield return SkillDashMovement.Move(owner.transform, owner.transform.forward, distance, duration,
+                (start, end, traveled) =>
+                {
                 foreach (Collider hit in Physics.OverlapCapsule(start, end, hitRadius, enemyLayers,
                              QueryTriggerInteraction.Collide))
                 {
@@ -48,11 +38,7 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
                     if (enemy != null && hitEnemies.Add(enemy))
                         owner.DamageDealer.DealDamage(enemy, damage, damageType);
                 }
-
-                actor.position = end;
-                elapsed += step;
-                yield return null;
-            }
+                });
         }
         finally
         {
