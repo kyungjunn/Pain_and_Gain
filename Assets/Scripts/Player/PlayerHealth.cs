@@ -25,7 +25,13 @@ public class PlayerHealth : LivingEntity
         }
 
         levelSystem = GetComponent<PlayerLevelSystem>();
+
         stateManager = GetComponent<PlayerStateManager>();
+        if (stateManager == null)
+        {
+            // 같은 오브젝트에 없으면 씬 전체에서 찾음
+            stateManager = FindFirstObjectByType<PlayerStateManager>();
+        }
 
         cachedMaxHealth = MaxHealth;
         CurrentHealth = cachedMaxHealth;
@@ -123,6 +129,7 @@ public class PlayerHealth : LivingEntity
     {
         IsDead = true;
 
+        Debug.Log($"[Health] Die 호출, stateManager 있음: {stateManager != null}");
         stateManager?.ChangeState(PlayerState.Dead);
 
         if (!disableControlsOnDeath)
