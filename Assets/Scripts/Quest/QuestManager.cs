@@ -48,6 +48,8 @@ public class QuestManager : MonoBehaviour
     private PlayerStats playerStats;
     private PlayerAugments playerAugments;
     private float countdown;
+    private EnemyHealth activeEventMonster;
+    private GameObject activeEventBeacon;
 
     private void Awake()
     {
@@ -108,6 +110,7 @@ public class QuestManager : MonoBehaviour
 
     private void HandlePlayerSpawned(GameObject playerObject)
     {
+        ClearEventMonster();
         // 플레이어 바인딩
         playerStats = playerObject != null ? playerObject.GetComponent<PlayerStats>() : null;
         playerAugments = playerObject != null ? playerObject.GetComponent<PlayerAugments>() : null;
@@ -144,6 +147,27 @@ public class QuestManager : MonoBehaviour
         }
 
         CurrentQuest = quests[UnityEngine.Random.Range(0, quests.Count)];
+        if (CurrentQuest.objectiveType == QuestObjectiveType.HuntEventMonster)
+        {
+            GameObject monster = null;
+            if (SpawnManager.Instance == null || CurrentQuest.eventMonsterPrefab == null
+                || !SpawnManager.Instance.TrySpawnQuestEnemy(CurrentQuest.eventMonsterPrefab, out monster)
+                || !monster.TryGetComponent(out activeEventMonster))
+            {
+                if (monster != null) Destroy(monster);
+                Debug.LogWarning("이벤트 몬스터를 스폰할 수 없어 퀘스트를 다시 대기합니다.");
+                CurrentQuest = null;
+                BeginCountdown(5f);
+                return;
+            }
+
+            if (CurrentQuest.eventMonsterBeaconPrefab != null)
+            {
+                activeEventBeacon = Instantiate(CurrentQuest.eventMonsterBeaconPrefab, monster.transform);
+                activeEventBeacon.transform.localPosition = Vector3.zero;
+                activeEventBeacon.transform.localRotation = Quaternion.identity;
+            }
+        }
         CurrentProgress = 0;
         RemainingTime = CurrentQuest.timeLimit;
         State = QuestState.Active;
@@ -157,10 +181,18 @@ public class QuestManager : MonoBehaviour
     private void HandleEnemyKilled(EnemyHealth enemy)
     {
         // 처치 진행도
-        if (State != QuestState.Active || CurrentQuest == null || CurrentQuest.objectiveType != QuestObjectiveType.KillEnemies)
+        if (State != QuestState.Active || CurrentQuest == null)
         {
             return;
         }
+
+        if (CurrentQuest.objectiveType == QuestObjectiveType.HuntEventMonster && enemy != activeEventMonster)
+        {
+            return;
+        }
+
+        if (CurrentQuest.objectiveType != QuestObjectiveType.KillEnemies
+            && CurrentQuest.objectiveType != QuestObjectiveType.HuntEventMonster) return;
 
         CurrentProgress = Mathf.Min(CurrentProgress + 1, CurrentQuest.targetAmount);
         Debug.Log($"[Quest] 진행: {CurrentQuest.questName} {CurrentProgress}/{CurrentQuest.targetAmount}");
@@ -184,6 +216,7 @@ public class QuestManager : MonoBehaviour
     private void FailCurrentQuest()
     {
         QuestSO failedQuest = CurrentQuest;
+        ClearEventMonster();
         QuestPenaltyResult penaltyResult = ApplyPenalty(failedQuest);
         ClearCurrentQuest();
         BeginCountdown(questCooldown);
@@ -238,9 +271,24 @@ public class QuestManager : MonoBehaviour
 
     private void ClearCurrentQuest()
     {
+        ClearEventBeacon();
+        activeEventMonster = null;
         CurrentQuest = null;
         CurrentProgress = 0;
         RemainingTime = 0f;
+    }
+
+    private void ClearEventMonster()
+    {
+        ClearEventBeacon();
+        if (activeEventMonster != null) Destroy(activeEventMonster.gameObject);
+        activeEventMonster = null;
+    }
+
+    private void ClearEventBeacon()
+    {
+        if (activeEventBeacon != null) Destroy(activeEventBeacon);
+        activeEventBeacon = null;
     }
 
     private void RemoveInvalidQuests()

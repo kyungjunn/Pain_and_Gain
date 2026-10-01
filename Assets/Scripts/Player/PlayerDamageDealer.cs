@@ -12,15 +12,28 @@ public class PlayerDamageDealer : MonoBehaviour
 {
     public event Action<int, PlayerDamageType> OnDamageDealt;
 
-    public int DealDamage(EnemyHealth enemy, int damage, PlayerDamageType damageType)
+    public int DealDamage(EnemyHealth enemy, int damage, PlayerDamageType damageType,
+        Vector3? attackSourcePosition = null)
     {
         if (enemy == null || enemy.IsDead || damage <= 0)
         {
             return 0;
         }
 
-        int actualDamage = Mathf.Min(damage, enemy.CurrentHealth);
-        enemy.TakeDamage(damage);
+        int previousHealth = enemy.CurrentHealth;
+        IDirectionalDamageable directionalTarget = enemy.GetComponent<IDirectionalDamageable>();
+
+        if (directionalTarget != null)
+        {
+            directionalTarget.TakeDamage(damage, attackSourcePosition ?? transform.position);
+        }
+        else
+        {
+            enemy.TakeDamage(damage);
+        }
+
+        // 약점 배율과 남은 체력을 반영한 실제 피해만 흡혈과 궁극기 게이지에 전달
+        int actualDamage = Mathf.Max(0, previousHealth - enemy.CurrentHealth);
 
         if (actualDamage > 0)
         {

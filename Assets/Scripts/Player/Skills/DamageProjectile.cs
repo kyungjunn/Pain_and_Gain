@@ -56,7 +56,8 @@ public sealed class DamageProjectile : MonoBehaviour
             return;
 
         initialized = false;
-        damageDealer.DealDamage(enemy, damage, damageType);
+        // 발사 후 플레이어가 이동해도 발사 위치를 기준으로 후방 약점을 판정
+        damageDealer.DealDamage(enemy, damage, damageType, spawnPosition);
         Destroy(gameObject);
     }
 }

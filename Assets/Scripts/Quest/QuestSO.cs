@@ -3,7 +3,8 @@ using UnityEngine;
 // 퀘스트 목표
 public enum QuestObjectiveType
 {
-    KillEnemies
+    KillEnemies,
+    HuntEventMonster
 }
 
 // 실패 페널티
@@ -28,6 +29,8 @@ public class QuestSO : ScriptableObject
     public QuestObjectiveType objectiveType = QuestObjectiveType.KillEnemies;
     [Min(1)] public int targetAmount = 3;
     [Min(1f)] public float timeLimit = 30f;
+    public GameObject eventMonsterPrefab;
+    public GameObject eventMonsterBeaconPrefab;
 
     // 실패 설정
     [Header("Failure Penalty")]
@@ -39,6 +42,7 @@ public class QuestSO : ScriptableObject
     {
         // 입력값 보정
         targetAmount = Mathf.Max(1, targetAmount);
+        if (objectiveType == QuestObjectiveType.HuntEventMonster) targetAmount = 1;
         timeLimit = Mathf.Max(1f, timeLimit);
         statReduceMin = Mathf.Clamp01(statReduceMin);
         statReduceMax = Mathf.Clamp(statReduceMax, statReduceMin, 1f);
