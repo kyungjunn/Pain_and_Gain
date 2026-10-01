@@ -13,6 +13,18 @@ public sealed class PlayerSkillController : MonoBehaviour
     [SerializeField] private PlayerSkillSO skillE;
     // R 궁극기
     [SerializeField] private PlayerSkillSO ultimate;
+    [SerializeField] private Sprite basicAttackIcon;
+    [SerializeField] private Sprite specialUltimateIcon;
+
+    public Sprite BasicAttackIcon => basicAttackIcon;
+    public Sprite UltimateIcon => ultimate != null ? ultimate.Icon : specialUltimateIcon;
+    public PlayerSkillSO SkillQ => skillQ;
+    public PlayerSkillSO SkillE => skillE;
+    public float QRemaining => Mathf.Max(0f, qReadyTime - Time.time);
+    public float ERemaining => Mathf.Max(0f, eReadyTime - Time.time);
+    public bool QChanneling => skillQ != null && deferredCooldownSkill == skillQ;
+    public bool EChanneling => skillE != null && deferredCooldownSkill == skillE;
+    public bool UltimateRecastReady => ninjaUltimate != null && ninjaUltimate.IsReady;
 
     [Header("References")]
     // 시전 위치

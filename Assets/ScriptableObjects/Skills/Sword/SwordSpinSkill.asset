@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 607e0a88df03917429d7582fc280822c, type: 3}
   m_Name: SwordSpinSkill
   m_EditorClassIdentifier: Assembly-CSharp::SwordSpinSkillSO
+  icon: {fileID: 21300000, guid: 808a682dd498fa243a8dc75a3ae6b3ea, type: 3}
   cooldown: 4
   animationTrigger: SkillQ
   radius: 3

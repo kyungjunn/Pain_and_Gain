@@ -19,6 +19,8 @@ public class InGameExpUI : MonoBehaviour
     private void OnEnable()
     {
         SpawnManager.OnPlayerSpawned += BindLevelSystem;
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null) BindLevelSystem(player);
     }
 
     private void OnDisable()
@@ -32,6 +34,7 @@ public class InGameExpUI : MonoBehaviour
     {
         if (player == null) return;
 
+        UnbindLevelSystem();
         playerLevelSystem = player.GetComponent<PlayerLevelSystem>();
         if (playerLevelSystem != null)
         {
@@ -54,6 +57,7 @@ public class InGameExpUI : MonoBehaviour
             playerLevelSystem.onExpChanged -= RefreshExpUI;
             playerLevelSystem.onLevelUp -= HandleLevelUp;
         }
+        playerLevelSystem = null;
     }
 
     private void Update()
@@ -97,14 +101,14 @@ public class InGameExpUI : MonoBehaviour
         // 레벨 텍스트 갱신 
         if (levelText != null)
         {
-            levelText.text = $"Level : {displayedLevel}";
+            levelText.text = $"LV. {displayedLevel}";
         }
 
         // 경험치 디테일 텍스트 갱신
         if (expValueText != null)
         {
             float percent = playerLevelSystem.GetExpPercent() * 100f;
-            expValueText.text = $"EXP : {percent:F0}% ({playerLevelSystem.currentExp} / {playerLevelSystem.requiredExp})";
+            expValueText.text = $"EXP {percent:F0}%";
         }
     }
 }

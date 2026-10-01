@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f872f839b8f4cb8a851ac65ec93f4ce, type: 3}
   m_Name: NinjaDashSkill
   m_EditorClassIdentifier: Assembly-CSharp::NinjaDashSkillSO
+  icon: {fileID: 21300000, guid: 3e9d0145ea10ba74b9459daaea2b0816, type: 3}
   cooldown: 4
   animationTrigger: SkillE
   distance: 7
