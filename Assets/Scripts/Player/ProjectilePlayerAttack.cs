@@ -1,6 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerDamageDealer))]
+// 원거리 기본 공격: 발사 간격, 증강 투사체, 피해 전달.
 public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
 {
     [SerializeField] private PlayerStats stats;
@@ -16,6 +17,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
     private float nextAttackTime;
 
     private float AttackDamage => stats != null ? stats.AttackDamage : 10f;
+    // 공격 속도가 있으면 역수로 발사 간격 계산.
     private float AttackCooldown => stats != null && stats.AttackSpeed > 0f ? 1f / stats.AttackSpeed : attackCooldown;
 
     private void Awake()
@@ -31,6 +33,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
 
     public bool TryAttack()
     {
+        // 필수 참조와 쿨타임 검사: 실패 시 발사하지 않음.
         if (projectilePrefab == null || projectileOrigin == null || damageDealer == null)
         {
             return false;
@@ -42,6 +45,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
         }
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(AttackDamage * damageMultiplier));
+        // 증강값으로 추가 발사 수와 전체 산탄 각도 산출.
         int extraProjectileCount = 0;
         float spreadDegrees = 0f;
 
@@ -56,19 +60,22 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
         int projectileCount = 1 + extraProjectileCount;
         for (int i = 0; i < projectileCount; i++)
         {
+            // 투사체를 산탄 각도 안에 균등 배치. 한 발이면 정면.
             float yaw = projectileCount > 1
                 ? Mathf.Lerp(-spreadDegrees * 0.5f, spreadDegrees * 0.5f,
                     i / (float)(projectileCount - 1))
                 : 0f;
             Quaternion yawRotation = Quaternion.AngleAxis(yaw, projectileOrigin.up);
-            Quaternion projectileRotation = yawRotation * projectileOrigin.rotation *
-                projectilePrefab.transform.localRotation;
+
+            // 발사 방향과 투사체 프리팹의 자체 회전을 함께 적용.
+            Quaternion projectileRotation = yawRotation * projectileOrigin.rotation * projectilePrefab.transform.localRotation;
             Vector3 direction = yawRotation * projectileOrigin.forward;
 
             DamageProjectile projectile = Instantiate(
                 projectilePrefab,
                 projectileOrigin.position,
                 projectileRotation);
+            // 피해 주체, 피해 유형, 속도, 사거리, 진행 방향 전달.
             projectile.Initialize(
                 damageDealer,
                 PlayerDamageType.BasicAttack,
@@ -79,6 +86,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
         }
 
         nextAttackTime = Time.time + AttackCooldown;
+        // 성공적으로 발사한 뒤에만 다음 발사 가능 시각 갱신.
         return true;
     }
 
