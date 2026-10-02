@@ -6,10 +6,8 @@ public class StatsPanelUI : MonoBehaviour
 {
     private GameObject currentPlayerObject;
     private PlayerStats playerStats;
-    private PlayerHealth playerHealth;
 
     public TextMeshProUGUI damageText;
-    public TextMeshProUGUI hpText;
     public TextMeshProUGUI moveSpeedText;
     public TextMeshProUGUI attackSpeedText;
     public TextMeshProUGUI defenseText;
@@ -44,8 +42,6 @@ public class StatsPanelUI : MonoBehaviour
             playerStats.onStatsChanged += Refresh;
         }
 
-        TryBindPlayerHealth();
-
         Refresh();
     }
 
@@ -68,43 +64,53 @@ public class StatsPanelUI : MonoBehaviour
     {
         if (playerStats == null)
         {
+            if (damageText != null)
+            {
+                damageText.text = string.Empty;
+            }
+
+            if (moveSpeedText != null)
+            {
+                moveSpeedText.text = string.Empty;
+            }
+
+            if (attackSpeedText != null)
+            {
+                attackSpeedText.text = string.Empty;
+            }
+
+            if (defenseText != null)
+            {
+                defenseText.text = string.Empty;
+            }
+
             return;
         }
 
-        TryBindPlayerHealth();
-
         if (damageText != null)
         {
-            damageText.text = $"AttackDamage : {FormatStat(playerStats.AttackDamage)}";
-        }
-
-        if (hpText != null)
-        {
-            hpText.text = playerHealth != null
-                ? $"HP : {playerHealth.CurrentHealth} / {playerHealth.MaxHealth}"
-                : $"HP : {FormatStat(playerStats.HP)}";
+            damageText.text = $"공격력: {FormatStat(playerStats.AttackDamage)}";
         }
 
         if (moveSpeedText != null)
         {
-            moveSpeedText.text = $"Speed : {FormatStat(playerStats.MoveSpeed)}";
+            moveSpeedText.text = $"이동속도: {FormatStat(playerStats.MoveSpeed)}";
         }
 
         if (attackSpeedText != null)
         {
-            attackSpeedText.text = $"AttackSpeed : {FormatStat(playerStats.AttackSpeed)}";
+            attackSpeedText.text = $"공격속도: {FormatStat(playerStats.AttackSpeed)}";
         }
 
         if (defenseText != null)
         {
-            defenseText.text = $"Defense : {FormatStat(playerStats.Defense)}";
+            defenseText.text = $"방어력: {FormatStat(playerStats.Defense)}";
         }
     }
 
-    // 정수 표시
     private static string FormatStat(float value)
     {
-        return Mathf.RoundToInt(value).ToString();
+        return value.ToString("0.##");
     }
 
     private void UnbindPlayer()
@@ -115,28 +121,6 @@ public class StatsPanelUI : MonoBehaviour
             playerStats = null;
         }
 
-        if (playerHealth != null)
-        {
-            playerHealth.onHealthChanged -= Refresh;
-            playerHealth = null;
-        }
-
         currentPlayerObject = null;
-    }
-
-    private void TryBindPlayerHealth()
-    {
-        if (playerHealth != null || currentPlayerObject == null)
-        {
-            return;
-        }
-
-        playerHealth = currentPlayerObject.GetComponent<PlayerHealth>();
-
-        if (playerHealth != null)
-        {
-            // 피격/회복 시 HP 텍스트가 즉시 갱신되도록 체력 이벤트 구독
-            playerHealth.onHealthChanged += Refresh;
-        }
     }
 }
