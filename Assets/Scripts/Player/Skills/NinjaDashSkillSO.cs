@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// E 돌진: 정적 지형 사전 검사, 이동 구간 내 적 1회 타격.
 [CreateAssetMenu(menuName = "Player/Skills/Ninja Dash")]
 public sealed class NinjaDashSkillSO : PlayerSkillSO
 {
@@ -13,6 +14,7 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
 
     public override bool Cast(PlayerSkillController owner, PlayerDamageType damageType)
     {
+        // 피해 계산에 필요한 참조 확인 후 돌진 코루틴 시작.
         if (owner == null || owner.DamageDealer == null || owner.Stats == null)
             return false;
 
@@ -22,15 +24,24 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
 
     private IEnumerator Dash(PlayerSkillController owner, PlayerDamageType damageType)
     {
+        // 스킬 피해 확정, 이미 맞은 적 기록.
         int damage = Mathf.Max(1, Mathf.RoundToInt(owner.Stats.AttackDamage * damageMultiplier));
         var hitEnemies = new HashSet<EnemyHealth>();
+        Vector3 direction = owner.transform.forward;
+        direction.y = 0f;
+        direction.Normalize();
 
+        // 시작 시 한 번 지형 충돌 거리 측정.
+        float allowedDistance = GetTerrainLimitedDistance(owner, direction);
+
+        // 돌진 중 일반 이동 잠금. 종료/중단 시 반드시 해제.
         owner.SetMovementLocked(true);
         try
         {
-            yield return SkillDashMovement.Move(owner.transform, owner.transform.forward, distance, duration,
+            yield return SkillDashMovement.Move(owner.transform, direction, allowedDistance, duration,
                 (start, end, traveled) =>
                 {
+                // 이번 프레임 이동 구간의 적 판정. 적마다 중복 피해 방지.
                 foreach (Collider hit in Physics.OverlapCapsule(start, end, hitRadius, enemyLayers,
                              QueryTriggerInteraction.Collide))
                 {
@@ -45,6 +56,33 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
             if (owner != null)
                 owner.SetMovementLocked(false);
         }
+    }
+
+    private float GetTerrainLimitedDistance(PlayerSkillController owner, Vector3 direction)
+    {
+        // 플레이어 캡슐 크기로 전방 검사; 캡슐이 없으면 기존 거리 유지.
+        CapsuleCollider capsule = owner.GetComponent<CapsuleCollider>();
+        if (capsule == null || direction.sqrMagnitude <= Mathf.Epsilon)
+            return distance;
+
+        // 발밑 바닥이 돌진 시작 지점에서 걸리지 않도록 검사 캡슐을 살짝 올림.
+        float scale = Mathf.Max(Mathf.Abs(owner.transform.lossyScale.x), Mathf.Abs(owner.transform.lossyScale.z));
+        float radius = capsule.radius * scale * 0.9f;
+        float halfHeight = capsule.height * Mathf.Abs(owner.transform.lossyScale.y) * 0.5f;
+        Vector3 center = owner.transform.TransformPoint(capsule.center);
+        Vector3 bottom = center + Vector3.up * (-halfHeight + radius + 0.15f);
+        Vector3 top = center + Vector3.up * (halfHeight - radius);
+
+        float limit = distance;
+        // 지형만 선택하고 가장 가까운 충돌 직전 거리로 제한.
+        foreach (RaycastHit hit in Physics.CapsuleCastAll(bottom, top, radius, direction, distance,
+                     Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            if (hit.collider is TerrainCollider)
+                limit = Mathf.Min(limit, Mathf.Max(0f, hit.distance - 0.05f));
+        }
+
+        return limit;
     }
 
     private void OnValidate()

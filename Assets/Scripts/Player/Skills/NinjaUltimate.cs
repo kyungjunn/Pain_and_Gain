@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// 닌자 궁극기: 준비 버프 → 재시전 돌진 → 경로 폭풍 피해.
 public sealed class NinjaUltimate : MonoBehaviour
 {
     private const float MinimumDuration = 0.05f;
@@ -54,6 +55,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private void Update()
     {
+        // 사망 시 정리, 준비 시간이 끝나면 버프 해제.
         if (IsPlayerDead())
         {
             Cancel();
@@ -66,6 +68,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private void LateUpdate()
     {
+        // 준비 중 손의 번개 이펙트를 손 위치에 동기화.
         if (readyActive && handEffect != null && handAnchor != null)
         {
             handEffect.transform.SetPositionAndRotation(handAnchor.position, handAnchor.rotation);
@@ -79,6 +82,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     public bool TryActivate()
     {
+        // 참조/상태 확인 후 손 이펙트 생성.
         CacheComponents();
 
         if (readyActive && Time.time >= readyEndTime)
@@ -95,9 +99,11 @@ public sealed class NinjaUltimate : MonoBehaviour
             return false;
 
         float attackBonus = stats.AttackDamage * SafeNonNegative(attackBonusRatio, 0f);
+        // 현재 능력치를 기준으로 임시 공격력/이동속도 보너스 산출.
         float moveBonus = stats.MoveSpeed * SafeNonNegative(moveBonusRatio, 0f);
 
         handEffect = effect;
+        // 준비 종료 시각, 버프, 상단 애니메이션 설정.
         readyEndTime = Time.time + SafeAtLeast(readyDuration, MinimumDuration, 5f);
         readyActive = true;
         stats.SetTemporaryBonus(this, AugmentType.AttackDamage, attackBonus);
@@ -108,6 +114,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     public bool TryRecast()
     {
+        // 준비 상태·조작 가능 여부를 확인한 뒤 재시전.
         CacheComponents();
 
         if (readyActive && Time.time >= readyEndTime)
@@ -120,6 +127,7 @@ public sealed class NinjaUltimate : MonoBehaviour
         }
 
         float buffedAttackDamage = stats.AttackDamage;
+        // 준비 버프가 사라지기 전 폭풍 피해를 확정.
         int stormDamage = CalculateStormDamage(buffedAttackDamage);
         Vector3 direction = transform.forward;
         direction.y = 0f;
@@ -130,6 +138,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
         ExpireReadyState();
 
+        // 기존 이동 잠금 상태 보관 후 돌진 중 조작 잠금.
         movementLockBeforeDash = skillController.IsMovementLocked;
         dashControlActive = true;
         skillController.SetMovementLocked(true);
@@ -143,6 +152,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     public void Cancel()
     {
+        // 진행 중 코루틴 중단 → 버프/이펙트/이동 상태 정리.
         CacheComponents();
 
         Coroutine activeRoutine = dashAndStormRoutine;
@@ -161,6 +171,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private IEnumerator DashAndStorm(Vector3 direction, int stormDamage)
     {
+        // 돌진 시작 지점, 제한된 거리/시간, 이펙트 간격 준비.
         Vector3 dashStart = transform.position;
         float distance = SafeAtLeast(dashDistance, MinimumDistance, 7f);
         float duration = SafeAtLeast(dashDuration, MinimumDuration, 0.28f);
@@ -170,7 +181,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
         try
         {
-            // Capture trail progress in local state; the shared movement does not deal damage.
+            // 공용 이동은 위치만 변경. 이동 거리마다 번개 흔적 생성.
             yield return SkillDashMovement.Move(transform, direction, distance, duration,
                 (start, end, traveledDistance) =>
                 {
@@ -182,6 +193,7 @@ public sealed class NinjaUltimate : MonoBehaviour
                 yield break;
 
             Vector3 dashEnd = transform.position;
+            // 돌진 종료 위치 확정 후 조작 복원. 경로 전체에 폭풍 유지.
             FinishDashControl();
 
             float stormEndTime = Time.time + SafeAtLeast(stormDuration, MinimumDuration, 3f);
@@ -202,6 +214,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
                 if (Time.time >= nextTickTime)
                 {
+                    // 틱마다 경로 안의 적을 새로 조회해 피해 적용.
                     ApplyStormDamage(dashStart, dashEnd, radius, stormDamage, hitThisTick);
                     nextTickTime = Time.time + tickInterval;
                 }
@@ -211,6 +224,7 @@ public sealed class NinjaUltimate : MonoBehaviour
         }
         finally
         {
+            // 사망·중단·정상 종료 모두 조작과 이펙트 정리.
             FinishDashControl();
             ClearTrailEffects();
             ClearUltimateAnimationIfActive();
@@ -226,6 +240,7 @@ public sealed class NinjaUltimate : MonoBehaviour
         ref float nextTrailDistance,
         ref int trailCount)
     {
+        // 지나온 거리만큼 간격을 채워 이펙트 생성; 최대 개수 제한.
         float spacing = SafeAtLeast(trailSpacing, MinimumDistance, 2f);
         while (nextTrailDistance <= traveledDistance && nextTrailDistance <= distance &&
                trailCount < MaximumTrailInstances)
@@ -247,6 +262,7 @@ public sealed class NinjaUltimate : MonoBehaviour
         int damage,
         HashSet<EnemyHealth> hitThisTick)
     {
+        // 틱당 적 1회 피해: 여러 콜라이더를 가진 적 중복 방지.
         if (damage <= 0 || damageDealer == null)
             return;
 
@@ -264,6 +280,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private GameObject SpawnEffect(Vector3 position, Quaternion rotation, Transform parent, Vector3 scale, bool enableBloom)
     {
+        // 이펙트 생성 후 부모/크기/블룸/파티클 상태 적용.
         if (lightningPrefab == null)
             return null;
 
@@ -344,6 +361,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private void ExpireReadyState()
     {
+        // 준비 만료 또는 재시전 시 임시 보너스와 손 이펙트 제거.
         readyActive = false;
         readyEndTime = 0f;
         stats?.RemoveTemporaryBonuses(this);
@@ -353,6 +371,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private void FinishDashControl()
     {
+        // 돌진 전 이동 잠금 복원 및 살아 있으면 공격 상태 해제.
         bool restoreState = dashControlActive;
         isDashing = false;
         ClearUltimateAnimationIfActive();
@@ -395,6 +414,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private void ClearTrailEffects()
     {
+        // 돌진 경로에 남은 번개 오브젝트 일괄 제거.
         for (int i = 0; i < trailEffects.Count; i++)
         {
             if (trailEffects[i] != null)

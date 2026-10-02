@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
+// 전투 HUD: 스킬 상태와 궁극기 게이지 표시. 수치 계산은 플레이어 컴포넌트 담당.
 public sealed class CombatHudUI : MonoBehaviour
 {
     [SerializeField] private Image basicAttackIcon;
@@ -25,6 +26,7 @@ public sealed class CombatHudUI : MonoBehaviour
 
     private void OnEnable()
     {
+        // 플레이어 교체 시 재연결하고, 이미 생성된 플레이어도 즉시 연결.
         SpawnManager.OnPlayerSpawned += Bind;
         var player = GameObject.FindGameObjectWithTag("Player");
         Bind(player);
@@ -39,6 +41,7 @@ public sealed class CombatHudUI : MonoBehaviour
 
     private void Unbind()
     {
+        // 이전 플레이어의 게이지 이벤트 구독 해제.
         if (gauge != null) gauge.Changed -= RefreshGauge;
         gauge = null;
         skills = null;
@@ -47,6 +50,7 @@ public sealed class CombatHudUI : MonoBehaviour
     public void Bind(GameObject player)
     {
         Unbind();
+        // 플레이어 컴포넌트 참조와 슬롯 아이콘 갱신.
         if (player != null)
         {
             skills = player.GetComponent<PlayerSkillController>();
@@ -59,22 +63,26 @@ public sealed class CombatHudUI : MonoBehaviour
         ultimateIcon.sprite = skills != null ? skills.UltimateIcon : null;
         ultimateIcon.enabled = ultimateIcon.sprite != null;
         if (gauge != null) gauge.Changed += RefreshGauge;
+        // 현재 게이지와 쿨타임 즉시 반영.
         RefreshGauge(gauge != null ? gauge.Normalized : 0f);
         RefreshSkills();
     }
 
     private void Update()
     {
+        // Tab: 능력치 패널 토글. 쿨타임: 매 프레임 표시 갱신.
         if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
             statsPanel.SetActive(!statsPanel.activeSelf);
         RefreshSkills();
         bool recast = skills != null && skills.UltimateRecastReady;
+        // 궁극기 충전 완료 또는 재시전 가능 시 강조색 적용.
         ultimateKey.color = recast || (gauge != null && gauge.IsFull) ? Ready : Color.white;
         ultimateFill.color = recast || (gauge != null && gauge.IsFull) ? Ready : Charging;
     }
 
     private void RefreshSkills()
     {
+        // 컨트롤러의 남은 시간/채널링 상태를 각 스킬 슬롯에 전달.
         skillQ.Refresh(skills != null ? skills.QRemaining : 0f,
             skills != null && skills.SkillQ != null ? skills.SkillQ.Cooldown : 0f,
             skills != null && skills.QChanneling);
@@ -85,6 +93,7 @@ public sealed class CombatHudUI : MonoBehaviour
 
     private void RefreshGauge(float value)
     {
+        // 정규화된 게이지(0~1)를 채움 비율과 정수 퍼센트로 변환.
         value = Mathf.Clamp01(value);
         ultimateFill.fillAmount = value;
         ultimatePercent.SetText("{0}%", Mathf.FloorToInt(value * 100f));

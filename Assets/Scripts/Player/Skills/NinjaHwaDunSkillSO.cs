@@ -1,6 +1,7 @@
 using DigitalRuby.PyroParticles;
 using UnityEngine;
 
+// 화둔 설정/시전: 증강 적용, 화염 이펙트와 지속 피해 판정 생성.
 [CreateAssetMenu(menuName = "Player/Skills/Ninja HwaDun")]
 public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
 {
@@ -11,10 +12,12 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
     [SerializeField] private Vector3 hitboxSize = new Vector3(1.2f, 1.2f, 6f);
     [SerializeField] private Vector3 hitboxCenter = new Vector3(0f, 0f, 3f);
 
+    // 채널 종료 후 쿨타임 시작.
     public override bool DefersCooldown => true;
 
     public override bool Cast(PlayerSkillController owner, PlayerDamageType damageType)
     {
+        // 필수 참조 및 기존 화둔 채널 중복 검사.
         if (flamethrowerPrefab == null || owner == null || owner.SkillOrigin == null ||
             owner.DamageDealer == null)
             return false;
@@ -22,6 +25,7 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
         if (owner.GetComponentInChildren<NinjaHwaDunChannel>(true) != null)
             return false;
 
+        // 전투 증강의 피해/범위/지속시간 보너스를 각각 조회.
         Transform origin = owner.SkillOrigin;
         PlayerAugments playerAugments = owner.GetComponent<PlayerAugments>();
         float combatDamageBonus = playerAugments != null
@@ -34,13 +38,16 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
             ? playerAugments.GetCombatAugmentValue(PlayerCombatAugmentEffect.SkillDuration, this)
             : 0f;
         float effectiveDamageMultiplier = damageMultiplier * Mathf.Max(0f, 1f + combatDamageBonus);
+        // 음수 범위/지속시간을 방지한 최종 시전 값.
         float effectiveRangeMultiplier = Mathf.Max(0f, 1f + combatRangeBonus);
         float effectiveDuration = Mathf.Max(0.05f, duration + combatDurationBonus);
 
+        // 시전 위치에 붙이고 증강 범위만큼 크기 변경.
         GameObject instance = Object.Instantiate(flamethrowerPrefab, origin.position, origin.rotation, origin);
         instance.name = "NinjaHwaDunFlamethrower";
         instance.transform.localScale *= effectiveRangeMultiplier;
 
+        // 자식 파티클에도 부모 크기 변경 적용.
         ParticleSystem[] particleSystems = instance.GetComponentsInChildren<ParticleSystem>(true);
         for (int i = 0; i < particleSystems.Length; i++)
         {
@@ -48,10 +55,12 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
             main.scalingMode = ParticleSystemScalingMode.Hierarchy;
         }
 
+        // 이펙트 자체의 자동 종료 대신 채널이 종료 시점 관리.
         FireBaseScript fire = instance.GetComponent<FireBaseScript>();
         if (fire != null)
             fire.Duration = 99999f;
 
+        // 지속 피해 대상 탐색용 트리거 영역 확보.
         BoxCollider box = instance.GetComponent<BoxCollider>();
         if (box == null)
             box = instance.AddComponent<BoxCollider>();
@@ -59,6 +68,7 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
         box.size = hitboxSize;
         box.center = hitboxCenter;
 
+        // 트리거 이벤트용 중력 없는 운동학 Rigidbody 확보.
         Rigidbody body = instance.GetComponent<Rigidbody>();
         if (body == null)
             body = instance.AddComponent<Rigidbody>();
@@ -66,6 +76,7 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
         body.isKinematic = true;
         body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
+        // 틱 피해와 간격/지속시간을 채널 컴포넌트에 전달.
         int damage = Mathf.Max(1, Mathf.RoundToInt(
             (owner.Stats != null ? owner.Stats.AttackDamage : 10f) * effectiveDamageMultiplier));
         NinjaHwaDunChannel channel = instance.AddComponent<NinjaHwaDunChannel>();

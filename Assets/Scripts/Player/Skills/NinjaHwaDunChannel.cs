@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using DigitalRuby.PyroParticles;
 using UnityEngine;
 
+// 화둔 지속 관리: 틱 피해, 시전자 충돌 제외, 종료 알림.
 public sealed class NinjaHwaDunChannel : MonoBehaviour
 {
     private readonly List<EnemyHealth> hitEnemies = new List<EnemyHealth>();
@@ -23,6 +24,7 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
         float interval,
         float channelDuration)
     {
+        // 시전자/스킬 정보 및 피해 간격, 종료 시각 기록.
         owner = skillOwner;
         skill = channelSkill;
         damageDealer = skillOwner != null ? skillOwner.DamageDealer : null;
@@ -31,6 +33,7 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
         endTime = Time.time + Mathf.Max(0.05f, channelDuration);
         nextTickTime = Time.time;
         hitbox = GetComponent<FireAuraHitbox>();
+        // 중첩 적 탐색용 히트박스가 없으면 생성.
         if (hitbox == null)
             hitbox = gameObject.AddComponent<FireAuraHitbox>();
 
@@ -39,6 +42,7 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
 
     private void Update()
     {
+        // 종료 여부 → 시전자 생존 → 지속시간 → 다음 틱 순서로 검사.
         if (stopped)
             return;
 
@@ -58,11 +62,13 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
             return;
 
         nextTickTime = Time.time + tickInterval;
+        // 틱 간격마다 현재 범위 안의 적에게 피해.
         ApplyTickDamage();
     }
 
     private void StopChannel(bool notifyOwner)
     {
+        // 중복 종료 방지 및 히트박스 비활성화.
         if (stopped)
             return;
 
@@ -74,12 +80,14 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
             collider.enabled = false;
 
         FireBaseScript fire = GetComponent<FireBaseScript>();
+        // 화염 이펙트 정지. 이펙트 스크립트가 없으면 오브젝트 제거.
         if (fire != null)
             fire.Stop();
         else
             Destroy(gameObject);
 
         if (notifyOwner && owner != null)
+            // 정상 종료만 컨트롤러에 알려 지연된 쿨타임 시작.
             owner.NotifyChannelFinished(skill);
     }
     private bool IsOwnerDead()
@@ -90,6 +98,7 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
 
     private void IgnoreOwnerColliders()
     {
+        // 화염 트리거와 시전자 콜라이더 간 충돌 무시.
         Collider self = GetComponent<Collider>();
         if (self == null || owner == null)
             return;
@@ -104,6 +113,7 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
 
     private void ApplyTickDamage()
     {
+        // 현재 히트박스에 잡힌 적을 조회하고 각 적에게 틱 피해.
         if (hitbox == null || damageDealer == null)
             return;
 

@@ -1,4 +1,4 @@
-// 캐릭터 고유 Q/E/R 시전.
+// Q/E/R 입력, 시전 조건, 쿨타임과 닌자 궁극기 연결.
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -17,11 +17,14 @@ public sealed class PlayerSkillController : MonoBehaviour
     [SerializeField] private Sprite specialUltimateIcon;
 
     public Sprite BasicAttackIcon => basicAttackIcon;
+    // 일반 궁극기는 스킬 아이콘, 닌자 전용 궁극기는 별도 아이콘 사용.
     public Sprite UltimateIcon => ultimate != null ? ultimate.Icon : specialUltimateIcon;
     public PlayerSkillSO SkillQ => skillQ;
     public PlayerSkillSO SkillE => skillE;
+    // 재사용 가능 시각과 현재 시각의 차이: HUD용 남은 쿨타임.
     public float QRemaining => Mathf.Max(0f, qReadyTime - Time.time);
     public float ERemaining => Mathf.Max(0f, eReadyTime - Time.time);
+    // 지연 쿨타임 스킬의 시전 중 상태와 궁극기 재시전 상태.
     public bool QChanneling => skillQ != null && deferredCooldownSkill == skillQ;
     public bool EChanneling => skillE != null && deferredCooldownSkill == skillE;
     public bool UltimateRecastReady => ninjaUltimate != null && ninjaUltimate.IsReady;
@@ -41,6 +44,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     private float qReadyTime;
     // E 재사용 가능 시각
     private float eReadyTime;
+    // 이동 잠금, 종료 대기 스킬, E 무기 이펙트, 닌자 궁극기 상태.
     private bool movementLocked;
     private PlayerSkillSO deferredCooldownSkill;
     private Coroutine skillEWeaponRoutine;
@@ -64,6 +68,7 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void Awake()
     {
+        // 시전과 피해 계산에 필요한 플레이어 컴포넌트 확보.
         stats = GetComponent<PlayerStats>();
         damageDealer = GetComponent<PlayerDamageDealer>();
         ultimateGauge = GetComponent<PlayerUltimateGauge>();
@@ -77,6 +82,7 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void Update()
     {
+        // 채널링 중 사망하면 대기 중인 쿨타임을 시작.
         if (deferredCooldownSkill != null &&
             stateManager != null &&
             stateManager.CurrentState == PlayerState.Dead)
@@ -85,6 +91,7 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void OnDisable()
     {
+        // 비활성화 시 궁극기 취소, E 무기 숨김, 지연 쿨타임 정리.
         ninjaUltimate?.Cancel();
         if (skillEWeaponRoutine != null)
         {
@@ -120,9 +127,11 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     public bool TryUseUltimate()
     {
+        // 일시정지·사망·다른 스킬 시전 중이면 사용 차단.
         if (!CanCast() || IsSkillCasting())
             return false;
 
+        // 닌자 궁극기: 준비 중이면 재시전, 아니면 게이지를 써서 준비 시작.
         if (ninjaUltimate != null)
         {
             if (ninjaUltimate.IsReady)
@@ -130,6 +139,7 @@ public sealed class PlayerSkillController : MonoBehaviour
             return ultimateGauge.IsFull && ninjaUltimate.TryActivate() && ultimateGauge.TryConsume();
         }
 
+        // 일반 궁극기: 게이지가 가득 찬 경우에만 시전 후 소모.
         if (ultimate == null || !ultimateGauge.IsFull)
             return false;
 
@@ -143,24 +153,26 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     public void NotifyChannelFinished(PlayerSkillSO skill)
     {
+        // 지속형 스킬 종료 알림을 받아 지연 쿨타임 완료.
         CompleteDeferredSkill(skill);
     }
 
     // 쿨다운 확인 후 시전
-    private void TryCast(
-        PlayerSkillSO skill,
-        ref float readyTime)
+    private void TryCast(PlayerSkillSO skill, ref float readyTime)
     {
+        // 시전 가능 상태, 현재 쿨타임, 스킬 실행 결과 검사.
         if (!CanCast() || IsSkillCasting() || skill == null || Time.time < readyTime ||
             !skill.Cast(this, PlayerDamageType.Skill))
             return;
 
         PlayAnimation(skill);
+        // E 무기는 애니메이션 종료 시까지 표시.
         if (skill == skillE && skillEWeapon != null && animator != null)
         {
             skillEWeapon.SetActive(true);
             skillEWeaponRoutine = StartCoroutine(HideSkillEWeaponAfterAnimation());
         }
+        // 지속형은 종료 알림을 기다리고, 일반 스킬은 즉시 쿨타임 시작.
         if (skill.DefersCooldown)
             deferredCooldownSkill = skill;
         else
@@ -169,12 +181,14 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private IEnumerator HideSkillEWeaponAfterAnimation()
     {
-        // The trigger is consumed on the next animator update, not during Cast.
+        // 애니메이션 트리거는 Cast 시점이 아니라 다음 애니메이터 갱신에 반영됨.
+        // E 모션 진입을 최대 1초 기다리고, 사망하거나 기한을 넘기면 대기 종료.
         float enterDeadline = Time.time + 1f;
         while (!IsEAnimationActive() && Time.time < enterDeadline &&
                (stateManager == null || stateManager.CurrentState != PlayerState.Dead))
             yield return null;
 
+        // E 모션이 끝나거나 사망하면 무기 숨김.
         while (IsEAnimationActive() &&
                (stateManager == null || stateManager.CurrentState != PlayerState.Dead))
             yield return null;
@@ -191,10 +205,12 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void CompleteDeferredSkill(PlayerSkillSO skill)
     {
+        // 현재 대기 중인 스킬의 종료 알림만 처리.
         if (skill == null || deferredCooldownSkill != skill)
             return;
 
         deferredCooldownSkill = null;
+        // 종료 시점부터 Q 또는 E 쿨타임 계산.
         if (skill == skillQ)
             qReadyTime = Time.time + skill.Cooldown;
         else if (skill == skillE)
@@ -202,6 +218,7 @@ public sealed class PlayerSkillController : MonoBehaviour
 
         if (animator != null && !string.IsNullOrWhiteSpace(skill.AnimationTrigger))
         {
+            // 남은 시전 트리거를 지우고 기본 애니메이션으로 복귀.
             animator.ResetTrigger(skill.AnimationTrigger);
             animator.CrossFade("Idle", 0.05f, 0);
         }
@@ -212,6 +229,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     // 스킬 애니메이션
     private void PlayAnimation(PlayerSkillSO skill)
     {
+        // 닌자 궁극기 준비 중이면 상단 애니메이션을 비우고 스킬 모션 재생.
         if (ninjaUltimate != null && ninjaUltimate.IsReady && animator != null)
             animator.CrossFadeInFixedTime("Empty", 0.05f, 1);
         stateManager?.ChangeState(PlayerState.Attack);
@@ -232,6 +250,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     // 스킬 모션 중 중복 시전 차단
     private bool IsSkillCasting()
     {
+        // 궁극기 돌진·채널링·Q/E/R 모션 중 중복 시전 방지.
         if (ninjaUltimate != null && ninjaUltimate.IsDashing)
             return true;
         if (deferredCooldownSkill != null)
