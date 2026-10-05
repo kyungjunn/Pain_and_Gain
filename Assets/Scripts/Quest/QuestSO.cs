@@ -32,8 +32,12 @@ public class QuestSO : ScriptableObject
     public GameObject eventMonsterPrefab;
     public GameObject eventMonsterBeaconPrefab;
 
+    [Header("Success Reward")]
+    public QuestRewardPoolSO rewardPool;
+
     // 실패 설정
     [Header("Failure Penalty")]
+    [Tooltip("SkillRemove: 증강 스킬 중첩 1 감소, 마지막 중첩이면 제거. StatReduce: 증강 스탯 보너스 감소.")]
     public QuestPenaltyType penaltyType = QuestPenaltyType.SkillRemove;
     [Range(0f, 1f)] public float statReduceMin = 0.25f;
     [Range(0f, 1f)] public float statReduceMax = 0.5f;

@@ -325,10 +325,20 @@ public static class LevelOneEnemyValidation
         questSpawn.transform.position = Vector3.right * 8;
         var spawnManager = new GameObject("SpawnManager").AddComponent<SpawnManager>();
         var questManager = new GameObject("QuestManager").AddComponent<QuestManager>();
-        var rabbitQuest = AssetDatabase.LoadAssetAtPath<QuestSO>("Assets/Prefabs/Quest/Data/HuntRabbit.asset");
+        var rabbitQuest = Object.Instantiate(AssetDatabase.LoadAssetAtPath<QuestSO>("Assets/Prefabs/Quest/Data/HuntRabbit.asset"));
+        var rewardPool = ScriptableObject.CreateInstance<QuestRewardPoolSO>();
+        rewardPool.entries.Add(new QuestRewardEntry
+        {
+            reward = new QuestReward { type = QuestRewardType.Heal, amount = 1 },
+            weight = 1
+        });
+        rabbitQuest.rewardPool = rewardPool;
+        typeof(QuestManager).GetMethod("HandlePlayerSpawned",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .Invoke(questManager, new object[] { player });
         SetPrivate(questManager, "quests", new List<QuestSO> { rabbitQuest });
         int succeeded = 0, failed = 0;
-        questManager.onQuestSucceeded += _ => succeeded++;
+        questManager.onQuestSucceeded += (_, __) => succeeded++;
         questManager.onQuestFailed += (_, __) => failed++;
         InvokePrivate(questManager, "StartRandomQuest");
         Require(questManager.State == QuestState.Active && questManager.CurrentQuest == rabbitQuest,
@@ -374,6 +384,7 @@ public static class LevelOneEnemyValidation
         var regularQuest = ScriptableObject.CreateInstance<QuestSO>();
         regularQuest.objectiveType = QuestObjectiveType.KillEnemies;
         regularQuest.targetAmount = 2;
+        regularQuest.rewardPool = rewardPool;
         SetPrivate(questManager, "quests", new List<QuestSO> { regularQuest });
         InvokePrivate(questManager, "StartRandomQuest");
         var ordinaryOne = new GameObject("OrdinaryOne").AddComponent<EnemyHealth>();
@@ -385,6 +396,8 @@ public static class LevelOneEnemyValidation
         Require(succeeded == 2 && questManager.State == QuestState.Countdown,
             "Existing kill quest still completes");
         Object.Destroy(regularQuest);
+        Object.Destroy(rabbitQuest);
+        Object.Destroy(rewardPool);
         Object.Destroy(player);
     }
 
