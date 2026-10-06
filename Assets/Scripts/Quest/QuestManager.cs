@@ -38,7 +38,7 @@ public class QuestManager : MonoBehaviour
     public QuestSO CurrentQuest { get; private set; }
     public int CurrentProgress { get; private set; }
     public float RemainingTime { get; private set; }
-    public QuestReward CurrentReward { get; private set; }
+    public QuestRewardSO CurrentReward { get; private set; }
 
     // UI 연동 이벤트
     public event Action<QuestSO> onQuestStarted;
@@ -168,14 +168,15 @@ public class QuestManager : MonoBehaviour
         if (CurrentQuest.rewardPool == null
             || !CurrentQuest.rewardPool.TrySelect(
                 UnityEngine.Random.value,
-                selected => QuestRewardProcessor.CanApply(player, selected),
-                out QuestReward reward))
+                selected => selected.CanApply(player),
+                out QuestRewardSO reward))
         {
             Debug.LogWarning($"[Quest] 보상 설정 또는 지급 대상이 유효하지 않습니다: {CurrentQuest.questName}");
             ClearCurrentQuest();
             BeginCountdown(questCooldown);
             return;
         }
+        // 시작 시 보상 확정 · 성공 시 재추첨 없음
         CurrentReward = reward;
         if (CurrentQuest.objectiveType == QuestObjectiveType.HuntEventMonster)
         {
@@ -238,11 +239,11 @@ public class QuestManager : MonoBehaviour
     {
         if (!CanResolveQuest()) return;
         QuestSO completedQuest = CurrentQuest;
-        QuestReward reward = CurrentReward;
-        // 지급 중 재진입해도 같은 퀘스트를 다시 완료할 수 없도록 먼저 종료한다.
+        QuestRewardSO reward = CurrentReward;
+        // 지급 전 상태 종료 · 재진입 중복 지급 차단
         BeginCountdown(questCooldown);
         ClearCurrentQuest();
-        QuestRewardResult result = QuestRewardProcessor.Apply(player, reward);
+        QuestRewardResult result = reward.Apply(player);
         if (!result.applied) Debug.LogError($"[Quest] 보상 지급 실패: {completedQuest.questName}");
         Debug.Log($"[Quest] 성공: {completedQuest.questName}, {result.Description}");
         onQuestSucceeded?.Invoke(completedQuest, result);
@@ -268,7 +269,7 @@ public class QuestManager : MonoBehaviour
 
     private QuestPenaltyResult ApplyPenalty(QuestSO quest)
     {
-        // 설정된 능력만 박탈하며 다른 종류의 능력에 손실을 전가하지 않는다.
+        // 설정된 능력만 손실 · 다른 종류로 전가 없음
         QuestPenaltyResult result = new QuestPenaltyResult();
 
         if (quest == null || AugmentManager.Instance == null)

@@ -13,19 +13,11 @@ MonoBehaviour:
   m_Name: StandardRewards
   m_EditorClassIdentifier: Assembly-CSharp::QuestRewardPoolSO
   entries:
-  - reward:
-      type: 0
-      amount: 25
+  - reward: {fileID: 11400000, guid: a31dc926e8ab47bb96cf78178d702002, type: 2}
     weight: 4
-  - reward:
-      type: 1
-      amount: 20
+  - reward: {fileID: 11400000, guid: a31dc926e8ab47bb96cf78178d702003, type: 2}
     weight: 3
-  - reward:
-      type: 2
-      amount: 25
+  - reward: {fileID: 11400000, guid: a31dc926e8ab47bb96cf78178d702004, type: 2}
     weight: 2
-  - reward:
-      type: 3
-      amount: 1
+  - reward: {fileID: 11400000, guid: a31dc926e8ab47bb96cf78178d702005, type: 2}
     weight: 1

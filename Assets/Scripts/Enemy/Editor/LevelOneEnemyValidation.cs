@@ -327,9 +327,11 @@ public static class LevelOneEnemyValidation
         var questManager = new GameObject("QuestManager").AddComponent<QuestManager>();
         var rabbitQuest = Object.Instantiate(AssetDatabase.LoadAssetAtPath<QuestSO>("Assets/Prefabs/Quest/Data/HuntRabbit.asset"));
         var rewardPool = ScriptableObject.CreateInstance<QuestRewardPoolSO>();
+        var healReward = ScriptableObject.CreateInstance<HealRewardSO>();
+        healReward.amount = 1;
         rewardPool.entries.Add(new QuestRewardEntry
         {
-            reward = new QuestReward { type = QuestRewardType.Heal, amount = 1 },
+            reward = healReward,
             weight = 1
         });
         rabbitQuest.rewardPool = rewardPool;
@@ -398,6 +400,7 @@ public static class LevelOneEnemyValidation
         Object.Destroy(regularQuest);
         Object.Destroy(rabbitQuest);
         Object.Destroy(rewardPool);
+        Object.Destroy(healReward);
         Object.Destroy(player);
     }
 

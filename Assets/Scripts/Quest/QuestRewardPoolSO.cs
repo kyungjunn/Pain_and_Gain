@@ -5,7 +5,7 @@ using UnityEngine;
 [Serializable]
 public struct QuestRewardEntry
 {
-    public QuestReward reward;
+    public QuestRewardSO reward;
     [Min(1)] public int weight;
 }
 
@@ -14,18 +14,19 @@ public sealed class QuestRewardPoolSO : ScriptableObject
 {
     public List<QuestRewardEntry> entries = new List<QuestRewardEntry>();
 
-    // 후보 하나는 확정 보상, 여러 후보는 가중치 추첨이다.
-    public bool TrySelect(float sample, out QuestReward reward)
+    // 단일 후보 확정 · 복수 후보 가중치 추첨
+    public bool TrySelect(float sample, out QuestRewardSO reward)
     {
         return TrySelect(sample, null, out reward);
     }
 
-    public bool TrySelect(float sample, Func<QuestReward, bool> isEligible, out QuestReward reward)
+    public bool TrySelect(float sample, Func<QuestRewardSO, bool> isEligible, out QuestRewardSO reward)
     {
         reward = default;
         if (entries == null || float.IsNaN(sample) || sample < 0f || sample > 1f)
             return false;
 
+        // 유효한 지급 후보의 가중치 합산
         double totalWeight = 0;
         foreach (QuestRewardEntry entry in entries)
         {
@@ -42,12 +43,13 @@ public sealed class QuestRewardPoolSO : ScriptableObject
             remaining -= entry.weight;
             if (remaining < 0) return true;
         }
-        // Random.value는 1을 반환할 수 있다.
+        // 난수 상한 1 포함 · 마지막 유효 후보 선택
         return true;
     }
 
-    private static bool IsSelectable(QuestRewardEntry entry, Func<QuestReward, bool> isEligible)
+    private static bool IsSelectable(QuestRewardEntry entry, Func<QuestRewardSO, bool> isEligible)
     {
-        return entry.weight > 0 && entry.reward.IsValid && (isEligible == null || isEligible(entry.reward));
+        return entry.weight > 0 && entry.reward != null && entry.reward.IsValid
+            && (isEligible == null || isEligible(entry.reward));
     }
 }
