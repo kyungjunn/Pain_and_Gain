@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8815276821900704839}
   - component: {fileID: 4156254528847410084}
   - component: {fileID: 2887273411991796888}
+  - component: {fileID: 943393391927496066}
   m_Layer: 0
   m_Name: ItemBox
   m_TagString: Untagged
@@ -50,15 +51,30 @@ MonoBehaviour:
   availableItems:
   - {fileID: 11400000, guid: 736be7a8bca903349a8acefe09bb48af, type: 2}
   - {fileID: 11400000, guid: d9f43f95ae1909942a8941b0e9b05338, type: 2}
-  equipEffectPrefab: {fileID: 3372678114695592438, guid: c2dae6a2b5fb64748be3cfd398f0e089, type: 3}
-  consumableEffectPrefab: {fileID: 4113264280539911217, guid: 08317e9476adff94d9d38da3a41375c2, type: 3}
+  equipApplyPrefab: {fileID: 8693191386208634553, guid: 8adb3ec71371af347b8ea8f1f53dc15a, type: 3}
+  consumableApplyPrefab: {fileID: 3335216194858938265, guid: be296477118ed6f4d93f6227d1c6fa04, type: 3}
+  kindEffects:
+  - kind: 0
+    tintColor: {r: 0.39451253, g: 0.764151, b: 0, a: 1}
+    idleEffect: {fileID: 0}
+    openEffect: {fileID: 0}
+    revealEffect: {fileID: 194316, guid: 11387396ccd933544b0567a831ce751a, type: 3}
+    revealSound: {fileID: 0}
+  - kind: 1
+    tintColor: {r: 1, g: 0.15, b: 0.15, a: 1}
+    idleEffect: {fileID: 0}
+    openEffect: {fileID: 0}
+    revealEffect: {fileID: 194316, guid: 11387396ccd933544b0567a831ce751a, type: 3}
+    revealSound: {fileID: 0}
+  effectOffset: {x: 0, y: 0.5, z: 0}
+  effectLifetime: 4
   uiPanel: {fileID: 4921135780123367464}
   infoText: {fileID: 6221990794348640086}
+  animator: {fileID: 943393391927496066}
+  effectDelay: 0.5
+  destroyDelay: 1.5
   interactKey: 19
-  declineKey: 31
   openPromptMessage: "\uC0C1\uC790 \uC5F4\uAE30 (E)"
-  confirmMessage: "\uC0C1\uC790\uB97C \uC5EC\uC2DC\uACA0\uC2B5\uB2C8\uAE4C? (E: \uC608
-    / Q: \uC544\uB2C8\uC624)"
   emptyBoxMessage: "\uBE48 \uC0C1\uC790\uC785\uB2C8\uB2E4."
 --- !u!65 &2887273411991796888
 BoxCollider:
@@ -79,8 +95,30 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
+  m_Size: {x: 2, y: 2, z: 2}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!95 &943393391927496066
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1945946750318195445}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 5394e3171527eee4cb2738fe87358d9b, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &3263773202647719061
 GameObject:
   m_ObjectHideFlags: 0
@@ -360,6 +398,7 @@ GameObject:
   - component: {fileID: 4998526651680953420}
   - component: {fileID: 442948696493246082}
   - component: {fileID: 7838786817810821298}
+  - component: {fileID: 6987041700423891725}
   m_Layer: 0
   m_Name: Gold Chest
   m_TagString: Untagged
@@ -439,6 +478,28 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!95 &6987041700423891725
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7760108768246657637}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &8803896771716775501
 GameObject:
   m_ObjectHideFlags: 0

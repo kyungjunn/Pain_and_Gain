@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -8,29 +9,36 @@ public class ItemBox : MonoBehaviour
     {
         None,
         Prompt,
-        Confirm,
         Resolved
     }
 
     [Header("Available Items")]
     [SerializeField] private ItemData[] availableItems;
 
-    [Header("Effect Prefabs")]
-    [SerializeField] private GameObject equipEffectPrefab;
-    [SerializeField] private GameObject consumableEffectPrefab;
+    [Header("Item Apply Prefabs")]
+    [SerializeField] private GameObject equipApplyPrefab;
+    [SerializeField] private GameObject consumableApplyPrefab;
 
     [Header("ItemBox UI")]
     [SerializeField] private GameObject uiPanel;
     [SerializeField] private Text infoText;
 
+    [Header("Open Animation")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private float effectDelay = 0.5f;
+    [SerializeField] private float destroyDelay = 0.8f;
+
     [Header("Interact")]
     [SerializeField] private Key interactKey = Key.E;
-    [SerializeField] private Key declineKey = Key.Q;
 
     [Header("Messages")]
     [SerializeField] private string openPromptMessage = "상자 열기 (E)";
-    [SerializeField] private string confirmMessage = "상자를 여시겠습니까? (E: 예 / Q: 아니오)";
     [SerializeField] private string emptyBoxMessage = "빈 상자입니다.";
+
+    [Header("Pickup Message")]
+    [SerializeField] private float resultShowTime = 2f;
+
+    private static readonly int OpenHash = Animator.StringToHash("Open");
 
     private ItemData chosenItem;
     private BoxState state = BoxState.None;
@@ -90,27 +98,11 @@ public class ItemBox : MonoBehaviour
 
     private void Update()
     {
-        if (state == BoxState.None || state == BoxState.Resolved || playerInRange == null) return;
+        if (state != BoxState.Prompt || playerInRange == null) return;
 
-        switch (state)
+        if (Keyboard.current != null && Keyboard.current[interactKey].wasPressedThisFrame)
         {
-            case BoxState.Prompt:
-                if (Keyboard.current[interactKey].wasPressedThisFrame)
-                {
-                    ShowConfirm();
-                }
-                break;
-
-            case BoxState.Confirm:
-                if (Keyboard.current[interactKey].wasPressedThisFrame)
-                {
-                    OpenBox();
-                }
-                else if (Keyboard.current[declineKey].wasPressedThisFrame)
-                {
-                    DeclineBox();
-                }
-                break;
+            OpenBox();
         }
     }
 
@@ -122,15 +114,6 @@ public class ItemBox : MonoBehaviour
         if (uiPanel != null) uiPanel.SetActive(true);
     }
 
-    private void ShowConfirm()
-    {
-        if (chosenItem == null) return;
-
-        state = BoxState.Confirm;
-
-        if (infoText != null) infoText.text = confirmMessage;
-    }
-
     private void OpenBox()
     {
         if (chosenItem == null)
@@ -140,25 +123,38 @@ public class ItemBox : MonoBehaviour
         }
 
         state = BoxState.Resolved;
-        ApplyItemEffect(playerInRange);
+
+        GameObject player = playerInRange;
 
         if (uiPanel != null) uiPanel.SetActive(false);
+        if (animator != null) animator.SetTrigger(OpenHash);
 
-        Destroy(gameObject, 1f);
+        StartCoroutine(ApplyAfterDelay(player));
     }
 
-    private void DeclineBox()
+    private IEnumerator ApplyAfterDelay(GameObject player)
     {
-        if (uiPanel != null) uiPanel.SetActive(false);
+        yield return new WaitForSeconds(effectDelay);
 
-        if (playerInRange != null)
-        {
-            ShowPrompt();
-        }
-        else
-        {
-            state = BoxState.None;
-        }
+        ApplyItemEffect(player);
+
+        if (infoText != null) infoText.text = BuildResultMessage(chosenItem);
+        if (uiPanel != null) uiPanel.SetActive(true);
+
+        yield return new WaitForSeconds(resultShowTime);
+
+        if (uiPanel != null) uiPanel.SetActive(false);
+        Destroy(gameObject, destroyDelay);
+    }
+
+    // 획득 메시지 생성
+    private string BuildResultMessage(ItemData data)
+    {
+        string effect = data.ItemType == ItemType.Equipment
+            ? $"Damage +{data.BonusAttackDamage}"
+            : $"HP +{Mathf.RoundToInt(data.HpRecoveryAmount)} 회복";
+
+        return $"{data.ItemName} 획득!\n{effect}";
     }
 
     // 아이템 효과 적용
@@ -170,7 +166,7 @@ public class ItemBox : MonoBehaviour
             return;
         }
 
-        GameObject effectPrefab = chosenItem.ItemType == ItemType.Equipment ? equipEffectPrefab : consumableEffectPrefab;
+        GameObject effectPrefab = chosenItem.ItemType == ItemType.Equipment ? equipApplyPrefab : consumableApplyPrefab;
 
         if (effectPrefab == null)
         {
@@ -206,14 +202,12 @@ public class ItemBox : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
+        if (state == BoxState.Resolved) return;
+
         if (other.CompareTag("Player"))
         {
             playerInRange = null;
-
-            if (state != BoxState.Resolved)
-            {
-                state = BoxState.None;
-            }
+            state = BoxState.None;
 
             if (uiPanel != null) uiPanel.SetActive(false);
         }
