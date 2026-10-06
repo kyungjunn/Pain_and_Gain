@@ -17,6 +17,7 @@ MonoBehaviour:
   objectiveType: 1
   targetAmount: 1
   timeLimit: 45
+  rewardPool: {fileID: 11400000, guid: 17de3b42d7c643269b05eb618c432904, type: 2}
   eventMonsterPrefab: {fileID: 1647588856111179663, guid: 0db0255fe219c26498708f44585747a9, type: 3}
   eventMonsterBeaconPrefab: {fileID: 7938867002401111200, guid: 8f4c868b63d12ce216a8ffe3dc27e30d, type: 3}
   penaltyType: 1

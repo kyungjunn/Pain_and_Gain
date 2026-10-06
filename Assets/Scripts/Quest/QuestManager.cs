@@ -15,6 +15,7 @@ public enum QuestState
 public struct QuestPenaltyResult
 {
     public SkillAugmentSO removedSkill;
+    public int remainingSkillStacks;
     public StatReduceResult? reducedStat;
 
     public bool HasPenalty => removedSkill != null || reducedStat.HasValue;
@@ -37,16 +38,19 @@ public class QuestManager : MonoBehaviour
     public QuestSO CurrentQuest { get; private set; }
     public int CurrentProgress { get; private set; }
     public float RemainingTime { get; private set; }
+    public QuestRewardSO CurrentReward { get; private set; }
 
     // UI 연동 이벤트
     public event Action<QuestSO> onQuestStarted;
     public event Action<int, int> onQuestProgressChanged;
     public event Action<float, float> onQuestTimeChanged;
-    public event Action<QuestSO> onQuestSucceeded;
+    public event Action<QuestSO, QuestRewardResult> onQuestSucceeded;
     public event Action<QuestSO, QuestPenaltyResult> onQuestFailed;
 
     private PlayerStats playerStats;
     private PlayerAugments playerAugments;
+    private GameObject player;
+    private PlayerHealth playerHealth;
     private float countdown;
     private EnemyHealth activeEventMonster;
     private GameObject activeEventBeacon;
@@ -77,6 +81,17 @@ public class QuestManager : MonoBehaviour
 
     private void Update()
     {
+        if (player == null || (playerHealth != null && playerHealth.IsDead))
+        {
+            if (State != QuestState.Stopped)
+            {
+                State = QuestState.Stopped;
+                ClearEventMonster();
+                ClearCurrentQuest();
+            }
+            return;
+        }
+
         // 상태별 시간 처리
         switch (State)
         {
@@ -112,12 +127,15 @@ public class QuestManager : MonoBehaviour
     {
         ClearEventMonster();
         // 플레이어 바인딩
+        player = playerObject;
+        playerHealth = playerObject != null ? playerObject.GetComponent<PlayerHealth>() : null;
         playerStats = playerObject != null ? playerObject.GetComponent<PlayerStats>() : null;
         playerAugments = playerObject != null ? playerObject.GetComponent<PlayerAugments>() : null;
         CurrentQuest = null;
         CurrentProgress = 0;
         RemainingTime = 0f;
         State = QuestState.WaitingForAugment;
+        CurrentReward = default;
     }
 
     private bool HasAnyAugment()
@@ -147,6 +165,19 @@ public class QuestManager : MonoBehaviour
         }
 
         CurrentQuest = quests[UnityEngine.Random.Range(0, quests.Count)];
+        if (CurrentQuest.rewardPool == null
+            || !CurrentQuest.rewardPool.TrySelect(
+                UnityEngine.Random.value,
+                selected => selected.CanApply(player),
+                out QuestRewardSO reward))
+        {
+            Debug.LogWarning($"[Quest] 보상 설정 또는 지급 대상이 유효하지 않습니다: {CurrentQuest.questName}");
+            ClearCurrentQuest();
+            BeginCountdown(questCooldown);
+            return;
+        }
+        // 시작 시 보상 확정 · 성공 시 재추첨 없음
+        CurrentReward = reward;
         if (CurrentQuest.objectiveType == QuestObjectiveType.HuntEventMonster)
         {
             GameObject monster = null;
@@ -156,7 +187,7 @@ public class QuestManager : MonoBehaviour
             {
                 if (monster != null) Destroy(monster);
                 Debug.LogWarning("이벤트 몬스터를 스폰할 수 없어 퀘스트를 다시 대기합니다.");
-                CurrentQuest = null;
+                ClearCurrentQuest();
                 BeginCountdown(5f);
                 return;
             }
@@ -181,7 +212,7 @@ public class QuestManager : MonoBehaviour
     private void HandleEnemyKilled(EnemyHealth enemy)
     {
         // 처치 진행도
-        if (State != QuestState.Active || CurrentQuest == null)
+        if (!CanResolveQuest())
         {
             return;
         }
@@ -206,27 +237,39 @@ public class QuestManager : MonoBehaviour
 
     private void SucceedCurrentQuest()
     {
+        if (!CanResolveQuest()) return;
         QuestSO completedQuest = CurrentQuest;
-        ClearCurrentQuest();
+        QuestRewardSO reward = CurrentReward;
+        // 지급 전 상태 종료 · 재진입 중복 지급 차단
         BeginCountdown(questCooldown);
-        Debug.Log($"[Quest] 성공: {completedQuest.questName}");
-        onQuestSucceeded?.Invoke(completedQuest);
+        ClearCurrentQuest();
+        QuestRewardResult result = reward.Apply(player);
+        if (!result.applied) Debug.LogError($"[Quest] 보상 지급 실패: {completedQuest.questName}");
+        Debug.Log($"[Quest] 성공: {completedQuest.questName}, {result.Description}");
+        onQuestSucceeded?.Invoke(completedQuest, result);
     }
 
     private void FailCurrentQuest()
     {
+        if (!CanResolveQuest()) return;
         QuestSO failedQuest = CurrentQuest;
-        ClearEventMonster();
-        QuestPenaltyResult penaltyResult = ApplyPenalty(failedQuest);
-        ClearCurrentQuest();
         BeginCountdown(questCooldown);
+        ClearEventMonster();
+        ClearCurrentQuest();
+        QuestPenaltyResult penaltyResult = ApplyPenalty(failedQuest);
         LogFailure(failedQuest, penaltyResult);
         onQuestFailed?.Invoke(failedQuest, penaltyResult);
     }
 
+    private bool CanResolveQuest()
+    {
+        return State == QuestState.Active && CurrentQuest != null && player != null
+            && (playerHealth == null || !playerHealth.IsDead);
+    }
+
     private QuestPenaltyResult ApplyPenalty(QuestSO quest)
     {
-        // 스킬 박탈 실패 시 스탯 감소
+        // 설정된 능력만 손실 · 다른 종류로 전가 없음
         QuestPenaltyResult result = new QuestPenaltyResult();
 
         if (quest == null || AugmentManager.Instance == null)
@@ -237,16 +280,18 @@ public class QuestManager : MonoBehaviour
         if (quest.penaltyType == QuestPenaltyType.SkillRemove)
         {
             result.removedSkill = AugmentManager.Instance.RemoveRandomSkill();
-
-            if (result.removedSkill != null)
-            {
-                return result;
-            }
+            result.remainingSkillStacks = playerAugments != null
+                ? playerAugments.GetSkillStackCount(result.removedSkill)
+                : 0;
+            return result;
         }
 
-        result.reducedStat = AugmentManager.Instance.ReduceRandomStat(
-            quest.statReduceMin,
-            quest.statReduceMax);
+        if (quest.penaltyType == QuestPenaltyType.StatReduce)
+        {
+            result.reducedStat = AugmentManager.Instance.ReduceRandomStat(
+                quest.statReduceMin,
+                quest.statReduceMax);
+        }
 
         return result;
     }
@@ -255,7 +300,7 @@ public class QuestManager : MonoBehaviour
     {
         if (result.removedSkill != null)
         {
-            Debug.Log($"[Quest] 실패: {quest.questName}, 스킬 박탈: {result.removedSkill.augmentName}");
+            Debug.Log($"[Quest] 실패: {quest.questName}, 증강 중첩 감소: {result.removedSkill.augmentName}, 남은 중첩: {result.remainingSkillStacks}");
             return;
         }
 
@@ -276,6 +321,7 @@ public class QuestManager : MonoBehaviour
         CurrentQuest = null;
         CurrentProgress = 0;
         RemainingTime = 0f;
+        CurrentReward = default;
     }
 
     private void ClearEventMonster()

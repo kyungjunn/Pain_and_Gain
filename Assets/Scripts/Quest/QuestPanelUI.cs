@@ -59,6 +59,10 @@ public class QuestPanelUI : MonoBehaviour
         {
             TryBindQuestManager();
         }
+        else if (questManager.State == QuestState.Stopped)
+        {
+            HideQuestCard();
+        }
     }
 
     private void TryBindQuestManager()
@@ -124,7 +128,7 @@ public class QuestPanelUI : MonoBehaviour
 
         if (descriptionText != null)
         {
-            descriptionText.text = quest.description;
+            descriptionText.text = $"{quest.description}\n성공 시: {questManager.CurrentReward.Description}";
         }
 
         if (penaltyText != null)
@@ -157,10 +161,10 @@ public class QuestPanelUI : MonoBehaviour
         }
     }
 
-    private void HandleQuestSucceeded(QuestSO quest)
+    private void HandleQuestSucceeded(QuestSO quest, QuestRewardResult result)
     {
         HideQuestCard();
-        ShowResultToast(true, "퀘스트 성공", quest != null ? string.Format("{0} 완료", quest.questName) : "목표 완료");
+        ShowResultToast(true, "퀘스트 성공", result.Description);
     }
 
     private void HandleQuestFailed(QuestSO quest, QuestPenaltyResult result)
@@ -230,7 +234,7 @@ public class QuestPanelUI : MonoBehaviour
     {
         if (quest.penaltyType == QuestPenaltyType.SkillRemove)
         {
-            return "실패 시: 보유 스킬 1개 박탈 · 없으면 스탯 감소";
+            return "실패: 증강 스킬 중첩 -1";
         }
 
         int minPercent = Mathf.RoundToInt(quest.statReduceMin * 100f);
@@ -242,7 +246,9 @@ public class QuestPanelUI : MonoBehaviour
     {
         if (result.removedSkill != null)
         {
-            return string.Format("스킬 박탈: {0}", result.removedSkill.GetDisplayName());
+            return result.remainingSkillStacks > 0
+                ? $"{result.removedSkill.GetDisplayName()} 중첩 -1 (남은 중첩 {result.remainingSkillStacks})"
+                : $"증강 스킬 제거: {result.removedSkill.GetDisplayName()}";
         }
 
         if (result.reducedStat.HasValue)
