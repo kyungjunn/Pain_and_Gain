@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df63a843032d5c74580d60f822d69123, type: 3}
   m_Name: AttackSpeed_Data
   m_EditorClassIdentifier: Assembly-CSharp::StatAugmentSO
-  augmentName: 공격속도 증가
-  description: 초당 기본 공격 횟수가 0.2 증가하고 평타 애니메이션도 빨라집니다.
-  icon: {fileID: 0}
+  augmentName: "\uACF5\uACA9\uC18D\uB3C4 \uC99D\uAC00"
+  description: "\uCD08\uB2F9 \uAE30\uBCF8 \uACF5\uACA9 \uD69F\uC218\uAC00 0.2 \uC99D\uAC00\uD558\uACE0
+    \uD3C9\uD0C0 \uC560\uB2C8\uBA54\uC774\uC158\uB3C4 \uBE68\uB77C\uC9D1\uB2C8\uB2E4."
+  icon: {fileID: 21300000, guid: b4fa53e83550a4a42b92bef40f68f126, type: 3}
   rarity: 0
   weight: 50
   type: 3

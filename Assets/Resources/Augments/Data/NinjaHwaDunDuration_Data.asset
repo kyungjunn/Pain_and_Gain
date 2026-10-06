@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71d2c4f6a8b0493e9c1d5e7f2a6b8c04, type: 3}
   m_Name: NinjaHwaDunDuration_Data
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
-  augmentName: 화둔 지속 시간 증가
-  description: 화둔 지속 시간이 0.5초 늘어납니다. 피해 간격은 그대로입니다.
-  icon: {fileID: 0}
+  augmentName: "\uD654\uB454 \uC9C0\uC18D \uC2DC\uAC04 \uC99D\uAC00"
+  description: "\uD654\uB454 \uC9C0\uC18D \uC2DC\uAC04\uC774 0.5\uCD08 \uB298\uC5B4\uB0A9\uB2C8\uB2E4.
+    \uD53C\uD574 \uAC04\uACA9\uC740 \uADF8\uB300\uB85C\uC785\uB2C8\uB2E4."
+  icon: {fileID: 21300000, guid: b5dbf8a41d1874e548a1f842ec32701e, type: 3}
   rarity: 1
   weight: 30
   skillResourcePath: Augments/Skills/PlayerCombatAugment

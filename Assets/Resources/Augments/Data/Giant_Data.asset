@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillAugmentSO
   augmentName: Giant
   description: Player becomes 1.5x larger
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 380763ed918e64b969b7e7c1b41924cd, type: 3}
   rarity: 1
   weight: 30
   skillResourcePath: Augments/Skills/GiantSkill

@@ -16,8 +16,8 @@ MonoBehaviour:
   description: 'Increase Defense
 
 '
-  icon: {fileID: 1351438921, guid: 33efa4e685ca6a14189667ccfce49f13, type: 3}
-  type: 4
-  value: 20
+  icon: {fileID: 21300000, guid: aa35da81ddf194f1eba716719e3cbbaa, type: 3}
   rarity: 0
   weight: 50
+  type: 4
+  value: 20

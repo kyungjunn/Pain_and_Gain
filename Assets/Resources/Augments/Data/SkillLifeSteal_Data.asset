@@ -12,9 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d21b0a5b884f3244b9eedba57b89c77, type: 3}
   m_Name: SkillLifeSteal_Data
   m_EditorClassIdentifier: Assembly-CSharp::SkillAugmentSO
-  augmentName: 스킬 피해 흡혈
-  description: 스킬로 준 실제 피해의 3%만큼 체력을 회복합니다. 중첩마다 흡혈률이 2% 증가합니다.
-  icon: {fileID: 0}
+  augmentName: "\uC2A4\uD0AC \uD53C\uD574 \uD761\uD608"
+  description: "\uC2A4\uD0AC\uB85C \uC900 \uC2E4\uC81C \uD53C\uD574\uC758 3%\uB9CC\uD07C
+    \uCCB4\uB825\uC744 \uD68C\uBCF5\uD569\uB2C8\uB2E4. \uC911\uCCA9\uB9C8\uB2E4 \uD761\uD608\uB960\uC774
+    2% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  icon: {fileID: 21300000, guid: da9eff5dba9e34f62ad67a4c42ba15a1, type: 3}
   rarity: 1
   weight: 30
   skillResourcePath: Augments/Skills/SkillLifeStealSkill

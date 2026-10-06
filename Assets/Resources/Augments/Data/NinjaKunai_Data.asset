@@ -12,9 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71d2c4f6a8b0493e9c1d5e7f2a6b8c04, type: 3}
   m_Name: NinjaKunai_Data
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
-  augmentName: 쿠나이 추가
-  description: 기본 공격 쿠나이가 1개 늘어납니다. 서로 다른 쿠나이는 같은 적에게도 각각 피해를 줍니다.
-  icon: {fileID: 0}
+  augmentName: "\uCFE0\uB098\uC774 \uCD94\uAC00"
+  description: "\uAE30\uBCF8 \uACF5\uACA9 \uCFE0\uB098\uC774\uAC00 1\uAC1C \uB298\uC5B4\uB0A9\uB2C8\uB2E4.
+    \uC11C\uB85C \uB2E4\uB978 \uCFE0\uB098\uC774\uB294 \uAC19\uC740 \uC801\uC5D0\uAC8C\uB3C4
+    \uAC01\uAC01 \uD53C\uD574\uB97C \uC90D\uB2C8\uB2E4."
+  icon: {fileID: 21300000, guid: 518fe07e1899444f398321eeeb498429, type: 3}
   rarity: 1
   weight: 30
   skillResourcePath: Augments/Skills/PlayerCombatAugment
