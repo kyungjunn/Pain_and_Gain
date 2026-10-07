@@ -6,6 +6,7 @@ public sealed class AugmentInventoryUI : MonoBehaviour
 {
     [SerializeField] private RectTransform content;
     [SerializeField] private AugmentInventorySlotUI template;
+    [SerializeField, Min(0)] private int defaultSlotCount = 9;
     private readonly List<AugmentInventorySlotUI> slots = new List<AugmentInventorySlotUI>();
     private PlayerAugments playerAugments;
 
@@ -42,8 +43,8 @@ public sealed class AugmentInventoryUI : MonoBehaviour
         if (content == null || template == null) return;
         if (slots.Count == 0) slots.AddRange(content.GetComponentsInChildren<AugmentInventorySlotUI>(true));
         int count = playerAugments != null ? playerAugments.OwnedSkills.Count : 0;
-        // 기본 12칸 유지 · 초과 슬롯 재사용
-        int capacity = Mathf.Max(12, count);
+        // 기본 슬롯 유지 · 초과 슬롯 재사용
+        int capacity = Mathf.Max(defaultSlotCount, count);
         while (slots.Count < capacity)
             slots.Add(Instantiate(template, content));
         int index = 0;
@@ -58,16 +59,6 @@ public sealed class AugmentInventoryUI : MonoBehaviour
             slots[index].SetAugment(null);
             slots[index].gameObject.SetActive(index < capacity);
         }
-        ResizeGrid();
         LayoutRebuilder.MarkLayoutForRebuild(content);
-    }
-
-    private void OnRectTransformDimensionsChange() => ResizeGrid();
-
-    private void ResizeGrid()
-    {
-        if (content == null || !content.TryGetComponent<GridLayoutGroup>(out var grid)) return;
-        float width = (content.rect.width - grid.padding.horizontal - grid.spacing.x * 2) / 3;
-        if (width > 0) grid.cellSize = new Vector2(width, width + 38);
     }
 }
