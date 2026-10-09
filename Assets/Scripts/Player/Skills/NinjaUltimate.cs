@@ -35,9 +35,12 @@ public sealed class NinjaUltimate : MonoBehaviour
     private PlayerStateManager stateManager;
     private PlayerController playerController;
     private PlayerHealth playerHealth;
+    private PlayerAugments playerAugments;
 
     private readonly List<GameObject> trailEffects = new List<GameObject>();
     private GameObject handEffect;
+    private GameObject endpointBurstEffect;
+    private ParticleSystem[] endpointBurstParticles;
     private Coroutine dashAndStormRoutine;
     private bool readyActive;
     private bool isDashing;
@@ -64,6 +67,9 @@ public sealed class NinjaUltimate : MonoBehaviour
 
         if (readyActive && Time.time >= readyEndTime)
             ExpireReadyState();
+
+        if (endpointBurstEffect != null && !IsPaused() && !IsEndpointBurstPlaying())
+            ClearEndpointBurstEffect();
     }
 
     private void LateUpdate()
@@ -146,7 +152,7 @@ public sealed class NinjaUltimate : MonoBehaviour
         stateManager.ChangeState(PlayerState.Attack);
         animator.CrossFadeInFixedTime("UltimateDash", 0.05f, 1);
 
-        dashAndStormRoutine = StartCoroutine(DashAndStorm(direction, stormDamage));
+        dashAndStormRoutine = StartCoroutine(DashAndStorm(direction, buffedAttackDamage, stormDamage));
         return true;
     }
 
@@ -164,12 +170,13 @@ public sealed class NinjaUltimate : MonoBehaviour
         readyEndTime = 0f;
         stats?.RemoveTemporaryBonuses(this);
         DestroyEffect(ref handEffect);
+        ClearEndpointBurstEffect();
         FinishDashControl();
         ClearTrailEffects();
         ClearUltimateAnimationIfActive();
     }
 
-    private IEnumerator DashAndStorm(Vector3 direction, int stormDamage)
+    private IEnumerator DashAndStorm(Vector3 direction, float buffedAttackDamage, int stormDamage)
     {
         // 돌진 시작 지점, 제한된 거리/시간, 이펙트 간격 준비.
         Vector3 dashStart = transform.position;
@@ -193,14 +200,13 @@ public sealed class NinjaUltimate : MonoBehaviour
                 yield break;
 
             Vector3 dashEnd = transform.position;
+            ApplyEndpointBurst(dashEnd, buffedAttackDamage, hitThisTick);
             // 돌진 종료 위치 확정 후 조작 복원. 경로 전체에 폭풍 유지.
             FinishDashControl();
 
             float stormEndTime = Time.time + SafeAtLeast(stormDuration, MinimumDuration, 3f);
             float nextTickTime = Time.time;
             float tickInterval = SafeAtLeast(stormTickInterval, MinimumDuration, 0.5f);
-            float radius = SafeAtLeast(stormRadius, MinimumDistance, 2f);
-
             while (Time.time < stormEndTime)
             {
                 if (IsPlayerDead())
@@ -215,6 +221,12 @@ public sealed class NinjaUltimate : MonoBehaviour
                 if (Time.time >= nextTickTime)
                 {
                     // 틱마다 경로 안의 적을 새로 조회해 피해 적용.
+                    float radius = GetAugmentedStormRadius();
+                    foreach (GameObject effect in trailEffects)
+                    {
+                        if (effect != null)
+                            effect.transform.localScale = Vector3.one * (radius * 5f);
+                    }
                     ApplyStormDamage(dashStart, dashEnd, radius, stormDamage, hitThisTick);
                     nextTickTime = Time.time + tickInterval;
                 }
@@ -246,7 +258,8 @@ public sealed class NinjaUltimate : MonoBehaviour
                trailCount < MaximumTrailInstances)
         {
             Vector3 position = dashStart + direction * nextTrailDistance;
-            GameObject effect = SpawnEffect(position, transform.rotation, null, Vector3.one * 10f, false);
+            GameObject effect = SpawnEffect(position, transform.rotation, null,
+                Vector3.one * (GetAugmentedStormRadius() * 5f), false);
             if (effect != null)
                 trailEffects.Add(effect);
 
@@ -278,7 +291,81 @@ public sealed class NinjaUltimate : MonoBehaviour
         }
     }
 
-    private GameObject SpawnEffect(Vector3 position, Quaternion rotation, Transform parent, Vector3 scale, bool enableBloom)
+    private void ApplyEndpointBurst(
+        Vector3 endpoint,
+        float buffedAttackDamage,
+        HashSet<EnemyHealth> hitThisTick)
+    {
+        // Read at application so removing the augment during the dash cancels the pending burst.
+        float damageMultiplier = GetCombatAugmentValue(PlayerCombatAugmentEffect.UltimateEndBurst);
+        if (damageMultiplier <= 0f || IsPlayerDead())
+            return;
+
+        float radius = GetAugmentedStormRadius();
+        int damage = CalculateBurstDamage(buffedAttackDamage, damageMultiplier);
+        SpawnEndpointBurst(endpoint, radius);
+        ApplyEndpointBurstDamage(endpoint, radius, damage, hitThisTick);
+    }
+
+    private void ApplyEndpointBurstDamage(
+        Vector3 endpoint,
+        float radius,
+        int damage,
+        HashSet<EnemyHealth> hitThisTick)
+    {
+        if (damage <= 0 || damageDealer == null)
+            return;
+
+        hitThisTick.Clear();
+        Collider[] overlaps = Physics.OverlapSphere(
+            endpoint, radius, enemyLayers, QueryTriggerInteraction.Collide);
+
+        for (int i = 0; i < overlaps.Length; i++)
+        {
+            EnemyHealth enemy = overlaps[i].GetComponentInParent<EnemyHealth>();
+            if (enemy != null && !enemy.IsDead && hitThisTick.Add(enemy))
+                damageDealer.DealDamage(enemy, damage, PlayerDamageType.Skill);
+        }
+    }
+
+    private void SpawnEndpointBurst(Vector3 endpoint, float radius)
+    {
+        ClearEndpointBurstEffect();
+        float effectScale = SafeAtLeast(radius, MinimumDistance, 2f) * 5f;
+        endpointBurstEffect = SpawnEffect(
+            endpoint, transform.rotation, null, Vector3.one * effectScale, true, false);
+        endpointBurstParticles = endpointBurstEffect != null
+            ? endpointBurstEffect.GetComponentsInChildren<ParticleSystem>(true)
+            : null;
+    }
+
+    private bool IsEndpointBurstPlaying()
+    {
+        if (endpointBurstParticles == null)
+            return false;
+
+        for (int i = 0; i < endpointBurstParticles.Length; i++)
+        {
+            if (endpointBurstParticles[i] != null && endpointBurstParticles[i].IsAlive(true))
+                return true;
+        }
+
+        return false;
+    }
+
+    private void ClearEndpointBurstEffect()
+    {
+        DestroyEffect(ref endpointBurstEffect);
+        endpointBurstParticles = null;
+    }
+
+    private GameObject SpawnEffect(
+        Vector3 position,
+        Quaternion rotation,
+        Transform parent,
+        Vector3 scale,
+        bool enableBloom,
+        bool loopParticles = true)
     {
         // 이펙트 생성 후 부모/크기/블룸/파티클 상태 적용.
         if (lightningPrefab == null)
@@ -291,18 +378,18 @@ public sealed class NinjaUltimate : MonoBehaviour
         effect.transform.localScale = scale;
         foreach (var volume in effect.GetComponentsInChildren<UnityEngine.Rendering.Volume>(true))
             volume.enabled = enableBloom;
-        ConfigureParticles(effect);
+        ConfigureParticles(effect, loopParticles);
         return effect;
     }
 
-    private static void ConfigureParticles(GameObject effect)
+    private static void ConfigureParticles(GameObject effect, bool loopParticles)
     {
         ParticleSystem[] particles = effect.GetComponentsInChildren<ParticleSystem>(true);
         for (int i = 0; i < particles.Length; i++)
         {
             ParticleSystem particle = particles[i];
             ParticleSystem.MainModule main = particle.main;
-            main.loop = true;
+            main.loop = loopParticles;
             main.scalingMode = ParticleSystemScalingMode.Hierarchy;
             main.useUnscaledTime = false;
             particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -317,6 +404,30 @@ public sealed class NinjaUltimate : MonoBehaviour
             return 0;
 
         return Mathf.Max(1, Mathf.RoundToInt(buffedAttackDamage * multiplier));
+    }
+
+    private int CalculateBurstDamage(float buffedAttackDamage, float multiplier)
+    {
+        multiplier = SafeNonNegative(multiplier, 0f);
+        if (multiplier <= 0f)
+            return 0;
+
+        return Mathf.Max(1, Mathf.RoundToInt(buffedAttackDamage * multiplier));
+    }
+
+    private float GetAugmentedStormRadius()
+    {
+        // Sample live so removing the augment stops affecting pending storm ticks and burst radius.
+        float baseRadius = SafeAtLeast(stormRadius, MinimumDistance, 2f);
+        float rangeBonus = GetCombatAugmentValue(PlayerCombatAugmentEffect.UltimateStormRange);
+        return SafeAtLeast(baseRadius * (1f + rangeBonus), MinimumDistance, baseRadius);
+    }
+
+    private float GetCombatAugmentValue(PlayerCombatAugmentEffect effect)
+    {
+        return playerAugments != null
+            ? SafeNonNegative(playerAugments.GetCombatAugmentValue(effect, null), 0f)
+            : 0f;
     }
 
     private bool CanUseAbility()
@@ -344,6 +455,8 @@ public sealed class NinjaUltimate : MonoBehaviour
             playerController = GetComponent<PlayerController>();
         if (playerHealth == null)
             playerHealth = GetComponent<PlayerHealth>();
+        if (playerAugments == null)
+            playerAugments = GetComponent<PlayerAugments>();
         if (animator == null)
             animator = GetComponentInChildren<Animator>(true);
     }
