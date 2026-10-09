@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 71d2c4f6a8b0493e9c1d5e7f2a6b8c04, type: 3}
-  m_Name: NinjaHwaDunRange_Data
+  m_Name: NinjaDashCharges_Data
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
-  augmentName: 확산 화염
-  description: "화둔 범위 +15%. 최대 3중첩, 증가율 합산."
-  icon: {fileID: 21300000, guid: 81ee4c897051a4b34b417ed2748037e3, type: 3}
-  rarity: 1
-  weight: 30
+  augmentName: "연속 보법"
+  description: "돌진 최대 2회 충전. 추가 충전은 빈 상태로 시작하며 순차 회복됩니다. 중첩 불가."
+  icon: {fileID: 21300000, guid: c12b0cad0f0d308bc3a695bab5713e7e, type: 3}
+  rarity: 2
+  weight: 15
   skillResourcePath: Augments/Skills/PlayerCombatAugment
-  maxStacks: 3
+  maxStacks: 1
   requiredCharacter: 1
-  effect: 2
-  targetSkill: {fileID: 11400000, guid: c9e6a31d4f0b508c1e3d7f5a9b2c4e6d, type: 2}
-  value: 0.15
+  effect: 5
+  targetSkill: {fileID: 11400000, guid: b30b59a8640a5bb418508bda62429e1e, type: 2}
+  value: 1
   spreadDegrees: 0

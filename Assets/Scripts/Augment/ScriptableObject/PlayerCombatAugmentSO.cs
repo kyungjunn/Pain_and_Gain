@@ -5,7 +5,11 @@ public enum PlayerCombatAugmentEffect
     BasicProjectileCount,
     SkillDamage,
     SkillRange,
-    SkillDuration
+    SkillDuration,
+    DashMoveSpeed,
+    DashExtraCharge,
+    UltimateStormRange,
+    UltimateEndBurst
 }
 
 // 플레이어 전투 동작을 바꾸는 공용 증강 데이터.
@@ -41,7 +45,14 @@ public sealed class PlayerCombatAugmentSO : SkillAugmentSO
             return false;
         }
 
-        if (effect != PlayerCombatAugmentEffect.BasicProjectileCount && targetSkill == null)
+        bool ultimateEffect = effect == PlayerCombatAugmentEffect.UltimateStormRange ||
+                              effect == PlayerCombatAugmentEffect.UltimateEndBurst;
+        if (ultimateEffect && player.GetComponent<NinjaUltimate>() == null)
+        {
+            return false;
+        }
+
+        if (!ultimateEffect && effect != PlayerCombatAugmentEffect.BasicProjectileCount && targetSkill == null)
         {
             return false;
         }

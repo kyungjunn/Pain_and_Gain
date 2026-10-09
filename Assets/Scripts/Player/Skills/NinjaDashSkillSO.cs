@@ -15,17 +15,26 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
     public override bool Cast(PlayerSkillController owner, PlayerDamageType damageType)
     {
         // 피해 계산에 필요한 참조 확인 후 돌진 코루틴 시작.
-        if (owner == null || owner.DamageDealer == null || owner.Stats == null)
+        if (owner == null || owner.DamageDealer == null || owner.Stats == null || owner.IsPlayerDead)
             return false;
 
-        owner.StartCoroutine(Dash(owner, damageType));
+        PlayerAugments playerAugments = owner.GetComponent<PlayerAugments>();
+        float damageBonus = playerAugments != null
+            ? playerAugments.GetCombatAugmentValue(PlayerCombatAugmentEffect.SkillDamage, this)
+            : 0f;
+        float effectiveDamageMultiplier = damageMultiplier * Mathf.Max(0f, 1f + damageBonus);
+
+        owner.StartCoroutine(Dash(owner, damageType, effectiveDamageMultiplier));
         return true;
     }
 
-    private IEnumerator Dash(PlayerSkillController owner, PlayerDamageType damageType)
+    private IEnumerator Dash(
+        PlayerSkillController owner,
+        PlayerDamageType damageType,
+        float effectiveDamageMultiplier)
     {
         // 스킬 피해 확정, 이미 맞은 적 기록.
-        int damage = Mathf.Max(1, Mathf.RoundToInt(owner.Stats.AttackDamage * damageMultiplier));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(owner.Stats.AttackDamage * effectiveDamageMultiplier));
         var hitEnemies = new HashSet<EnemyHealth>();
         Vector3 direction = owner.transform.forward;
         direction.y = 0f;
@@ -35,26 +44,33 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
         float allowedDistance = GetTerrainLimitedDistance(owner, direction);
 
         // 돌진 중 일반 이동 잠금. 종료/중단 시 반드시 해제.
+        bool movementLockBeforeDash = owner.IsMovementLocked;
         owner.SetMovementLocked(true);
         try
         {
             yield return SkillDashMovement.Move(owner.transform, direction, allowedDistance, duration,
                 (start, end, traveled) =>
                 {
-                // 이번 프레임 이동 구간의 적 판정. 적마다 중복 피해 방지.
-                foreach (Collider hit in Physics.OverlapCapsule(start, end, hitRadius, enemyLayers,
-                             QueryTriggerInteraction.Collide))
-                {
-                    EnemyHealth enemy = hit.GetComponentInParent<EnemyHealth>();
-                    if (enemy != null && hitEnemies.Add(enemy))
-                        owner.DamageDealer.DealDamage(enemy, damage, damageType);
-                }
-                });
+                    // 이번 프레임 이동 구간의 적 판정. 적마다 중복 피해 방지.
+                    foreach (Collider hit in Physics.OverlapCapsule(start, end, hitRadius, enemyLayers,
+                                 QueryTriggerInteraction.Collide))
+                    {
+                        EnemyHealth enemy = hit.GetComponentInParent<EnemyHealth>();
+                        if (enemy != null && hitEnemies.Add(enemy))
+                            owner.DamageDealer.DealDamage(enemy, damage, damageType);
+                    }
+                },
+                () => GameManager.Instance != null && GameManager.Instance.IsPaused,
+                () => owner == null || !owner.isActiveAndEnabled || owner.IsPlayerDead);
+
+            // 중단·사망·비활성화가 아니면 허용된 거리만큼 이동한 돌진을 완료로 본다.
+            if (allowedDistance > 0f && owner != null && owner.isActiveAndEnabled && !owner.IsPlayerDead)
+                owner.NotifyDashCompleted(this);
         }
         finally
         {
             if (owner != null)
-                owner.SetMovementLocked(false);
+                owner.SetMovementLocked(owner.IsPlayerDead ? false : movementLockBeforeDash);
         }
     }
 

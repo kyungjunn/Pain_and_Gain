@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 71d2c4f6a8b0493e9c1d5e7f2a6b8c04, type: 3}
-  m_Name: NinjaHwaDunRange_Data
+  m_Name: NinjaEndBurst_Data
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
-  augmentName: 확산 화염
-  description: "화둔 범위 +15%. 최대 3중첩, 증가율 합산."
-  icon: {fileID: 21300000, guid: 81ee4c897051a4b34b417ed2748037e3, type: 3}
-  rarity: 1
-  weight: 30
+  augmentName: "낙뢰의 끝"
+  description: "궁극기 돌진 종료 지점에 공격력의 200% 범위 피해를 1회 줍니다. 최대 1회 중첩."
+  icon: {fileID: 21300000, guid: 3ca23b2e713cff16b7900d59842a1a36, type: 3}
+  rarity: 2
+  weight: 15
   skillResourcePath: Augments/Skills/PlayerCombatAugment
-  maxStacks: 3
+  maxStacks: 1
   requiredCharacter: 1
-  effect: 2
-  targetSkill: {fileID: 11400000, guid: c9e6a31d4f0b508c1e3d7f5a9b2c4e6d, type: 2}
-  value: 0.15
+  effect: 7
+  targetSkill: {fileID: 0}
+  value: 2
   spreadDegrees: 0

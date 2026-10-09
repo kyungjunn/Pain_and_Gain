@@ -85,10 +85,12 @@ public sealed class CombatHudUI : MonoBehaviour
         // 컨트롤러의 남은 시간/채널링 상태를 각 스킬 슬롯에 전달.
         skillQ.Refresh(skills != null ? skills.QRemaining : 0f,
             skills != null && skills.SkillQ != null ? skills.SkillQ.Cooldown : 0f,
-            skills != null && skills.QChanneling);
+            skills != null && skills.QChanneling, 1, 1);
         skillE.Refresh(skills != null ? skills.ERemaining : 0f,
             skills != null && skills.SkillE != null ? skills.SkillE.Cooldown : 0f,
-            skills != null && skills.EChanneling);
+            skills != null && skills.EChanneling,
+            skills != null ? skills.ECharges : 1,
+            skills != null ? skills.EMaxCharges : 1);
     }
 
     private void RefreshGauge(float value)
