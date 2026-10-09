@@ -44,6 +44,7 @@ public class PlayerLevelSystem : MonoBehaviour
 
     public float GetExpPercent()
     {
-        return (float)currentExp / requiredExp;
+        if (requiredExp <= 0) return 0f;
+        return Mathf.Clamp01((float)currentExp / requiredExp);
     }
 }
