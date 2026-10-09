@@ -17,13 +17,18 @@ public sealed class SkillSlotUI : MonoBehaviour
         progress.enabled = sprite != null;
     }
 
-    public void Refresh(float remaining, float duration, bool channeling)
+    public void Refresh(float remaining, float duration, bool channeling, int charges, int maxCharges)
     {
         bool cooling = remaining > 0f;
         bool ready = !cooling && !channeling;
         icon.color = ready ? Color.white : Dim;
         progress.fillAmount = channeling ? 0f : duration > 0f ? Mathf.Clamp01(1f - remaining / duration) : 1f;
-        cooldownText.gameObject.SetActive(cooling);
-        if (cooling) cooldownText.SetText("{0}", Mathf.CeilToInt(remaining));
+        cooldownText.gameObject.SetActive(cooling || maxCharges > 1);
+        if (cooling && maxCharges > 1)
+            cooldownText.SetText("{0}s\n{1}/{2}", Mathf.CeilToInt(remaining), charges, maxCharges);
+        else if (cooling)
+            cooldownText.SetText("{0}", Mathf.CeilToInt(remaining));
+        else if (maxCharges > 1)
+            cooldownText.SetText("{0}/{1}", charges, maxCharges);
     }
 }
