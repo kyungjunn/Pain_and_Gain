@@ -11,6 +11,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private GameObject lightningPrefab;
+    [SerializeField] private GameObject readyBodyAuraPrefab;
     [SerializeField] private Transform handAnchor;
     [SerializeField] private Animator animator;
 
@@ -39,6 +40,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private readonly List<GameObject> trailEffects = new List<GameObject>();
     private GameObject handEffect;
+    private GameObject readyBodyAuraEffect;
     private GameObject endpointBurstEffect;
     private ParticleSystem[] endpointBurstParticles;
     private Coroutine dashAndStormRoutine;
@@ -111,6 +113,17 @@ public sealed class NinjaUltimate : MonoBehaviour
         float moveBonus = stats.MoveSpeed * SafeNonNegative(moveBonusRatio, 0f);
 
         handEffect = effect;
+        readyBodyAuraEffect = Instantiate(readyBodyAuraPrefab, transform, false);
+        readyBodyAuraEffect.transform.localPosition = Vector3.up;
+        readyBodyAuraEffect.transform.localRotation = Quaternion.identity;
+        readyBodyAuraEffect.transform.localScale = Vector3.one * 0.75f;
+        foreach (ParticleSystem particle in readyBodyAuraEffect.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ParticleSystem.MainModule main = particle.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+        }
+        ConfigureParticles(readyBodyAuraEffect, true);
         // 준비 종료 시각, 버프, 상단 애니메이션 설정.
         readyEndTime = Time.time + SafeAtLeast(readyDuration, MinimumDuration, 5f);
         readyActive = true;
@@ -172,6 +185,7 @@ public sealed class NinjaUltimate : MonoBehaviour
         readyEndTime = 0f;
         stats?.RemoveTemporaryBonuses(this);
         DestroyEffect(ref handEffect);
+        DestroyEffect(ref readyBodyAuraEffect);
         ClearEndpointBurstEffect();
         FinishDashControl();
         ClearTrailEffects();
@@ -439,7 +453,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private bool HasRequiredReferences()
     {
-        return lightningPrefab != null && handAnchor != null && animator != null && animator.layerCount > 1 &&
+        return lightningPrefab != null && readyBodyAuraPrefab != null && handAnchor != null && animator != null && animator.layerCount > 1 &&
                stats != null && damageDealer != null && skillController != null && stateManager != null;
     }
 
@@ -481,6 +495,7 @@ public sealed class NinjaUltimate : MonoBehaviour
         readyEndTime = 0f;
         stats?.RemoveTemporaryBonuses(this);
         DestroyEffect(ref handEffect);
+        DestroyEffect(ref readyBodyAuraEffect);
         ClearUltimateAnimationIfActive();
     }
 
