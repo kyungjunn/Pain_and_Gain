@@ -11,6 +11,7 @@ public enum PlayerDamageType
 public class PlayerDamageDealer : MonoBehaviour
 {
     public event Action<int, PlayerDamageType> OnDamageDealt;
+    public event Action<EnemyHealth, Vector3, int, PlayerDamageType> OnTargetDamaged;
 
     public int DealDamage(EnemyHealth enemy, int damage, PlayerDamageType damageType,
         Vector3? attackSourcePosition = null)
@@ -21,6 +22,7 @@ public class PlayerDamageDealer : MonoBehaviour
         }
 
         int previousHealth = enemy.CurrentHealth;
+        Vector3 hitPosition = enemy.transform.position;
         IDirectionalDamageable directionalTarget = enemy.GetComponent<IDirectionalDamageable>();
 
         if (directionalTarget != null)
@@ -38,6 +40,7 @@ public class PlayerDamageDealer : MonoBehaviour
         if (actualDamage > 0)
         {
             OnDamageDealt?.Invoke(actualDamage, damageType);
+            OnTargetDamaged?.Invoke(enemy, hitPosition, actualDamage, damageType);
         }
 
         return actualDamage;

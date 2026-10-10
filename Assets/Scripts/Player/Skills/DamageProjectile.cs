@@ -1,4 +1,4 @@
-// Shared flight with either a single-target hit or a one-shot area explosion.
+// Shared flight with piercing direct hits or a one-shot area explosion.
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -16,10 +16,14 @@ public sealed class DamageProjectile : MonoBehaviour
     private bool initialized;
     private float explosionRadius;
     private ParticleSystem[] particles;
+    private int remainingPierces;
+    private readonly HashSet<EnemyHealth> directHits = new HashSet<EnemyHealth>();
+    private readonly SkillAreaQuery explosionQuery = new SkillAreaQuery();
 
     // 발사 설정
     public void Initialize(PlayerDamageDealer dealer, PlayerDamageType type, int value,
-        float speed, float distance, Vector3 direction, float blastRadius = 0f, float visualScale = 1f)
+        float speed, float distance, Vector3 direction, float blastRadius = 0f, float visualScale = 1f,
+        int additionalPierces = 0)
     {
         damageDealer = dealer;
         damageType = type;
@@ -29,10 +33,12 @@ public sealed class DamageProjectile : MonoBehaviour
         moveDirection = direction.normalized;
         spawnPosition = transform.position;
         explosionRadius = Mathf.Max(0f, blastRadius);
+        remainingPierces = Mathf.Max(0, additionalPierces);
+        directHits.Clear();
         // Scale the artwork, not the flight collider: a large R must not hit early.
         foreach (Transform child in transform)
             child.localScale *= Mathf.Max(0.1f, visualScale);
-        if (explosionRadius > 0f)
+        if (explosionRadius > 0f || !Mathf.Approximately(visualScale, 1f))
         {
             particles = GetComponentsInChildren<ParticleSystem>(true);
             foreach (ParticleSystem particle in particles)
@@ -73,8 +79,15 @@ public sealed class DamageProjectile : MonoBehaviour
             return;
 
         EnemyHealth enemy = other.GetComponentInParent<EnemyHealth>();
-        if (enemy == null)
+        if (enemy == null || enemy.IsDead || !directHits.Add(enemy))
             return;
+
+        if (explosionRadius <= 0f && remainingPierces > 0)
+        {
+            remainingPierces--;
+            damageDealer.DealDamage(enemy, damage, damageType, spawnPosition);
+            return;
+        }
 
         Finish(enemy);
     }
@@ -93,13 +106,8 @@ public sealed class DamageProjectile : MonoBehaviour
             return;
         }
 
-        var hitEnemies = new HashSet<EnemyHealth>();
-        ApplyExplosionDamage(directTarget, hitEnemies);
-        foreach (Collider hit in Physics.OverlapSphere(body.position, explosionRadius, ~0,
-                     QueryTriggerInteraction.Collide))
-        {
-            ApplyExplosionDamage(hit.GetComponentInParent<EnemyHealth>(), hitEnemies);
-        }
+        explosionQuery.DealDamage(damageDealer, body.position, explosionRadius, damage,
+            damageType, spawnPosition, directTarget);
 
         foreach (Collider hitbox in GetComponentsInChildren<Collider>())
             hitbox.enabled = false;
@@ -120,9 +128,4 @@ public sealed class DamageProjectile : MonoBehaviour
         Destroy(gameObject, 0.6f);
     }
 
-    private void ApplyExplosionDamage(EnemyHealth enemy, HashSet<EnemyHealth> hitEnemies)
-    {
-        if (damageDealer != null && enemy != null && !enemy.IsDead && hitEnemies.Add(enemy))
-            damageDealer.DealDamage(enemy, damage, damageType, spawnPosition);
-    }
 }
