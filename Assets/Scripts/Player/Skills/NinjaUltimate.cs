@@ -50,6 +50,8 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     public bool IsReady => readyActive && Time.time < readyEndTime && !IsPlayerDead();
     public bool IsDashing => isDashing && !IsPlayerDead();
+    public bool IsUltimateActive =>
+        isActiveAndEnabled && !IsPlayerDead() && (IsReady || isDashing || dashAndStormRoutine != null);
 
     private void Awake()
     {
