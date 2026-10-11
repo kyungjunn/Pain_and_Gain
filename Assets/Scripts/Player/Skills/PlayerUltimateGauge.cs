@@ -12,6 +12,8 @@ public sealed class PlayerUltimateGauge : MonoBehaviour
     [SerializeField, Min(0f)] private float gaugePerDamage = 1f;
 
     private PlayerDamageDealer damageDealer;
+    private NinjaUltimate ninjaUltimate;
+    private WizardCombat wizardCombat;
 
     public float Current => currentGauge;
     public float Normalized => currentGauge / maxGauge;
@@ -34,6 +36,15 @@ public sealed class PlayerUltimateGauge : MonoBehaviour
     // 충전
     public void Add(float amount)
     {
+        // Lazy lookup also supports runtime factories that add combat after the gauge.
+        if (ninjaUltimate == null)
+            ninjaUltimate = GetComponent<NinjaUltimate>();
+        if (wizardCombat == null)
+            wizardCombat = GetComponent<WizardCombat>();
+        if ((ninjaUltimate != null && ninjaUltimate.IsUltimateActive) ||
+            (wizardCombat != null && wizardCombat.IsUltimateActive))
+            return;
+
         currentGauge = Mathf.Clamp(currentGauge + Mathf.Max(0f, amount), 0f, maxGauge);
         Changed?.Invoke(Normalized);
     }

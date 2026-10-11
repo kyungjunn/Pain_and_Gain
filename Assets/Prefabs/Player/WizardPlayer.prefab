@@ -49,7 +49,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1481412354457338367, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: baseAttackSpeed
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3149081206460350233, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_Actions
@@ -158,7 +158,29 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3962547682914665106}
+    - targetCorrespondingSourceObject: {fileID: 8888413459189353256, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7354814693730518401}
   m_SourcePrefab: {fileID: 100100000, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+--- !u!114 &7354814693730518401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4938431607362285984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54bcf92fc25f44afb74c84ce2b32eb68, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WizardCombat
+  gravityCorePrefab: {fileID: 5607819269926399345, guid: 45e0f06c750176947862c10346226439, type: 3}
+  gravityVortexPrefab: {fileID: 6526302276393259002, guid: f9d9793366789ae48a7e1b0692763acc, type: 3}
+  starHitPrefab: {fileID: 4535006216103734310, guid: 98c4704d0fd7211449bcf5c451095a60, type: 3}
+  resonanceFieldPrefab: {fileID: 3377181292992421420, guid: 48c5715f9603c3842a353516a8baefbb, type: 3}
+  overdriveAuraPrefab: {fileID: 7053385775836331393, guid: 354b6251e950209409c75ab984acf000, type: 3}
+  overdriveWavePrefab: {fileID: 7647375919561907788, guid: 035ce8c9cfc34104991ce416daf8aebe, type: 3}
+  overdriveFinalPrefab: {fileID: 8378648546881499446, guid: 867c572a5be680d42a042d2349f10143, type: 3}
 --- !u!114 &3124971625832102775 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1481412354457338367, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}

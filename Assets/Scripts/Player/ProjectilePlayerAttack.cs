@@ -14,6 +14,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
 
     private PlayerDamageDealer damageDealer;
     private PlayerAugments playerAugments;
+    private WizardCombat wizardCombat;
     private float nextAttackTime;
 
     private float AttackDamage => stats != null ? stats.AttackDamage : 10f;
@@ -29,6 +30,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
 
         damageDealer = GetComponent<PlayerDamageDealer>();
         playerAugments = GetComponent<PlayerAugments>();
+        wizardCombat = GetComponent<WizardCombat>();
     }
 
     public bool TryAttack()
@@ -44,7 +46,13 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
             return false;
         }
 
-        int damage = Mathf.Max(1, Mathf.RoundToInt(AttackDamage * damageMultiplier));
+        if (wizardCombat == null)
+            wizardCombat = GetComponent<WizardCombat>();
+
+        float overdriveDamage = wizardCombat != null ? wizardCombat.BasicDamageMultiplier : 1f;
+        float visualScale = wizardCombat != null ? wizardCombat.BasicVisualScale : 1f;
+        int additionalPierces = wizardCombat != null ? wizardCombat.BasicAdditionalPierces : 0;
+        int damage = Mathf.Max(1, Mathf.RoundToInt(AttackDamage * damageMultiplier * overdriveDamage));
         // 증강값으로 추가 발사 수와 전체 산탄 각도 산출.
         int extraProjectileCount = 0;
         float spreadDegrees = 0f;
@@ -82,7 +90,9 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
                 damage,
                 speed,
                 maxDistance,
-                direction);
+                direction,
+                visualScale: visualScale,
+                additionalPierces: additionalPierces);
         }
 
         nextAttackTime = Time.time + AttackCooldown;

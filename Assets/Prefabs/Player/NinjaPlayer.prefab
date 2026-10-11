@@ -327,6 +327,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NinjaUltimate
   lightningPrefab: {fileID: 8196031114790387216, guid: 7d806f39181552b4bb334ca3426a09a8, type: 3}
+  readyBodyAuraPrefab: {fileID: 7131401307255788800, guid: 4d9a3b35b3bc07649b697df7fb497b6d, type: 3}
   handAnchor: {fileID: 983306558053714933}
   animator: {fileID: 8787825563741590316}
   readyDuration: 5

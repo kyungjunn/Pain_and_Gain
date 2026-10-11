@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(PlayerUltimateGauge))]
 public sealed class PlayerSkillController : MonoBehaviour
@@ -70,6 +71,8 @@ public sealed class PlayerSkillController : MonoBehaviour
     private PlayerStateManager stateManager;
     private PlayerHealth playerHealth;
     private PlayerAugments playerAugments;
+    private PlayerInputHandler playerInput;
+    private WizardCombat wizardCombat;
     // Q 재사용 가능 시각
     private float qReadyTime;
     // E 충전과 순차 재충전 상태.
@@ -89,12 +92,35 @@ public sealed class PlayerSkillController : MonoBehaviour
     private PlayerSkillSO deferredCooldownSkill;
     private Coroutine skillEWeaponRoutine;
     private NinjaUltimate ninjaUltimate;
+    private int resonancePreviewOpenedFrame = -1;
+    private int suppressBasicAttackThroughFrame = -1;
 
     public Transform SkillOrigin => skillOrigin;
     public PlayerStats Stats => stats;
     public PlayerDamageDealer DamageDealer => damageDealer;
     public bool IsMovementLocked => movementLocked;
     public bool IsUltimateDashing => ninjaUltimate != null && ninjaUltimate.IsDashing;
+    public bool IsWizardResonancePreviewActive
+    {
+        get
+        {
+            WizardCombat combat = GetWizardCombat();
+            return combat != null && combat.IsResonancePreviewActive;
+        }
+    }
+    public bool ShouldSuppressBasicAttack
+    {
+        get
+        {
+            if (IsWizardResonancePreviewActive)
+                return true;
+
+            if (playerInput == null)
+                playerInput = GetComponent<PlayerInputHandler>();
+            return Time.frameCount <= suppressBasicAttackThroughFrame &&
+                   playerInput != null && playerInput.AttackTriggered;
+        }
+    }
     public bool IsPlayerDead =>
         (stateManager != null && stateManager.CurrentState == PlayerState.Dead) ||
         (playerHealth != null && playerHealth.IsDead);
@@ -118,6 +144,8 @@ public sealed class PlayerSkillController : MonoBehaviour
         stateManager = GetComponent<PlayerStateManager>();
         playerHealth = GetComponent<PlayerHealth>();
         playerAugments = GetComponent<PlayerAugments>();
+        playerInput = GetComponent<PlayerInputHandler>();
+        wizardCombat = GetComponent<WizardCombat>();
         ninjaUltimate = GetComponent<NinjaUltimate>();
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
@@ -148,12 +176,18 @@ public sealed class PlayerSkillController : MonoBehaviour
         RefreshEChargeState();
         if (IsPlayerDead)
         {
+            CancelWizardResonancePreview();
             ClearDashMoveSpeedBonus();
             return;
         }
 
-        if (GameManager.Instance != null && GameManager.Instance.IsPaused)
+        if (Time.timeScale <= 0f || (GameManager.Instance != null && GameManager.Instance.IsPaused))
+        {
+            CancelWizardResonancePreview();
             return;
+        }
+
+        UpdateWizardResonancePreviewInput();
 
         if (dashMoveSpeedBonusActive && Time.time >= dashMoveSpeedBonusEndTime)
             ClearDashMoveSpeedBonus();
@@ -162,6 +196,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     private void OnDisable()
     {
         // 비활성화 시 궁극기 취소, E 무기 숨김, 지연 쿨타임 정리.
+        CancelWizardResonancePreview();
         if (stateManager != null)
             stateManager.OnDead -= HandlePlayerDeath;
         if (playerAugments != null)
@@ -186,14 +221,53 @@ public sealed class PlayerSkillController : MonoBehaviour
     public void OnSkillQ(InputValue value)
     {
         if (value.isPressed)
+        {
+            CancelWizardResonancePreview();
             TryCast(skillQ, false);
+        }
     }
 
     // E 입력
     public void OnSkillE(InputValue value)
     {
         if (value.isPressed)
+        {
+            if (IsWizardResonancePreviewActive && Mouse.current != null &&
+                Mouse.current.rightButton.wasPressedThisFrame)
+            {
+                CancelWizardResonancePreview();
+                return;
+            }
+
+            if (IsWizardResonancePreviewActive && !TryGetWizardResonanceSkill(out _))
+                CancelWizardResonancePreview();
+
+            if (TryGetWizardResonanceSkill(out _))
+            {
+                if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                {
+                    CancelWizardResonancePreview();
+                    return;
+                }
+
+                if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame)
+                {
+                    CancelWizardResonancePreview();
+                    return;
+                }
+
+                if (IsPointerOverUI())
+                    return;
+
+                if (IsWizardResonancePreviewActive)
+                    TryConfirmWizardResonancePreview();
+                else
+                    TryBeginWizardResonancePreview();
+                return;
+            }
+
             TryCast(skillE, true);
+        }
     }
 
     // R 입력. 게이지 풀일 때만 시전.
@@ -205,6 +279,7 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     public bool TryUseUltimate()
     {
+        CancelWizardResonancePreview();
         // 일시정지·사망·다른 스킬 시전 중이면 사용 차단.
         if (!CanCast() || IsSkillCasting())
             return false;
@@ -235,14 +310,80 @@ public sealed class PlayerSkillController : MonoBehaviour
         CompleteDeferredSkill(skill);
     }
 
+    public bool TryBeginWizardResonancePreview()
+    {
+        if (IsPointerOverUI())
+            return false;
+
+        if (!TryGetWizardResonanceSkill(out WizardSkillSO skill) ||
+            !CanCast() || IsSkillCasting() || ECharges <= 0 || IsWizardResonancePreviewActive)
+        {
+            return false;
+        }
+
+        WizardCombat combat = GetWizardCombat();
+        if (combat == null || !combat.TryBeginResonancePreview(skill))
+            return false;
+
+        resonancePreviewOpenedFrame = Time.frameCount;
+        SuppressBasicAttackForCurrentFrame();
+        return true;
+    }
+
+    public bool TryConfirmWizardResonancePreview()
+    {
+        if (!IsWizardResonancePreviewActive)
+            return false;
+
+        SuppressBasicAttackForCurrentFrame();
+        if (Time.frameCount <= resonancePreviewOpenedFrame || IsPointerOverUI())
+            return false;
+
+        if (!TryGetWizardResonanceSkill(out WizardSkillSO skill) ||
+            !CanCast() || IsSkillCasting() || ECharges <= 0)
+        {
+            return false;
+        }
+
+        WizardCombat combat = GetWizardCombat();
+        if (combat == null || !combat.TryPrepareResonancePreviewCast(skill))
+            return false;
+
+        bool cast = TryCast(skillE, true);
+        if (!cast)
+            combat.CancelPreparedResonancePreviewCast();
+        else
+            resonancePreviewOpenedFrame = -1;
+
+        return cast;
+    }
+
+    public void CancelWizardResonancePreview()
+    {
+        resonancePreviewOpenedFrame = -1;
+        GetWizardCombat()?.CancelResonancePreview();
+    }
+
+    public void SuppressBasicAttackForCurrentFrame()
+    {
+        int suppressThroughFrame = Time.frameCount;
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            suppressThroughFrame++;
+        suppressBasicAttackThroughFrame = Mathf.Max(suppressBasicAttackThroughFrame, suppressThroughFrame);
+        if (playerInput == null)
+            playerInput = GetComponent<PlayerInputHandler>();
+        if (playerInput != null)
+            playerInput.AttackTriggered = false;
+    }
+
     // 쿨다운 확인 후 시전
-    private void TryCast(PlayerSkillSO skill, bool isE)
+    private bool TryCast(PlayerSkillSO skill, bool isE)
     {
         // 시전 가능 상태, Q 쿨타임 또는 E 충전 수, 스킬 실행 결과 검사.
         if (!CanCast() || IsSkillCasting() || skill == null ||
             (isE ? ECharges <= 0 : Time.time < qReadyTime) ||
             !skill.Cast(this, PlayerDamageType.Skill))
-            return;
+            return false;
 
         PlayAnimation(skill);
         // E 무기는 애니메이션 종료 시까지 표시.
@@ -266,6 +407,8 @@ public sealed class PlayerSkillController : MonoBehaviour
         {
             qReadyTime = Time.time + skill.Cooldown;
         }
+
+        return true;
     }
 
     private IEnumerator HideSkillEWeaponAfterAnimation()
@@ -357,8 +500,65 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void HandlePlayerDeath()
     {
+        CancelWizardResonancePreview();
         ClearDashMoveSpeedBonus();
         movementLocked = false;
+    }
+
+    private void UpdateWizardResonancePreviewInput()
+    {
+        WizardCombat combat = GetWizardCombat();
+        if (combat == null || !combat.IsResonancePreviewActive)
+            return;
+
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+        {
+            CancelWizardResonancePreview();
+            return;
+        }
+
+        Mouse mouse = Mouse.current;
+        if (mouse == null)
+            return;
+
+        if (mouse.rightButton.wasPressedThisFrame)
+        {
+            CancelWizardResonancePreview();
+            return;
+        }
+
+        if (mouse.leftButton.wasPressedThisFrame && Time.frameCount > resonancePreviewOpenedFrame &&
+            !IsPointerOverUI())
+        {
+            TryConfirmWizardResonancePreview();
+        }
+    }
+
+    private bool TryGetWizardResonanceSkill(out WizardSkillSO skill)
+    {
+        skill = skillE as WizardSkillSO;
+        return skill != null && skill.Kind == WizardSkillKind.ResonanceField;
+    }
+
+    private WizardCombat GetWizardCombat()
+    {
+        if (wizardCombat == null)
+            wizardCombat = GetComponent<WizardCombat>();
+        return wizardCombat;
+    }
+
+    private static bool IsPointerOverUI()
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null)
+            return false;
+
+        if (eventSystem.IsPointerOverGameObject())
+            return true;
+
+        Mouse mouse = Mouse.current;
+        return mouse != null && eventSystem.IsPointerOverGameObject(mouse.deviceId);
     }
 
     private void ClearDashMoveSpeedBonus()
