@@ -58,6 +58,7 @@ public class PlayerController : MonoBehaviour
 
         if (stateManager.CurrentState == PlayerState.Dead)
         {
+            input.AttackTriggered = false;
             return;
         }
 
@@ -79,6 +80,9 @@ public class PlayerController : MonoBehaviour
             anim.SetFloat("MoveSpeed", moveSpeedParameter);
             anim.SetFloat("LegSpeed", isGrounded ? 1f : 0f);
         }
+
+        if (skillController != null && skillController.ShouldSuppressBasicAttack)
+            input.AttackTriggered = false;
 
         if (input.AttackTriggered)
         {

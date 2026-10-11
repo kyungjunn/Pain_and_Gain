@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 // Runtime ownership for the wizard's independently tunable Q/E/R effects.
 public sealed class WizardCombat : MonoBehaviour
@@ -21,6 +23,19 @@ public sealed class WizardCombat : MonoBehaviour
         public WizardSkillVisual Visual;
         public readonly SkillAreaQuery TickQuery = new SkillAreaQuery();
         public readonly SkillAreaQuery ResonanceQuery = new SkillAreaQuery();
+    }
+
+    private sealed class ResonancePreview
+    {
+        public WizardSkillSO Skill;
+        public bool HasGroundTarget;
+        public bool IsValid;
+        public Vector3 Center;
+        public Vector3 Normal;
+        public GameObject VisualRoot;
+        public Material LineMaterial;
+        public LineRenderer RangeRenderer;
+        public LineRenderer FieldRenderer;
     }
 
     private sealed class Overdrive
@@ -66,7 +81,13 @@ public sealed class WizardCombat : MonoBehaviour
     private PlayerHealth playerHealth;
     private PlayerStateManager stateManager;
     private ResonanceField resonanceField;
+    private ResonancePreview resonancePreview;
     private Overdrive overdrive;
+    private WizardSkillSO preparedPreviewCastSkill;
+    private Vector3 preparedPreviewCastPosition;
+    private Vector3 preparedPreviewCastNormal;
+    private int preparedPreviewCastFrame = -1;
+    private RaycastHit[] groundHitBuffer = new RaycastHit[16];
     private readonly HashSet<GameObject> activeVisuals = new HashSet<GameObject>();
     private readonly Dictionary<NavMeshAgent, PullControl> controlledAgents =
         new Dictionary<NavMeshAgent, PullControl>();
@@ -86,6 +107,20 @@ public sealed class WizardCombat : MonoBehaviour
 
     public int BasicAdditionalPierces =>
         IsOverdriveActive ? overdrive.BasicAdditionalPierces : 0;
+
+    public bool IsResonancePreviewActive => resonancePreview != null;
+    public bool ResonancePreviewHasGroundTarget =>
+        resonancePreview != null && resonancePreview.HasGroundTarget;
+    public bool ResonancePreviewIsValid => resonancePreview != null && resonancePreview.IsValid &&
+        owner != null && owner.ECharges > 0 && !IsOwnerDead() && !IsGamePaused;
+    public Vector3 ResonancePreviewPosition =>
+        resonancePreview != null && resonancePreview.HasGroundTarget ? resonancePreview.Center : default;
+    public Vector3 ResonancePreviewNormal =>
+        resonancePreview != null && resonancePreview.HasGroundTarget ? resonancePreview.Normal : Vector3.up;
+    public float ResonancePreviewRange =>
+        resonancePreview != null ? resonancePreview.Skill.ResonanceFieldRange : 0f;
+    public float ResonancePreviewRadius =>
+        resonancePreview != null ? resonancePreview.Skill.ResonanceFieldRadius : 0f;
 
     private void Awake()
     {
@@ -119,7 +154,14 @@ public sealed class WizardCombat : MonoBehaviour
             return;
         }
 
-        if (IsGamePaused || resonanceField == null)
+        if (IsGamePaused)
+        {
+            CancelResonancePreview();
+            return;
+        }
+
+        UpdateResonancePreview();
+        if (resonanceField == null)
             return;
 
         if (Time.time >= resonanceField.EndTime)
@@ -163,6 +205,76 @@ public sealed class WizardCombat : MonoBehaviour
         }
     }
 
+    public bool TryBeginResonancePreview(WizardSkillSO skill)
+    {
+        if (IsPointerOverUI() || !isActiveAndEnabled || !gameObject.activeInHierarchy || owner == null ||
+            skill == null || skill != owner.SkillE || skill.Kind != WizardSkillKind.ResonanceField ||
+            owner.ECharges <= 0 || IsOwnerDead() || IsGamePaused)
+        {
+            return false;
+        }
+
+        if (resonancePreview != null)
+            return resonancePreview.Skill == skill;
+
+        resonancePreview = new ResonancePreview
+        {
+            Skill = skill,
+            Normal = Vector3.up
+        };
+        if (!CreateResonancePreviewVisual(resonancePreview))
+        {
+            resonancePreview = null;
+            return false;
+        }
+
+        UpdateResonancePreview();
+        return true;
+    }
+
+    internal bool TryPrepareResonancePreviewCast(WizardSkillSO skill)
+    {
+        ClearPreparedResonancePreviewCast();
+        if (resonancePreview == null || resonancePreview.Skill != skill ||
+            owner == null || owner.ECharges <= 0 || IsOwnerDead() || IsGamePaused)
+        {
+            return false;
+        }
+
+        UpdateResonancePreview();
+        if (resonancePreview == null || !resonancePreview.IsValid)
+            return false;
+
+        preparedPreviewCastSkill = skill;
+        preparedPreviewCastPosition = resonancePreview.Center;
+        preparedPreviewCastNormal = resonancePreview.Normal;
+        preparedPreviewCastFrame = Time.frameCount;
+        return true;
+    }
+
+    internal void CancelPreparedResonancePreviewCast()
+    {
+        ClearPreparedResonancePreviewCast();
+    }
+
+    public void CancelResonancePreview()
+    {
+        if (resonancePreview == null)
+            return;
+
+        ResonancePreview preview = resonancePreview;
+        resonancePreview = null;
+        ClearPreparedResonancePreviewCast();
+        if (preview.VisualRoot != null)
+        {
+            preview.VisualRoot.SetActive(false);
+            Destroy(preview.VisualRoot);
+        }
+        if (preview.LineMaterial != null)
+            Destroy(preview.LineMaterial);
+        owner?.SuppressBasicAttackForCurrentFrame();
+    }
+
     private bool TryCastGravityCore(WizardSkillSO skill)
     {
         Transform origin = owner.SkillOrigin;
@@ -175,8 +287,20 @@ public sealed class WizardCombat : MonoBehaviour
 
     private bool TryCastResonanceField(WizardSkillSO skill)
     {
-        if (!TryFindGroundPosition(skill.ResonanceFieldRange, out Vector3 groundPosition, out Vector3 groundNormal))
-            return false;
+        Vector3 groundPosition;
+        Vector3 groundNormal;
+        if (preparedPreviewCastSkill == skill && preparedPreviewCastFrame == Time.frameCount)
+        {
+            groundPosition = preparedPreviewCastPosition;
+            groundNormal = preparedPreviewCastNormal;
+            ClearPreparedResonancePreviewCast();
+        }
+        else
+        {
+            ClearPreparedResonancePreviewCast();
+            if (!TryFindGroundPosition(skill.ResonanceFieldRange, out groundPosition, out groundNormal))
+                return false;
+        }
 
         if (resonanceField != null)
             RemoveResonanceField(resonanceField);
@@ -199,6 +323,7 @@ public sealed class WizardCombat : MonoBehaviour
             field.Visual.transform.rotation = Quaternion.FromToRotation(Vector3.up, groundNormal);
         }
         resonanceField = field;
+        CancelResonancePreview();
         return true;
     }
 
@@ -432,29 +557,45 @@ public sealed class WizardCombat : MonoBehaviour
 
     private bool TryFindGroundPosition(float range, out Vector3 groundPosition, out Vector3 groundNormal)
     {
+        return TryFindGroundCandidate(range, out groundPosition, out groundNormal, out bool withinRange) &&
+               withinRange;
+    }
+
+    private bool TryFindGroundCandidate(float range, out Vector3 groundPosition, out Vector3 groundNormal,
+        out bool withinRange)
+    {
         groundPosition = default;
         groundNormal = Vector3.up;
+        withinRange = false;
         Camera aimCamera = Camera.main;
         if (aimCamera == null || owner == null)
             return false;
 
         Ray aimRay = aimCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-        RaycastHit[] hits = Physics.RaycastAll(aimRay, aimCamera.farClipPlane, ~0,
-            QueryTriggerInteraction.Ignore);
+        int hitCount;
+        while (true)
+        {
+            hitCount = Physics.RaycastNonAlloc(aimRay, groundHitBuffer, aimCamera.farClipPlane, ~0,
+                QueryTriggerInteraction.Ignore);
+            if (hitCount < groundHitBuffer.Length)
+                break;
+
+            System.Array.Resize(ref groundHitBuffer, groundHitBuffer.Length * 2);
+        }
         bool hasNearest = false;
         RaycastHit nearest = default;
-        for (int i = 0; i < hits.Length; i++)
+        for (int i = 0; i < hitCount; i++)
         {
-            Collider hitCollider = hits[i].collider;
+            Collider hitCollider = groundHitBuffer[i].collider;
             if (hitCollider == null || IsOwnerCollider(hitCollider) ||
                 hitCollider.GetComponentInParent<EnemyHealth>() != null)
             {
                 continue;
             }
 
-            if (!hasNearest || hits[i].distance < nearest.distance)
+            if (!hasNearest || groundHitBuffer[i].distance < nearest.distance)
             {
-                nearest = hits[i];
+                nearest = groundHitBuffer[i];
                 hasNearest = true;
             }
         }
@@ -464,11 +605,9 @@ public sealed class WizardCombat : MonoBehaviour
 
         Vector3 flatOffset = nearest.point - owner.transform.position;
         flatOffset.y = 0f;
-        if (flatOffset.sqrMagnitude > range * range)
-            return false;
-
         groundPosition = nearest.point;
         groundNormal = nearest.normal.normalized;
+        withinRange = flatOffset.sqrMagnitude <= range * range;
         return true;
     }
 
@@ -772,6 +911,188 @@ public sealed class WizardCombat : MonoBehaviour
         return visual;
     }
 
+    private void UpdateResonancePreview()
+    {
+        ResonancePreview preview = resonancePreview;
+        if (preview == null)
+            return;
+
+        if (owner == null || preview.Skill == null || preview.Skill != owner.SkillE ||
+            preview.Skill.Kind != WizardSkillKind.ResonanceField || owner.ECharges <= 0 || IsOwnerDead())
+        {
+            CancelResonancePreview();
+            return;
+        }
+
+        preview.HasGroundTarget = TryFindGroundCandidate(preview.Skill.ResonanceFieldRange,
+            out Vector3 position, out Vector3 normal, out bool withinRange);
+        if (preview.HasGroundTarget)
+        {
+            preview.Center = position;
+            preview.Normal = normal;
+        }
+
+        preview.IsValid = preview.HasGroundTarget && withinRange && owner != null &&
+                          owner.ECharges > 0 && !IsOwnerDead() && !IsGamePaused;
+
+        if (preview.RangeRenderer == null)
+            return;
+
+        Color rangeColor = preview.IsValid
+            ? new Color(0.25f, 0.85f, 1f, 0.95f)
+            : new Color(1f, 0.12f, 0.12f, 0.95f);
+        Color fieldColor = preview.IsValid
+            ? new Color(0.72f, 0.38f, 1f, 0.95f)
+            : new Color(1f, 0.12f, 0.12f, 0.95f);
+        preview.RangeRenderer.startColor = rangeColor;
+        preview.RangeRenderer.endColor = rangeColor;
+        SetPreviewRing(preview.RangeRenderer, owner.transform.position, Vector3.up,
+            preview.Skill.ResonanceFieldRange, 0.04f, true);
+
+        preview.FieldRenderer.enabled = preview.HasGroundTarget;
+        preview.FieldRenderer.startColor = fieldColor;
+        preview.FieldRenderer.endColor = fieldColor;
+        if (preview.HasGroundTarget)
+        {
+            SetPreviewRing(preview.FieldRenderer, preview.Center, preview.Normal,
+                preview.Skill.ResonanceFieldRadius, 0.055f, false);
+        }
+    }
+
+    private bool CreateResonancePreviewVisual(ResonancePreview preview)
+    {
+        Material lineMaterial = null;
+        if (resonanceFieldPrefab != null)
+        {
+            foreach (Renderer renderer in resonanceFieldPrefab.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer.sharedMaterial != null)
+                {
+                    lineMaterial = renderer.sharedMaterial;
+                    break;
+                }
+            }
+        }
+
+        if (lineMaterial == null)
+            return false;
+
+        preview.LineMaterial = new Material(lineMaterial);
+        if (preview.LineMaterial.HasProperty("_BaseMap"))
+            preview.LineMaterial.SetTexture("_BaseMap", Texture2D.whiteTexture);
+        if (preview.LineMaterial.HasProperty("_MainTex"))
+            preview.LineMaterial.SetTexture("_MainTex", Texture2D.whiteTexture);
+        if (preview.LineMaterial.HasProperty("_BaseColor"))
+            preview.LineMaterial.SetColor("_BaseColor", Color.white);
+        if (preview.LineMaterial.HasProperty("_Color"))
+            preview.LineMaterial.SetColor("_Color", Color.white);
+
+        preview.VisualRoot = new GameObject("WizardResonancePreview");
+        preview.VisualRoot.transform.SetParent(transform, false);
+        preview.RangeRenderer = CreatePreviewLine(preview.VisualRoot.transform,
+            "WizardResonancePreviewRange", preview.LineMaterial, 0.055f);
+        preview.FieldRenderer = CreatePreviewLine(preview.VisualRoot.transform,
+            "WizardResonancePreviewField", preview.LineMaterial, 0.075f);
+        if (preview.RangeRenderer != null && preview.FieldRenderer != null)
+            return true;
+
+        preview.VisualRoot.SetActive(false);
+        Destroy(preview.VisualRoot);
+        Destroy(preview.LineMaterial);
+        preview.VisualRoot = null;
+        preview.LineMaterial = null;
+        preview.RangeRenderer = null;
+        preview.FieldRenderer = null;
+        return false;
+    }
+
+    private static LineRenderer CreatePreviewLine(Transform parent, string objectName, Material material,
+        float width)
+    {
+        GameObject lineObject = new GameObject(objectName);
+        lineObject.transform.SetParent(parent, false);
+        LineRenderer line = lineObject.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.loop = true;
+        line.positionCount = 64;
+        line.startWidth = width;
+        line.endWidth = width;
+        line.sharedMaterial = material;
+        line.alignment = LineAlignment.View;
+        line.textureMode = LineTextureMode.Tile;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        return line;
+    }
+
+    private void SetPreviewRing(LineRenderer line, Vector3 center, Vector3 normal,
+        float radius, float surfaceOffset, bool projectToGround)
+    {
+        normal.Normalize();
+        Vector3 tangent = Vector3.Cross(normal, Vector3.right);
+        if (tangent.sqrMagnitude < 0.001f)
+            tangent = Vector3.Cross(normal, Vector3.forward);
+        tangent.Normalize();
+        Vector3 bitangent = Vector3.Cross(normal, tangent).normalized;
+        Vector3 ringCenter = center + normal * surfaceOffset;
+        for (int i = 0; i < line.positionCount; i++)
+        {
+            float angle = Mathf.PI * 2f * i / line.positionCount;
+            Vector3 offset = tangent * Mathf.Cos(angle) + bitangent * Mathf.Sin(angle);
+            Vector3 point = ringCenter + offset * radius;
+            if (projectToGround)
+                point = ProjectPreviewPointToGround(point, surfaceOffset);
+            line.SetPosition(i, point);
+        }
+    }
+
+    private Vector3 ProjectPreviewPointToGround(Vector3 point, float surfaceOffset)
+    {
+        const float ProbeHeight = 2f;
+        const float ProbeDistance = 20f;
+        Ray ray = new Ray(new Vector3(point.x, Mathf.Max(point.y, owner.transform.position.y) + ProbeHeight,
+            point.z), Vector3.down);
+        int hitCount;
+        while (true)
+        {
+            hitCount = Physics.RaycastNonAlloc(ray, groundHitBuffer, ProbeDistance, ~0,
+                QueryTriggerInteraction.Ignore);
+            if (hitCount < groundHitBuffer.Length)
+                break;
+
+            System.Array.Resize(ref groundHitBuffer, groundHitBuffer.Length * 2);
+        }
+
+        float nearestDistance = float.PositiveInfinity;
+        RaycastHit nearest = default;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = groundHitBuffer[i];
+            if (hit.collider == null || IsOwnerCollider(hit.collider) ||
+                hit.collider.GetComponentInParent<EnemyHealth>() != null ||
+                hit.normal.y < Mathf.Cos(50f * Mathf.Deg2Rad) || hit.distance >= nearestDistance)
+            {
+                continue;
+            }
+
+            nearest = hit;
+            nearestDistance = hit.distance;
+        }
+
+        if (nearestDistance == float.PositiveInfinity)
+            return point;
+
+        return new Vector3(point.x, nearest.point.y + surfaceOffset, point.z);
+    }
+
+    private void ClearPreparedResonancePreviewCast()
+    {
+        preparedPreviewCastSkill = null;
+        preparedPreviewCastPosition = default;
+        preparedPreviewCastNormal = default;
+        preparedPreviewCastFrame = -1;
+    }
+
     private void DestroyVisual(WizardSkillVisual visual)
     {
         if (visual == null)
@@ -784,6 +1105,7 @@ public sealed class WizardCombat : MonoBehaviour
 
     private void CancelAllEffects()
     {
+        CancelResonancePreview();
         if (overdrive != null)
             overdrive.Cancelled = true;
         StopAllCoroutines();
@@ -823,6 +1145,19 @@ public sealed class WizardCombat : MonoBehaviour
 
         Transform colliderTransform = other.transform;
         return colliderTransform == owner.transform || colliderTransform.IsChildOf(owner.transform);
+    }
+
+    private static bool IsPointerOverUI()
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null)
+            return false;
+
+        if (eventSystem.IsPointerOverGameObject())
+            return true;
+
+        Mouse mouse = Mouse.current;
+        return mouse != null && eventSystem.IsPointerOverGameObject(mouse.deviceId);
     }
 
     private int CalculateDamage(float multiplier)
