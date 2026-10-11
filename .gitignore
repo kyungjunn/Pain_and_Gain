@@ -107,3 +107,7 @@ Assets/_Recovery/
 # Local Unity editor automation
 /Assets/Editor/
 /Assets/Editor.meta
+
+# macOS folder metadata
+.DS_Store
+**/.DS_Store
