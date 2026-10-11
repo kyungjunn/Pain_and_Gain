@@ -17,8 +17,8 @@ MonoBehaviour:
 
 
 '
-  icon: {fileID: 0}
-  type: 0
-  value: 1000
+  icon: {fileID: 21300000, guid: 8e12f45cbc6cc42898801313c2dd416d, type: 3}
   rarity: 3
   weight: 10
+  type: 0
+  value: 1000

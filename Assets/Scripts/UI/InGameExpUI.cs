@@ -15,10 +15,16 @@ public class InGameExpUI : MonoBehaviour
     private PlayerLevelSystem playerLevelSystem;
     private float targetProgress = 0f;
     private int displayedLevel = 1;
+    private void Awake()
+    {
+        ConfigureSlider();
+    }
 
     private void OnEnable()
     {
         SpawnManager.OnPlayerSpawned += BindLevelSystem;
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null) BindLevelSystem(player);
     }
 
     private void OnDisable()
@@ -32,6 +38,7 @@ public class InGameExpUI : MonoBehaviour
     {
         if (player == null) return;
 
+        UnbindLevelSystem();
         playerLevelSystem = player.GetComponent<PlayerLevelSystem>();
         if (playerLevelSystem != null)
         {
@@ -54,17 +61,27 @@ public class InGameExpUI : MonoBehaviour
             playerLevelSystem.onExpChanged -= RefreshExpUI;
             playerLevelSystem.onLevelUp -= HandleLevelUp;
         }
+        playerLevelSystem = null;
     }
 
     private void Update()
     {
         if (playerLevelSystem == null || expSlider == null) return;
 
-        // Mathf.MoveTowards를 사용해 부드럽게 목표치로 게이지 이동
         expSlider.value = Mathf.MoveTowards(expSlider.value, targetProgress, fillSpeed * Time.deltaTime);
+    }
 
-        // 연속 레벨업이나 연출 중 레벨 숫자가 먼저 튀는 걸 방지하기 위해 
-        // 게이지가 꽉 차서 초기화되는 타이밍과 디스플레이 레벨을 동기화해 주면 비주얼이 자연스러워짐
+    private void ConfigureSlider()
+    {
+        if (expSlider == null) return;
+
+        expSlider.minValue = 0f;
+        expSlider.maxValue = 1f;
+        expSlider.wholeNumbers = false;
+        expSlider.interactable = false;
+
+        if (expSlider.fillRect != null && expSlider.fillRect.TryGetComponent(out Image fillImage))
+            fillImage.type = Image.Type.Simple;
     }
 
     // 경험치 변경 시 호출 (단순 수치 증가)
@@ -97,14 +114,14 @@ public class InGameExpUI : MonoBehaviour
         // 레벨 텍스트 갱신 
         if (levelText != null)
         {
-            levelText.text = $"Level : {displayedLevel}";
+            levelText.text = $"LV. {displayedLevel}";
         }
 
         // 경험치 디테일 텍스트 갱신
         if (expValueText != null)
         {
             float percent = playerLevelSystem.GetExpPercent() * 100f;
-            expValueText.text = $"EXP : {percent:F0}% ({playerLevelSystem.currentExp} / {playerLevelSystem.requiredExp})";
+            expValueText.text = $"EXP {percent:F0}%";
         }
     }
 }

@@ -14,6 +14,8 @@ public class PlayerHealth : LivingEntity
     public Action onHealthChanged;
 
     private PlayerStateManager stateManager;
+    private Animator animator;
+    private Rigidbody rb;
 
     private void Awake()
     {
@@ -23,6 +25,14 @@ public class PlayerHealth : LivingEntity
         }
 
         stateManager = GetComponent<PlayerStateManager>();
+        if (stateManager == null)
+        {
+            // 같은 오브젝트에 없으면 씬 전체에서 찾음
+            stateManager = FindFirstObjectByType<PlayerStateManager>();
+        }
+
+        animator = GetComponentInChildren<Animator>();
+        rb = GetComponent<Rigidbody>();
 
         CurrentHealth = MaxHealth;
     }
@@ -85,9 +95,30 @@ public class PlayerHealth : LivingEntity
 
     private void Die()
     {
+        if (IsDead)
+        {
+            return;
+        }
+
         IsDead = true;
 
+        Debug.Log($"[Health] Die 호출, stateManager 있음: {stateManager != null}");
         stateManager?.ChangeState(PlayerState.Dead);
+
+        if (rb != null)
+        {
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+        }
+
+        if (animator != null)
+        {
+            if (animator.layerCount > 1)
+            {
+                animator.SetLayerWeight(1, 0f);
+            }
+
+            animator.SetTrigger("Die");
+        }
 
         if (!disableControlsOnDeath)
         {

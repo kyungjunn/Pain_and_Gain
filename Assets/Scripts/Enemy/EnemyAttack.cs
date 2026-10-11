@@ -17,17 +17,24 @@ public class EnemyAttack : MonoBehaviour
     private float nextAttackTime;
     private bool pendingDamageApplied;
 
-    public float AttackRange => stats != null ? stats.AttackRange : attackRange;
-    private int AttackDamage => stats != null ? stats.AttackDamage : attackDamage;
-    private float AttackCooldown => stats != null ? stats.AttackCooldown : attackCooldown;
+    public virtual float AttackRange => stats != null ? stats.AttackRange : attackRange;
+    public bool IsAttackCycleActive => Time.time < nextAttackTime;
+    public virtual bool LockFacingDuringAttack => false;
+    public virtual bool ShouldFaceTarget => true;
+    protected EnemyStats Stats => stats;
+    protected EnemyAnimator EnemyAnimator => enemyAnimator;
+    protected bool IsAttackReady => Time.time >= nextAttackTime;
+    protected virtual int CurrentAttackDamage => stats != null ? stats.AttackDamage : attackDamage;
+    protected virtual float CurrentAttackCooldown => stats != null ? stats.AttackCooldown : attackCooldown;
+    protected virtual float CurrentFallbackHitDelay => fallbackHitDelay;
 
-    private void Awake()
+    protected virtual void Awake()
     {
         enemyAnimator = GetComponent<EnemyAnimator>();
     }
 
     // 공격 가능 상태일 때 공격 애니메이션을 재생하고 피해 적용을 예약
-    public bool TryAttack(Transform target)
+    public virtual bool TryAttack(Transform target)
     {
         if (target == null || Time.time < nextAttackTime)
         {
@@ -39,7 +46,8 @@ public class EnemyAttack : MonoBehaviour
             return false;
         }
 
-        nextAttackTime = Time.time + AttackCooldown;
+        PrepareAttack(target);
+        nextAttackTime = Time.time + CurrentAttackCooldown;
         pendingTarget = target;
         pendingDamageApplied = false;
 
@@ -48,7 +56,7 @@ public class EnemyAttack : MonoBehaviour
             StopCoroutine(fallbackHitRoutine);
         }
 
-        enemyAnimator?.PlayAttack();
+        PlayAttackAnimation();
 
         if (useFallbackHitDelay)
         {
@@ -73,7 +81,7 @@ public class EnemyAttack : MonoBehaviour
     // 애니메이션 이벤트가 없는 경우에도 일정 시간 뒤 피해가 들어가도록 하는 보조 처리
     private IEnumerator ApplyDamageAfterFallbackDelay(Transform expectedTarget)
     {
-        yield return new WaitForSeconds(fallbackHitDelay);
+        yield return new WaitForSeconds(CurrentFallbackHitDelay);
 
         if (pendingTarget == expectedTarget)
         {
@@ -96,15 +104,13 @@ public class EnemyAttack : MonoBehaviour
             return;
         }
 
-        if (!IsTargetInRange(pendingTarget))
+        if (!IsTargetInRangeForDamage(pendingTarget))
         {
             ClearPendingAttack();
             return;
         }
 
-        // 플레이어 루트 또는 자식 오브젝트에 붙은 IDamageable을 찾아 피해 적용
-        IDamageable damageable = FindDamageable(pendingTarget);
-        damageable?.TakeDamage(AttackDamage);
+        DealDamage(pendingTarget);
 
         ClearPendingAttack();
     }
@@ -115,13 +121,36 @@ public class EnemyAttack : MonoBehaviour
         pendingTarget = null;
     }
 
-    private bool IsTargetInRange(Transform target)
+    // 보스처럼 공격 종류를 선택해야 하는 파생 클래스에서 공격 직전 상태를 준비
+    protected virtual void PrepareAttack(Transform target)
+    {
+    }
+
+    protected virtual void PlayAttackAnimation()
+    {
+        enemyAnimator?.PlayAttack();
+    }
+
+    // 플레이어 루트 또는 자식 오브젝트에 붙은 IDamageable을 찾아 피해 적용
+    protected virtual void DealDamage(Transform target)
+    {
+        IDamageable damageable = FindDamageable(target);
+        damageable?.TakeDamage(CurrentAttackDamage);
+    }
+
+    protected bool IsTargetInRange(Transform target)
     {
         float currentAttackRange = AttackRange;
         return (target.position - transform.position).sqrMagnitude <= currentAttackRange * currentAttackRange;
     }
 
-    private IDamageable FindDamageable(Transform target)
+    // 범위 공격처럼 시작 거리와 실제 판정 거리가 다른 적이 타격 검사를 확장할 수 있음
+    protected virtual bool IsTargetInRangeForDamage(Transform target)
+    {
+        return IsTargetInRange(target);
+    }
+
+    protected IDamageable FindDamageable(Transform target)
     {
         IDamageable damageable = target.GetComponentInParent<IDamageable>();
 
@@ -133,7 +162,7 @@ public class EnemyAttack : MonoBehaviour
         return target.GetComponentInChildren<IDamageable>();
     }
 
-    private void OnValidate()
+    protected virtual void OnValidate()
     {
         attackDamage = Mathf.Max(1, attackDamage);
         attackRange = Mathf.Max(0.1f, attackRange);

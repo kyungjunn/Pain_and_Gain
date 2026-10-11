@@ -75,6 +75,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         deathHandled = true;
         IsDead = true;
+        RunStats.AddKill();   // ← 추가: 엔딩 화면의 Monster Kills 집계
         AwardExpOnce();
         OnEnemyKilled?.Invoke(this);
         enemyAnimator?.PlayDeath();

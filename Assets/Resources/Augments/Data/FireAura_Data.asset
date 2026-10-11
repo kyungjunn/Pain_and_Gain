@@ -17,7 +17,7 @@ MonoBehaviour:
     \uC8FC\uC704\uB97C \uB3CC\uBA70 \uB2FF\uB294 \uC801\uC5D0\uAC8C \uD53C\uD574\uB97C
     \uC90D\uB2C8\uB2E4. \uC911\uCCA9\uD560 \uB54C\uB9C8\uB2E4 \uAD6C\uCCB4\uAC00
     1\uAC1C \uC99D\uAC00\uD569\uB2C8\uB2E4."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 2f1794c98e95e4587b3adabeea223ffd, type: 3}
   rarity: 0
   weight: 50
   skillResourcePath: Augments/Skills/FireAuraSkill

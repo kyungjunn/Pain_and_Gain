@@ -59,13 +59,22 @@ public class PlayerMovement : MonoBehaviour
         transform.Translate(move * MoveSpeed * Time.deltaTime, Space.World);
     }
 
-    public void Jump()
+    public bool Jump()
     {
         if (CheckGrounded()) 
         {
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            return true;
         }
+
+        return false;
+    }
+
+    private void OnValidate()
+    {
+        moveSpeed = Mathf.Max(0f, moveSpeed);
+        jumpForce = Mathf.Max(0f, jumpForce);
     }
 }
     

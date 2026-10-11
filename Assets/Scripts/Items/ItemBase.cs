@@ -12,6 +12,17 @@ public abstract class ItemBase : MonoBehaviour, IInteractable
         ApplyEffect(null);
     }
 
+    public void ApplyTo(GameObject player)
+    {
+        ApplyEffect(player);
+    }
+
+    public void ApplyTo(GameObject player, ItemData data)
+    {
+        itemData = data;
+        ApplyEffect(player);
+    }
+
     public virtual string GetInteractText()
     {
         return $"{itemData.ItemName} 획득";

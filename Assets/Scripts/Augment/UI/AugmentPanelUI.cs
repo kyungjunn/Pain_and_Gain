@@ -21,6 +21,7 @@ public class AugmentPanelUI : MonoBehaviour
     [SerializeField] private float selectionDelay = 0.35f;
     // 상태 안내
     [SerializeField] private TextMeshProUGUI statusText;
+    [SerializeField] private TMP_FontAsset statusFont;
     // 선택 건너뛰기
     [SerializeField] private Button skipButton;
 
@@ -343,6 +344,16 @@ public class AugmentPanelUI : MonoBehaviour
                 labelRect.anchorMax = Vector2.one;
                 labelRect.offsetMin = Vector2.zero;
                 labelRect.offsetMax = Vector2.zero;
+            }
+        }
+
+        if (statusFont != null)
+        {
+            statusText.font = statusFont;
+            TextMeshProUGUI skipLabel = skipButton.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (skipLabel != null)
+            {
+                skipLabel.font = statusFont;
             }
         }
 

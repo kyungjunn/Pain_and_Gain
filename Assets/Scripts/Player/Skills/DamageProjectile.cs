@@ -1,4 +1,5 @@
-// 직선 이동 후 적 충돌 시 피해.
+// Shared flight with piercing direct hits or a one-shot area explosion.
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
@@ -13,10 +14,16 @@ public sealed class DamageProjectile : MonoBehaviour
     private Vector3 moveDirection;
     private Rigidbody body;
     private bool initialized;
+    private float explosionRadius;
+    private ParticleSystem[] particles;
+    private int remainingPierces;
+    private readonly HashSet<EnemyHealth> directHits = new HashSet<EnemyHealth>();
+    private readonly SkillAreaQuery explosionQuery = new SkillAreaQuery();
 
     // 발사 설정
     public void Initialize(PlayerDamageDealer dealer, PlayerDamageType type, int value,
-        float speed, float distance, Vector3 direction)
+        float speed, float distance, Vector3 direction, float blastRadius = 0f, float visualScale = 1f,
+        int additionalPierces = 0)
     {
         damageDealer = dealer;
         damageType = type;
@@ -25,6 +32,21 @@ public sealed class DamageProjectile : MonoBehaviour
         moveSpeed = Mathf.Max(0f, speed);
         moveDirection = direction.normalized;
         spawnPosition = transform.position;
+        explosionRadius = Mathf.Max(0f, blastRadius);
+        remainingPierces = Mathf.Max(0, additionalPierces);
+        directHits.Clear();
+        // Scale the artwork, not the flight collider: a large R must not hit early.
+        foreach (Transform child in transform)
+            child.localScale *= Mathf.Max(0.1f, visualScale);
+        if (explosionRadius > 0f || !Mathf.Approximately(visualScale, 1f))
+        {
+            particles = GetComponentsInChildren<ParticleSystem>(true);
+            foreach (ParticleSystem particle in particles)
+            {
+                var main = particle.main;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            }
+        }
         initialized = true;
 
         body = GetComponent<Rigidbody>();
@@ -39,10 +61,15 @@ public sealed class DamageProjectile : MonoBehaviour
         if (!initialized)
             return;
 
-        body.MovePosition(body.position + moveDirection * moveSpeed * Time.fixedDeltaTime);
+        float remaining = maxDistance - Vector3.Distance(body.position, spawnPosition);
+        if (remaining <= 0.001f)
+        {
+            Finish(null);
+            return;
+        }
 
-        if ((body.position - spawnPosition).sqrMagnitude >= maxDistance * maxDistance)
-            Destroy(gameObject);
+        float step = Mathf.Min(moveSpeed * Time.fixedDeltaTime, remaining);
+        body.MovePosition(body.position + moveDirection * step);
     }
 
     // 적 적중
@@ -52,11 +79,53 @@ public sealed class DamageProjectile : MonoBehaviour
             return;
 
         EnemyHealth enemy = other.GetComponentInParent<EnemyHealth>();
-        if (enemy == null)
+        if (enemy == null || enemy.IsDead || !directHits.Add(enemy))
+            return;
+
+        if (explosionRadius <= 0f && remainingPierces > 0)
+        {
+            remainingPierces--;
+            damageDealer.DealDamage(enemy, damage, damageType, spawnPosition);
+            return;
+        }
+
+        Finish(enemy);
+    }
+
+    private void Finish(EnemyHealth directTarget)
+    {
+        if (!initialized)
             return;
 
         initialized = false;
-        damageDealer.DealDamage(enemy, damage, damageType);
-        Destroy(gameObject);
+        if (explosionRadius <= 0f)
+        {
+            if (directTarget != null && damageDealer != null)
+                damageDealer.DealDamage(directTarget, damage, damageType, spawnPosition);
+            Destroy(gameObject);
+            return;
+        }
+
+        explosionQuery.DealDamage(damageDealer, body.position, explosionRadius, damage,
+            damageType, spawnPosition, directTarget);
+
+        foreach (Collider hitbox in GetComponentsInChildren<Collider>())
+            hitbox.enabled = false;
+
+        // Reuse the projectile's green particles as a short, stationary burst.
+        foreach (ParticleSystem particle in particles)
+        {
+            particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = particle.main;
+            main.loop = false;
+            main.startLifetime = 0.4f;
+            main.startSpeed = 3f;
+            var emission = particle.emission;
+            emission.enabled = false;
+            particle.Play(false);
+            particle.Emit(24);
+        }
+        Destroy(gameObject, 0.6f);
     }
+
 }

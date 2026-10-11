@@ -7,6 +7,14 @@ public enum ItemType
     Consumable
 }
 
+public enum ItemRarity 
+{
+    Common,
+    Rare,
+    Epic,
+    Legendary
+}
+
 [CreateAssetMenu(fileName = "New Item Data", menuName = "Game/Item Data")]
 public class ItemData : ScriptableObject
 {
@@ -14,18 +22,18 @@ public class ItemData : ScriptableObject
     [SerializeField] private string itemName;
     [SerializeField] private string itemDescription;
     [SerializeField] private ItemType itemType;
-    [SerializeField] private string rarity;
+    [SerializeField] private ItemRarity rarity;
     [SerializeField] private Sprite itemIcon;
     [SerializeField] private GameObject itemPrefab;
 
     [Header("Stats")]
     [SerializeField] private float bonusAttackDamage;
-    [SerializeField] private float hpRecoveryAmount;
+    [SerializeField] private int hpRecoveryAmount;
 
     public string ItemName => itemName;
     public string ItemDescription => itemDescription;
     public ItemType ItemType => itemType;
-    public string Rarity => rarity;
+    public ItemRarity Rarity => rarity;
     public Sprite ItemIcon => itemIcon;
     public GameObject ItemPrefab => itemPrefab;
     public float BonusAttackDamage => bonusAttackDamage;

@@ -49,7 +49,7 @@ public class EnemyStats : ScriptableObject
     public float AttackRange => attackRange;
     public float AttackCooldown => attackCooldown;
 
-    private void OnValidate()
+    protected virtual void OnValidate()
     {
         // 인스펙터에서 잘못된 값이 들어가도 런타임 계산이 깨지지 않도록 보정
         maxHealth = Mathf.Max(1, maxHealth);

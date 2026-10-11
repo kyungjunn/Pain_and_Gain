@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StatAugmentSO
   augmentName: Damage
   description: Increase Damage
-  icon: {fileID: 1476883250, guid: 63294de887d537f4a81f80aa9c866cdd, type: 3}
-  type: 0
-  value: 5
+  icon: {fileID: 21300000, guid: 8f9e32b2e590c47fcb0ac94265e4cfcf, type: 3}
   rarity: 0
   weight: 50
+  type: 0
+  value: 5

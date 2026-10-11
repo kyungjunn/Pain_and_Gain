@@ -17,6 +17,7 @@ MonoBehaviour:
   objectiveType: 0
   targetAmount: 3
   timeLimit: 30
+  rewardPool: {fileID: 11400000, guid: 17de3b42d7c643269b05eb618c432904, type: 2}
   penaltyType: 0
   statReduceMin: 0.25
   statReduceMax: 0.5

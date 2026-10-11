@@ -1008,6 +1008,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::AugmentPanelUI
   selectionDelay: 0.35
+  statusFont: {fileID: 11400000, guid: 3d83a2d8bf356c041a384fecb848adcb, type: 2}
   optionUIs:
   - {fileID: 4406737560795609572}
   - {fileID: 4446721911443454386}

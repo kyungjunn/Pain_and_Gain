@@ -19,6 +19,8 @@ public class PlayerAugments : MonoBehaviour
 
     // 보유 스킬 목록 외부에 제공
     public IReadOnlyCollection<SkillAugmentSO> OwnedSkills => ownedSkills.Keys;
+    // 실제 플레이어에 붙은 런타임 효과 목록 외부에 제공
+    public IReadOnlyCollection<AugmentSkill> OwnedSkillInstances => ownedSkills.Values;
 
     // 스킬목록이나 중첩 변경 이벤트
     public Action onSkillsChanged;
@@ -54,6 +56,12 @@ public class PlayerAugments : MonoBehaviour
             return SkillAcquireStatus.Invalid;
         }
 
+        // 캐릭터 전용 증강은 직접 호출 경로에서도 대상 플레이어를 검증한다.
+        if (!so.IsAvailableFor(gameObject))
+        {
+            return SkillAcquireStatus.Invalid;
+        }
+
         // 최대 중첩 검사
         if (IsAtMaxStacks(so))
         {
@@ -69,7 +77,9 @@ public class PlayerAugments : MonoBehaviour
         }
 
         // 프리팹 검사
-        if (prefab == null || prefab.GetComponent<AugmentSkill>() == null)
+        AugmentSkill prefabSkill = prefab != null ? prefab.GetComponent<AugmentSkill>() : null;
+        if (prefabSkill == null ||
+            (so is PlayerCombatAugmentSO) != (prefabSkill is PlayerCombatAugment))
         {
             return SkillAcquireStatus.Invalid;
         }
@@ -81,11 +91,52 @@ public class PlayerAugments : MonoBehaviour
             return SkillAcquireStatus.Invalid;
         }
 
+        if (skill is PlayerCombatAugment combatAugment)
+        {
+            combatAugment.Configure((PlayerCombatAugmentSO)so);
+        }
+
         // 스킬 적용
         skill.Apply(gameObject);
         ownedSkills[so] = skill;
         onSkillsChanged?.Invoke();
         return SkillAcquireStatus.Instantiated;
+    }
+
+    // 플레이어 전투 증강의 누적 가산값 조회.
+    public float GetCombatAugmentValue(
+        PlayerCombatAugmentEffect effect,
+        PlayerSkillSO targetSkill = null)
+    {
+        float total = 0f;
+
+        foreach (AugmentSkill ownedSkill in ownedSkills.Values)
+        {
+            if (ownedSkill is PlayerCombatAugment combatAugment)
+            {
+                total += combatAugment.GetValue(effect, targetSkill);
+            }
+        }
+
+        return total;
+    }
+
+    // 투사체 패턴의 총 펼침 각도 조회.
+    public float GetCombatAugmentSpread(
+        PlayerCombatAugmentEffect effect,
+        PlayerSkillSO targetSkill = null)
+    {
+        float total = 0f;
+
+        foreach (AugmentSkill ownedSkill in ownedSkills.Values)
+        {
+            if (ownedSkill is PlayerCombatAugment combatAugment)
+            {
+                total += combatAugment.GetSpread(effect, targetSkill);
+            }
+        }
+
+        return total;
     }
 
     // 무작위 중첩 제거
