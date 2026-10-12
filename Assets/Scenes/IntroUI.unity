@@ -3384,7 +3384,7 @@ MonoBehaviour:
   optionButton: {fileID: 0}
   quitButton: {fileID: 328808593}
   ExitButton: {fileID: 1244051203}
-  nextSceneName: InGame
+  nextSceneName: SelectCharacter
   OptionPanel: {fileID: 0}
 --- !u!1 &1556273927
 GameObject:
