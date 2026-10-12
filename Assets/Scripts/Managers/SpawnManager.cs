@@ -82,7 +82,7 @@ public class SpawnManager : MonoBehaviour
         // 맵 씬 로드가 끝난 뒤 플레이어와 적 스폰을 한 번에 초기화
         spawnStartTime = Time.time;
         ResetEnemyUnlockSpawns();
-        SpawnPlayer();
+        //SpawnPlayer();
         CacheEnemySpawnPoints();
         SpawnInitialEnemies();
         StartEnemyAutoSpawn();

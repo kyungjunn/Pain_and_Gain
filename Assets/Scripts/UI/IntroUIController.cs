@@ -12,7 +12,7 @@ public class IntroUIController : MonoBehaviour
 
 
     [Header("다음 씬 이름")]
-    [SerializeField] private string nextSceneName = "InGame";
+    [SerializeField] private string nextSceneName = "SelectCharacter";
 
     [Header("패널 설정")]
     [SerializeField] private GameObject OptionPanel;
