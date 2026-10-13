@@ -9,7 +9,12 @@ public class CharacterSelectManager : MonoBehaviour
     [Header("이동할 인게임 씬 이름")]
     public string inGameSceneName = "InGame"; // 실제 인게임 씬 파일 이름으로 설정하세요.
 
-    private int selectedCharacterIndex = 0; // 기본 선택값: 0번 (닌자)
+    private static readonly PlayerCharacterId[] ButtonCharacters =
+    {
+        PlayerCharacterId.Ninja, PlayerCharacterId.Sword, PlayerCharacterId.Wizard
+    };
+
+    private PlayerCharacterId selectedCharacter = PlayerCharacterId.Ninja;
 
     void Start()
     {
@@ -30,7 +35,13 @@ public class CharacterSelectManager : MonoBehaviour
     // 캐릭터 버튼(발판/캐릭터) 클릭 시 호출할 함수
     public void SelectCharacter(int index)
     {
-        selectedCharacterIndex = index;
+        if (index < 0 || index >= ButtonCharacters.Length)
+        {
+            Debug.LogError($"Invalid character button index: {index}", this);
+            return;
+        }
+
+        selectedCharacter = ButtonCharacters[index];
 
         // 선택한 캐릭터 연기만 활성화, 나머지 비활성화
         for (int i = 0; i < smokeEffects.Length; i++)
@@ -41,14 +52,12 @@ public class CharacterSelectManager : MonoBehaviour
             }
         }
 
-        // 선택된 캐릭터 번호를 저장
-        PlayerPrefs.SetInt("SelectedCharacter", selectedCharacterIndex);
-        PlayerPrefs.Save();
     }
 
     // START 버튼 누를 때 호출할 함수
     public void OnClickStartButton()
     {
+        CharacterSelection.Confirm(selectedCharacter);
         // 인게임 씬으로 이동
         SceneManager.LoadScene(inGameSceneName);
     }

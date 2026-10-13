@@ -5,10 +5,10 @@ using UnityEngine.SceneManagement;
 // 인게임 씬의 빈 오브젝트(예: GameEndHandler)에 붙이는 스크립트
 public class GameEndHandler : MonoBehaviour
 {
-    [Header("비워 두면 자동으로 찾음")]
-    [SerializeField] private PlayerStateManager stateManager;
-    [SerializeField] private PlayerStats stats;
-    [SerializeField] private PlayerLevelSystem levelSystem;
+    private PlayerStateManager stateManager;
+    private PlayerStats stats;
+    private PlayerLevelSystem levelSystem;
+    private float combatStartTime;
 
     [Header("설정")]
     [SerializeField] private float delayBeforeEnding = 1.5f; // 죽고 나서 엔딩으로 넘어가기까지 대기(초)
@@ -24,26 +24,40 @@ public class GameEndHandler : MonoBehaviour
 
     private void OnEnable()
     {
-        StartCoroutine(FindPlayerAndSubscribe());
+        SpawnManager.OnPlayerSpawned += BindPlayer;
+        if (SpawnManager.Instance != null)
+            BindPlayer(SpawnManager.Instance.SpawnedPlayer);
     }
 
     private void OnDisable()
     {
-        if (stateManager != null) stateManager.OnDead -= HandleDead;
+        SpawnManager.OnPlayerSpawned -= BindPlayer;
+        UnbindPlayer();
+        StopAllCoroutines();
     }
 
-    // 플레이어가 나중에 생성되는 경우도 있으니, 찾을 때까지 기다렸다가 연결
-    private IEnumerator FindPlayerAndSubscribe()
+    private void UnbindPlayer()
     {
-        while (stateManager == null || stats == null || levelSystem == null)
+        if (stateManager != null) stateManager.OnDead -= HandleDead;
+        stateManager = null;
+        stats = null;
+        levelSystem = null;
+    }
+
+    private void BindPlayer(GameObject player)
+    {
+        UnbindPlayer();
+        if (player == null || ended) return;
+        if (!player.TryGetComponent(out stateManager)
+            || !player.TryGetComponent(out stats)
+            || !player.TryGetComponent(out levelSystem))
         {
-            if (stateManager == null) stateManager = FindFirstObjectByType<PlayerStateManager>();
-            if (stats == null) stats = FindFirstObjectByType<PlayerStats>();
-            if (levelSystem == null) levelSystem = FindFirstObjectByType<PlayerLevelSystem>();
-            yield return new WaitForSecondsRealtime(0.2f);
+            Debug.LogError("GameEndHandler requires player state, stats and level components.", this);
+            UnbindPlayer();
+            return;
         }
 
-        stateManager.OnDead -= HandleDead; // 중복 연결 방지
+        combatStartTime = Time.time;
         stateManager.OnDead += HandleDead;
     }
 
@@ -61,7 +75,7 @@ public class GameEndHandler : MonoBehaviour
         return new ResultData
         {
             isVictory = false,
-            survivalTime = Time.timeSinceLevelLoad, // 씬 시작 후 흐른 시간(일시정지 시간은 제외)
+            survivalTime = Time.time - combatStartTime,
             monsterKills = RunStats.Kills,
             finalLevel = levelSystem.level,
 
