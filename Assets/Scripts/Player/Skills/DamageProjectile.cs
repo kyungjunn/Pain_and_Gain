@@ -5,6 +5,11 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public sealed class DamageProjectile : MonoBehaviour
 {
+    [Header("Launch height correction")]
+    [SerializeField, Range(0f, 30f)] private float horizontalAimAngle = 8f;
+    [SerializeField, Range(0f, 60f)] private float verticalAimAngle = 35f;
+    private static readonly ProjectileHeightAim HeightAim = new ProjectileHeightAim();
+
     private PlayerDamageDealer damageDealer;
     private PlayerDamageType damageType;
     private Vector3 spawnPosition;
@@ -30,7 +35,10 @@ public sealed class DamageProjectile : MonoBehaviour
         damage = Mathf.Max(1, value);
         maxDistance = Mathf.Max(0.1f, distance);
         moveSpeed = Mathf.Max(0f, speed);
-        moveDirection = direction.normalized;
+        moveDirection = HeightAim.Resolve(transform.position, direction, maxDistance,
+            dealer != null ? dealer.transform : null, horizontalAimAngle, verticalAimAngle);
+        if (direction.sqrMagnitude > 0.001f)
+            transform.rotation = Quaternion.FromToRotation(direction.normalized, moveDirection) * transform.rotation;
         spawnPosition = transform.position;
         explosionRadius = Mathf.Max(0f, blastRadius);
         remainingPierces = Mathf.Max(0, additionalPierces);
