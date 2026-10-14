@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
   augmentName: 사건의 지평선
   description: "중력핵 끌어당김 반경 +25%. 최대 2중첩, 합산. 폭발 반경은 변하지 않음."
-  icon: {fileID: 21300000, guid: d3a0c379690e1ba42962a1cb1c6a2498, type: 3}
+  icon: {fileID: 21300000, guid: 4e5bd3b66e80f8550b093241ea1b972d, type: 3}
   rarity: 1
   weight: 30
   skillResourcePath: Augments/Skills/PlayerCombatAugment

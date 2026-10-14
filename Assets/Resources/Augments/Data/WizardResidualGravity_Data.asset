@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
   augmentName: 잔류 중력
   description: "중력핵 정상 종료 후 당김 범위에 2초간 30% 둔화 구역 생성. 최대 1중첩. 박탈 시 즉시 해제."
-  icon: {fileID: 21300000, guid: d3a0c379690e1ba42962a1cb1c6a2498, type: 3}
+  icon: {fileID: 21300000, guid: 93018fafff6e7c4afa958be7232b1f8c, type: 3}
   rarity: 2
   weight: 15
   skillResourcePath: Augments/Skills/PlayerCombatAugment

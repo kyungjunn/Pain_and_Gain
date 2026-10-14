@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
   augmentName: 관통 공식
   description: "평타 추가 관통 +1. 최대 2중첩. 폭주 관통과 합산하며 발사한 탄환은 유지."
-  icon: {fileID: 21300000, guid: d3a0c379690e1ba42962a1cb1c6a2498, type: 3}
+  icon: {fileID: 21300000, guid: fcae36c5fb0f2c06066280ba9048eac4, type: 3}
   rarity: 1
   weight: 30
   skillResourcePath: Augments/Skills/PlayerCombatAugment

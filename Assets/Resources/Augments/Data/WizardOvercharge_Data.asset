@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
   augmentName: 과충전
   description: "폭주 중 직접 처치 시 지속시간 +0.5초. 최대 2중첩. R 1회당 총 연장 상한 3초. 박탈 시 해당 연장분 회수."
-  icon: {fileID: 21300000, guid: d1017267a0c2fde4dbedac28af5f69d1, type: 3}
+  icon: {fileID: 21300000, guid: 812f87e983c5378b0b6e99f1fd43c55a, type: 3}
   rarity: 2
   weight: 15
   skillResourcePath: Augments/Skills/PlayerCombatAugment

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
   augmentName: 이중 각인
   description: "마법진 최대 유지 개수 +1. 최대 1중첩. 초과·박탈 시 오래된 마법진부터 폭발 없이 제거."
-  icon: {fileID: 21300000, guid: 3373416481132d449bbe1c832de6dde1, type: 3}
+  icon: {fileID: 21300000, guid: 89c0c63013bf94a6d8d6472b21085faf, type: 3}
   rarity: 2
   weight: 15
   skillResourcePath: Augments/Skills/PlayerCombatAugment

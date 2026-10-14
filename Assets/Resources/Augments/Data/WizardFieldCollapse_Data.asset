@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
   augmentName: 붕괴 공식
   description: "마법진 자연 만료 시 내부 적에게 공격력 150% 폭발. 최대 2중첩, 합산. 교체·사망·박탈 제거는 폭발하지 않음."
-  icon: {fileID: 21300000, guid: 3373416481132d449bbe1c832de6dde1, type: 3}
+  icon: {fileID: 21300000, guid: b29625940d224b4fef4f397682c2b287, type: 3}
   rarity: 2
   weight: 15
   skillResourcePath: Augments/Skills/PlayerCombatAugment

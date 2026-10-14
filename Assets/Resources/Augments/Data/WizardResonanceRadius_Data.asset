@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAugmentSO
   augmentName: 공명 탄환
   description: "평타 공명 반경 +25%. 최대 2중첩, 합산. 마법진 자체 반경은 변하지 않음."
-  icon: {fileID: 21300000, guid: 3373416481132d449bbe1c832de6dde1, type: 3}
+  icon: {fileID: 21300000, guid: 591431f3363031c06c77f400805f2b2c, type: 3}
   rarity: 1
   weight: 30
   skillResourcePath: Augments/Skills/PlayerCombatAugment
