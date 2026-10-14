@@ -8,8 +8,12 @@ using UnityEngine.InputSystem;
 // Runtime ownership for the wizard's independently tunable Q/E/R effects.
 public sealed class WizardCombat : MonoBehaviour
 {
+    private const float ResidualGravityDuration = 2f;
+    private const float OverchargeTotalExtensionLimit = 3f;
+
     private sealed class ResonanceField
     {
+        public WizardSkillSO Skill;
         public Vector3 Center;
         public float Radius;
         public float EndTime;
@@ -23,6 +27,28 @@ public sealed class WizardCombat : MonoBehaviour
         public WizardSkillVisual Visual;
         public readonly SkillAreaQuery TickQuery = new SkillAreaQuery();
         public readonly SkillAreaQuery ResonanceQuery = new SkillAreaQuery();
+        public readonly SkillAreaQuery CollapseQuery = new SkillAreaQuery();
+    }
+
+    private sealed class ResidualGravityField
+    {
+        public WizardSkillSO Skill;
+        public Vector3 Center;
+        public float RemainingDuration;
+        public WizardSkillVisual Visual;
+        public readonly SkillAreaQuery Query = new SkillAreaQuery();
+        public readonly HashSet<NavMeshAgent> AffectedAgents = new HashSet<NavMeshAgent>();
+        public readonly HashSet<NavMeshAgent> CurrentAgents = new HashSet<NavMeshAgent>();
+        public readonly List<NavMeshAgent> AgentsToRelease = new List<NavMeshAgent>();
+    }
+
+    private sealed class SlowControl
+    {
+        public float BaseSpeed;
+        public float AppliedSpeed;
+        public float AppliedMultiplier = 1f;
+        public readonly Dictionary<ResidualGravityField, float> Contributions =
+            new Dictionary<ResidualGravityField, float>();
     }
 
     private sealed class ResonancePreview
@@ -40,7 +66,12 @@ public sealed class WizardCombat : MonoBehaviour
 
     private sealed class Overdrive
     {
+        public WizardSkillSO Skill;
+        public float BaseEndTime;
         public float EndTime;
+        public float AppliedOverchargeExtension;
+        public float PauseStartedAt;
+        public int CreditedKillCount;
         public float NextWaveTime;
         public float WaveInterval;
         public float WaveRadius;
@@ -50,6 +81,7 @@ public sealed class WizardCombat : MonoBehaviour
         public float BasicDamageMultiplier;
         public float BasicVisualScale;
         public int BasicAdditionalPierces;
+        public bool WasPaused;
         public bool Cancelled;
         public bool FinalBlastTriggered;
         public WizardSkillVisual Aura;
@@ -80,7 +112,9 @@ public sealed class WizardCombat : MonoBehaviour
     private PlayerStats playerStats;
     private PlayerHealth playerHealth;
     private PlayerStateManager stateManager;
-    private ResonanceField resonanceField;
+    private PlayerAugments playerAugments;
+    private readonly List<ResonanceField> resonanceFields = new List<ResonanceField>();
+    private readonly List<ResidualGravityField> residualGravityFields = new List<ResidualGravityField>();
     private ResonancePreview resonancePreview;
     private Overdrive overdrive;
     private WizardSkillSO preparedPreviewCastSkill;
@@ -91,9 +125,21 @@ public sealed class WizardCombat : MonoBehaviour
     private readonly HashSet<GameObject> activeVisuals = new HashSet<GameObject>();
     private readonly Dictionary<NavMeshAgent, PullControl> controlledAgents =
         new Dictionary<NavMeshAgent, PullControl>();
+    private static readonly Dictionary<NavMeshAgent, SlowControl> activeSlowControls =
+        new Dictionary<NavMeshAgent, SlowControl>();
+    private static readonly List<NavMeshAgent> destroyedSlowAgents = new List<NavMeshAgent>();
 
-    public bool IsOverdriveActive =>
-        overdrive != null && !overdrive.Cancelled && Time.time < overdrive.EndTime && !IsOwnerDead();
+    public bool IsOverdriveActive
+    {
+        get
+        {
+            if (overdrive == null || overdrive.Cancelled || IsOwnerDead())
+                return false;
+
+            RefreshOverchargeExtension(overdrive);
+            return Time.time < overdrive.EndTime || IsGamePaused;
+        }
+    }
 
     // Includes synchronous final-blast damage, but not its lingering visual.
     public bool IsUltimateActive =>
@@ -105,8 +151,15 @@ public sealed class WizardCombat : MonoBehaviour
     public float BasicVisualScale =>
         IsOverdriveActive ? overdrive.BasicVisualScale : 1f;
 
-    public int BasicAdditionalPierces =>
-        IsOverdriveActive ? overdrive.BasicAdditionalPierces : 0;
+    public int BasicAdditionalPierces
+    {
+        get
+        {
+            int overdrivePierces = IsOverdriveActive ? overdrive.BasicAdditionalPierces : 0;
+            return overdrivePierces + Mathf.Max(0, Mathf.RoundToInt(
+                GetCombatAugmentValue(PlayerCombatAugmentEffect.WizardBasicPierce)));
+        }
+    }
 
     public bool IsResonancePreviewActive => resonancePreview != null;
     public bool ResonancePreviewHasGroundTarget =>
@@ -160,28 +213,11 @@ public sealed class WizardCombat : MonoBehaviour
             return;
         }
 
+        RefreshOverchargeExtension(overdrive);
+        UpdateResidualGravityFields();
+        EnforceResonanceFieldCapacity();
         UpdateResonancePreview();
-        if (resonanceField == null)
-            return;
-
-        if (Time.time >= resonanceField.EndTime)
-        {
-            RemoveResonanceField(resonanceField);
-            return;
-        }
-
-        if (Time.time < resonanceField.NextTickTime)
-            return;
-
-        ResonanceField activeField = resonanceField;
-        activeField.NextTickTime = Time.time + activeField.TickInterval;
-        activeField.TickQuery.DealDamage(
-            damageDealer,
-            activeField.Center,
-            activeField.Radius,
-            activeField.TickDamage,
-            PlayerDamageType.Skill,
-            activeField.Center);
+        UpdateResonanceFields();
     }
 
     public bool TryCast(WizardSkillSO skill)
@@ -302,11 +338,9 @@ public sealed class WizardCombat : MonoBehaviour
                 return false;
         }
 
-        if (resonanceField != null)
-            RemoveResonanceField(resonanceField);
-
         ResonanceField field = new ResonanceField
         {
+            Skill = skill,
             Center = groundPosition,
             Radius = skill.ResonanceFieldRadius,
             EndTime = Time.time + skill.ResonanceFieldDuration,
@@ -322,7 +356,8 @@ public sealed class WizardCombat : MonoBehaviour
         {
             field.Visual.transform.rotation = Quaternion.FromToRotation(Vector3.up, groundNormal);
         }
-        resonanceField = field;
+        resonanceFields.Add(field);
+        EnforceResonanceFieldCapacity();
         CancelResonancePreview();
         return true;
     }
@@ -334,6 +369,8 @@ public sealed class WizardCombat : MonoBehaviour
 
         Overdrive state = new Overdrive
         {
+            Skill = skill,
+            BaseEndTime = Time.time + skill.OverdriveDuration,
             EndTime = Time.time + skill.OverdriveDuration,
             NextWaveTime = Time.time,
             WaveInterval = skill.OverdriveWaveInterval,
@@ -363,6 +400,7 @@ public sealed class WizardCombat : MonoBehaviour
         RaycastHit[] hitBuffer = new RaycastHit[16];
         Collider[] overlapBuffer = new Collider[16];
         float traveled = 0f;
+        bool completedNormally = false;
 
         try
         {
@@ -404,8 +442,9 @@ public sealed class WizardCombat : MonoBehaviour
 
             if (TryFindVortexFloor(position, out RaycastHit floor))
             {
+                float pullRadius = GetAugmentedGravityPullRadius(skill);
                 vortexVisual = CreateVisual(gravityVortexPrefab, "WizardGravityVortex",
-                    floor.point + floor.normal * 0.04f, skill.GravityCorePullRadius / 4f, true);
+                    floor.point + floor.normal * 0.04f, pullRadius / 4f, true);
                 if (vortexVisual != null)
                     vortexVisual.transform.rotation = Quaternion.FromToRotation(Vector3.up, floor.normal);
             }
@@ -420,7 +459,10 @@ public sealed class WizardCombat : MonoBehaviour
                     continue;
                 }
 
-                PullNearbyEnemies(position, skill.GravityCorePullRadius, skill.GravityCorePullSpeed,
+                float pullRadius = GetAugmentedGravityPullRadius(skill);
+                if (vortexVisual != null)
+                    vortexVisual.transform.localScale = Vector3.one * (pullRadius / 4f);
+                PullNearbyEnemies(position, pullRadius, skill.GravityCorePullSpeed,
                     Time.deltaTime, pullQuery, pulledAgents, ref hitBuffer);
                 yield return null;
             }
@@ -443,6 +485,8 @@ public sealed class WizardCombat : MonoBehaviour
                 PlayBurst(starHitPrefab, "WizardGravityBlast", position + Vector3.up * 0.04f,
                     skill.GravityCoreBlastRadius / 2f);
             }
+
+            completedNormally = true;
         }
         finally
         {
@@ -450,21 +494,29 @@ public sealed class WizardCombat : MonoBehaviour
             DestroyVisual(coreVisual);
             DestroyVisual(vortexVisual);
         }
+
+        if (completedNormally && CanRunEffects())
+            StartResidualGravityField(skill, position);
     }
 
     private IEnumerator RunOverdrive(Overdrive state)
     {
         try
         {
-            while (Time.time < state.EndTime)
+            while (true)
             {
                 if (!CanRunEffects() || state.Cancelled)
                     yield break;
+
+                RefreshOverchargeExtension(state);
                 if (IsGamePaused)
                 {
                     yield return null;
                     continue;
                 }
+
+                if (Time.time >= state.EndTime)
+                    break;
 
                 if (Time.time >= state.NextWaveTime)
                 {
@@ -842,47 +894,122 @@ public sealed class WizardCombat : MonoBehaviour
     private void HandleTargetDamaged(EnemyHealth enemy, Vector3 hitPosition, int actualDamage,
         PlayerDamageType damageType)
     {
-        ResonanceField field = resonanceField;
-        // Finish the hit even when its kill reward opened the paused level-up UI.
-        if (!CanRunEffects() || field == null || damageType != PlayerDamageType.BasicAttack || actualDamage <= 0 ||
-            Time.time >= field.EndTime || Time.time < field.NextResonanceTime)
-        {
+        if (!CanRunEffects() || enemy == null || actualDamage <= 0)
             return;
+
+        Overdrive activeOverdrive = overdrive;
+        if (enemy.IsDead && activeOverdrive != null && !activeOverdrive.Cancelled &&
+            !activeOverdrive.FinalBlastTriggered && Time.time < activeOverdrive.EndTime &&
+            GetCombatAugmentValue(PlayerCombatAugmentEffect.WizardOvercharge, activeOverdrive.Skill) > 0f)
+        {
+            activeOverdrive.CreditedKillCount++;
+            RefreshOverchargeExtension(activeOverdrive);
         }
 
-        Vector3 offset = hitPosition - field.Center;
-        if (Mathf.Abs(offset.y) > field.Radius)
-            return;
-        offset.y = 0f;
-        if (offset.sqrMagnitude > field.Radius * field.Radius)
+        // Finish every field's hit even if an earlier kill opened the paused level-up UI.
+        if (damageType != PlayerDamageType.BasicAttack)
             return;
 
-        // Reserve the field's shared cooldown before damage callbacks can re-enter this handler.
-        field.NextResonanceTime = Time.time + field.ResonanceCooldown;
-        field.ResonanceQuery.DealDamage(
-            damageDealer,
-            hitPosition,
-            field.ResonanceRadius,
-            field.ResonanceDamage,
-            PlayerDamageType.Skill,
-            owner.transform.position);
+        for (int i = 0; i < resonanceFields.Count; i++)
+        {
+            ResonanceField field = resonanceFields[i];
+            if (field == null || Time.time >= field.EndTime || Time.time < field.NextResonanceTime)
+                continue;
 
-        if (!CanRunEffects())
-            return;
+            Vector3 offset = hitPosition - field.Center;
+            if (Mathf.Abs(offset.y) > field.Radius)
+                continue;
+            offset.y = 0f;
+            if (offset.sqrMagnitude > field.Radius * field.Radius)
+                continue;
 
-        PlayBurst(starHitPrefab, "WizardResonanceBurst",
-            hitPosition + Vector3.up * 0.04f, field.ResonanceRadius / 2f);
+            // Reserve this field's independent cooldown before re-entrant damage callbacks.
+            field.NextResonanceTime = Time.time + field.ResonanceCooldown;
+            float radius = field.ResonanceRadius * (1f + Mathf.Max(0f,
+                GetCombatAugmentValue(PlayerCombatAugmentEffect.WizardResonanceRadius, field.Skill)));
+            field.ResonanceQuery.DealDamage(
+                damageDealer,
+                hitPosition,
+                radius,
+                field.ResonanceDamage,
+                PlayerDamageType.Skill,
+                owner.transform.position);
+
+            if (!CanRunEffects())
+                return;
+
+            PlayBurst(starHitPrefab, "WizardResonanceBurst",
+                hitPosition + Vector3.up * 0.04f, radius / 2f);
+        }
     }
 
-    private void RemoveResonanceField(ResonanceField field)
+    private void UpdateResonanceFields()
+    {
+        int index = 0;
+        while (index < resonanceFields.Count)
+        {
+            ResonanceField field = resonanceFields[index];
+            if (field == null)
+            {
+                resonanceFields.RemoveAt(index);
+                continue;
+            }
+
+            if (Time.time >= field.EndTime)
+            {
+                RemoveResonanceField(field, naturalExpiry: true);
+                continue;
+            }
+
+            index++;
+            if (Time.time < field.NextTickTime)
+                continue;
+
+            field.NextTickTime = Time.time + field.TickInterval;
+            field.TickQuery.DealDamage(
+                damageDealer,
+                field.Center,
+                field.Radius,
+                field.TickDamage,
+                PlayerDamageType.Skill,
+                field.Center);
+        }
+    }
+
+    private void EnforceResonanceFieldCapacity()
+    {
+        int extraFields = Mathf.Max(0, Mathf.RoundToInt(GetCombatAugmentValue(
+            PlayerCombatAugmentEffect.WizardExtraField, owner != null ? owner.SkillE : null)));
+        int capacity = 1 + extraFields;
+        while (resonanceFields.Count > capacity)
+            RemoveResonanceField(resonanceFields[0]);
+    }
+
+    private void RemoveResonanceField(ResonanceField field, bool naturalExpiry = false)
     {
         if (field == null)
             return;
 
-        if (resonanceField == field)
-            resonanceField = null;
+        resonanceFields.Remove(field);
         DestroyVisual(field.Visual);
         field.Visual = null;
+
+        float collapseDamageMultiplier = naturalExpiry
+            ? GetCombatAugmentValue(PlayerCombatAugmentEffect.WizardFieldCollapse, field.Skill)
+            : 0f;
+        if (collapseDamageMultiplier <= 0f || !CanRunEffects())
+            return;
+
+        field.CollapseQuery.DealDamage(
+            damageDealer,
+            field.Center,
+            field.Radius,
+            CalculateDamage(collapseDamageMultiplier),
+            PlayerDamageType.Skill,
+            field.Center);
+        if (CanRunEffects())
+            PlayBurst(starHitPrefab, "WizardFieldCollapse", field.Center + Vector3.up * 0.04f,
+                field.Radius / 2f);
     }
 
     // Practical authoring radii: circle 3, vortex/slash 4, hit 2, final 5 units.
@@ -1110,7 +1237,9 @@ public sealed class WizardCombat : MonoBehaviour
             overdrive.Cancelled = true;
         StopAllCoroutines();
 
-        resonanceField = null;
+        while (resonanceFields.Count > 0)
+            RemoveResonanceField(resonanceFields[0]);
+        ClearResidualGravityFields();
         overdrive = null;
         RestoreAllPulls();
 
@@ -1160,6 +1289,227 @@ public sealed class WizardCombat : MonoBehaviour
         return mouse != null && eventSystem.IsPointerOverGameObject(mouse.deviceId);
     }
 
+    private float GetCombatAugmentValue(PlayerCombatAugmentEffect effect, PlayerSkillSO targetSkill = null)
+    {
+        return playerAugments != null
+            ? playerAugments.GetCombatAugmentValue(effect, targetSkill)
+            : 0f;
+    }
+
+    private float GetAugmentedGravityPullRadius(WizardSkillSO skill)
+    {
+        return skill.GravityCorePullRadius * (1f + Mathf.Max(0f,
+            GetCombatAugmentValue(PlayerCombatAugmentEffect.WizardGravityRadius, skill)));
+    }
+
+    private void StartResidualGravityField(WizardSkillSO skill, Vector3 center)
+    {
+        if (GetCombatAugmentValue(PlayerCombatAugmentEffect.WizardResidualGravity, skill) <= 0f)
+            return;
+
+        ResidualGravityField field = new ResidualGravityField
+        {
+            Skill = skill,
+            Center = center,
+            RemainingDuration = ResidualGravityDuration
+        };
+        Vector3 visualPosition = center;
+        Vector3 visualNormal = Vector3.up;
+        if (TryFindVortexFloor(center, out RaycastHit floor))
+        {
+            visualPosition = floor.point + floor.normal * 0.04f;
+            visualNormal = floor.normal;
+        }
+
+        float radius = GetAugmentedGravityPullRadius(skill);
+        field.Visual = CreateVisual(gravityVortexPrefab, "WizardResidualGravity",
+            visualPosition, radius / 4f, true);
+        if (field.Visual != null)
+            field.Visual.transform.rotation = Quaternion.FromToRotation(Vector3.up, visualNormal);
+        residualGravityFields.Add(field);
+    }
+
+    private void UpdateResidualGravityFields()
+    {
+        PruneDestroyedSlowControls();
+        for (int i = residualGravityFields.Count - 1; i >= 0; i--)
+        {
+            ResidualGravityField field = residualGravityFields[i];
+            float slowFraction = Mathf.Clamp01(GetCombatAugmentValue(
+                PlayerCombatAugmentEffect.WizardResidualGravity, field.Skill));
+            if (field.Skill == null || field.RemainingDuration <= 0f || slowFraction <= 0f)
+            {
+                RemoveResidualGravityField(field);
+                continue;
+            }
+
+            field.RemainingDuration -= Time.deltaTime;
+            float radius = GetAugmentedGravityPullRadius(field.Skill);
+            if (field.Visual != null)
+                field.Visual.transform.localScale = Vector3.one * (radius / 4f);
+            IReadOnlyList<EnemyHealth> enemies = field.Query.Collect(field.Center, radius);
+            field.CurrentAgents.Clear();
+            for (int enemyIndex = 0; enemyIndex < enemies.Count; enemyIndex++)
+            {
+                EnemyHealth enemy = enemies[enemyIndex];
+                NavMeshAgent agent = enemy != null ? enemy.GetComponentInParent<NavMeshAgent>() : null;
+                if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+                    continue;
+
+                field.CurrentAgents.Add(agent);
+                field.AffectedAgents.Add(agent);
+                ApplySlowContribution(agent, field, slowFraction);
+            }
+
+            field.AgentsToRelease.Clear();
+            foreach (NavMeshAgent agent in field.AffectedAgents)
+            {
+                if (agent == null || !field.CurrentAgents.Contains(agent))
+                    field.AgentsToRelease.Add(agent);
+            }
+
+            for (int agentIndex = 0; agentIndex < field.AgentsToRelease.Count; agentIndex++)
+            {
+                NavMeshAgent agent = field.AgentsToRelease[agentIndex];
+                RemoveSlowContribution(agent, field);
+                field.AffectedAgents.Remove(agent);
+            }
+
+            if (field.RemainingDuration <= 0f)
+                RemoveResidualGravityField(field);
+        }
+    }
+
+    private void RemoveResidualGravityField(ResidualGravityField field)
+    {
+        if (field == null)
+            return;
+
+        residualGravityFields.Remove(field);
+        DestroyVisual(field.Visual);
+        field.Visual = null;
+        foreach (NavMeshAgent agent in field.AffectedAgents)
+            RemoveSlowContribution(agent, field);
+        field.AffectedAgents.Clear();
+        field.CurrentAgents.Clear();
+        field.AgentsToRelease.Clear();
+    }
+
+    private void ClearResidualGravityFields()
+    {
+        while (residualGravityFields.Count > 0)
+            RemoveResidualGravityField(residualGravityFields[0]);
+    }
+
+    private static void ApplySlowContribution(NavMeshAgent agent, ResidualGravityField source,
+        float slowFraction)
+    {
+        if (agent == null || source == null)
+            return;
+
+        if (!activeSlowControls.TryGetValue(agent, out SlowControl control))
+        {
+            control = new SlowControl
+            {
+                BaseSpeed = agent.speed,
+                AppliedSpeed = agent.speed
+            };
+            activeSlowControls.Add(agent, control);
+        }
+        else
+        {
+            PreserveExternalSpeedChanges(agent, control);
+        }
+
+        control.Contributions[source] = Mathf.Clamp01(slowFraction);
+        ApplyCompositeSlow(agent, control);
+    }
+
+    private static void RemoveSlowContribution(NavMeshAgent agent, ResidualGravityField source)
+    {
+        if (object.ReferenceEquals(agent, null) || source == null ||
+            !activeSlowControls.TryGetValue(agent, out SlowControl control))
+        {
+            return;
+        }
+
+        if (agent != null)
+            PreserveExternalSpeedChanges(agent, control);
+        control.Contributions.Remove(source);
+        if (control.Contributions.Count == 0)
+        {
+            if (agent != null)
+                agent.speed = control.BaseSpeed;
+            activeSlowControls.Remove(agent);
+            return;
+        }
+
+        if (agent != null)
+            ApplyCompositeSlow(agent, control);
+    }
+
+    private static void PreserveExternalSpeedChanges(NavMeshAgent agent, SlowControl control)
+    {
+        if (agent == null || Mathf.Approximately(agent.speed, control.AppliedSpeed) ||
+            control.AppliedMultiplier <= 0.0001f)
+        {
+            return;
+        }
+
+        control.BaseSpeed = Mathf.Max(0f, agent.speed / control.AppliedMultiplier);
+    }
+
+    private static void ApplyCompositeSlow(NavMeshAgent agent, SlowControl control)
+    {
+        float multiplier = 1f;
+        foreach (float slowFraction in control.Contributions.Values)
+            multiplier *= 1f - Mathf.Clamp01(slowFraction);
+
+        control.AppliedMultiplier = multiplier;
+        control.AppliedSpeed = control.BaseSpeed * multiplier;
+        agent.speed = control.AppliedSpeed;
+    }
+
+    private static void PruneDestroyedSlowControls()
+    {
+        destroyedSlowAgents.Clear();
+        foreach (KeyValuePair<NavMeshAgent, SlowControl> pair in activeSlowControls)
+        {
+            if (pair.Key == null)
+                destroyedSlowAgents.Add(pair.Key);
+        }
+
+        for (int i = 0; i < destroyedSlowAgents.Count; i++)
+            activeSlowControls.Remove(destroyedSlowAgents[i]);
+    }
+
+    private void RefreshOverchargeExtension(Overdrive state)
+    {
+        if (state == null || state.Cancelled || state.FinalBlastTriggered)
+            return;
+
+        if (IsGamePaused)
+        {
+            if (!state.WasPaused)
+            {
+                state.PauseStartedAt = Time.time;
+                state.WasPaused = true;
+            }
+        }
+        else if (state.WasPaused)
+        {
+            state.BaseEndTime += Mathf.Max(0f, Time.time - state.PauseStartedAt);
+            state.WasPaused = false;
+        }
+
+        float secondsPerKill = Mathf.Max(0f, GetCombatAugmentValue(
+            PlayerCombatAugmentEffect.WizardOvercharge, state.Skill));
+        state.AppliedOverchargeExtension = Mathf.Min(
+            OverchargeTotalExtensionLimit,
+            state.CreditedKillCount * secondsPerKill);
+        state.EndTime = state.BaseEndTime + state.AppliedOverchargeExtension;
+    }
+
     private int CalculateDamage(float multiplier)
     {
         float baseDamage = playerStats != null ? playerStats.AttackDamage : 10f;
@@ -1173,6 +1523,7 @@ public sealed class WizardCombat : MonoBehaviour
         playerStats = GetComponent<PlayerStats>();
         playerHealth = GetComponent<PlayerHealth>();
         stateManager = GetComponent<PlayerStateManager>();
+        playerAugments = GetComponent<PlayerAugments>();
     }
 
     private static bool IsGamePaused => Time.timeScale <= 0f ||
