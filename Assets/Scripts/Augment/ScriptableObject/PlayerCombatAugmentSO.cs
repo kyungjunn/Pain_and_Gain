@@ -9,7 +9,14 @@ public enum PlayerCombatAugmentEffect
     DashMoveSpeed,
     DashExtraCharge,
     UltimateStormRange,
-    UltimateEndBurst
+    UltimateEndBurst,
+    WizardBasicPierce,
+    WizardResonanceRadius,
+    WizardGravityRadius,
+    WizardResidualGravity,
+    WizardExtraField,
+    WizardFieldCollapse,
+    WizardOvercharge
 }
 
 // 플레이어 전투 동작을 바꾸는 공용 증강 데이터.
@@ -40,7 +47,8 @@ public sealed class PlayerCombatAugmentSO : SkillAugmentSO
         }
 
         PlayerCharacter character = player.GetComponent<PlayerCharacter>();
-        if (character == null || !character.Is(requiredCharacter))
+        if (character == null ||
+            (IsWizardEffect(effect) ? !character.Is(PlayerCharacterId.Wizard) : !character.Is(requiredCharacter)))
         {
             return false;
         }
@@ -52,7 +60,31 @@ public sealed class PlayerCombatAugmentSO : SkillAugmentSO
             return false;
         }
 
-        if (!ultimateEffect && effect != PlayerCombatAugmentEffect.BasicProjectileCount && targetSkill == null)
+        bool wizardEffect = IsWizardEffect(effect);
+        bool basicProjectileEffect = effect == PlayerCombatAugmentEffect.BasicProjectileCount ||
+                                     effect == PlayerCombatAugmentEffect.WizardBasicPierce;
+        if (wizardEffect)
+        {
+            if (!character.Is(PlayerCharacterId.Wizard) || player.GetComponent<WizardCombat>() == null)
+            {
+                return false;
+            }
+
+            if (effect == PlayerCombatAugmentEffect.WizardBasicPierce)
+            {
+                if (targetSkill != null)
+                {
+                    return false;
+                }
+            }
+            else if (!(targetSkill is WizardSkillSO wizardSkill) ||
+                     wizardSkill.Kind != RequiredWizardSkillKind(effect))
+            {
+                return false;
+            }
+        }
+
+        if (!ultimateEffect && !basicProjectileEffect && targetSkill == null)
         {
             return false;
         }
@@ -64,9 +96,19 @@ public sealed class PlayerCombatAugmentSO : SkillAugmentSO
             {
                 return false;
             }
+
+            WizardSkillSO targetWizardSkill = targetSkill as WizardSkillSO;
+            if (wizardEffect && targetWizardSkill != null &&
+                ((targetWizardSkill.Kind == WizardSkillKind.GravityCore && skillController.SkillQ != targetSkill) ||
+                 (targetWizardSkill.Kind == WizardSkillKind.ResonanceField && skillController.SkillE != targetSkill) ||
+                 (targetWizardSkill.Kind == WizardSkillKind.Overdrive &&
+                  (skillController.SkillQ == targetSkill || skillController.SkillE == targetSkill))))
+            {
+                return false;
+            }
         }
 
-        if (effect == PlayerCombatAugmentEffect.BasicProjectileCount &&
+        if (basicProjectileEffect &&
             player.GetComponent<ProjectilePlayerAttack>() == null)
         {
             return false;
@@ -85,5 +127,44 @@ public sealed class PlayerCombatAugmentSO : SkillAugmentSO
         base.OnValidate();
         value = Mathf.Max(0f, value);
         spreadDegrees = Mathf.Clamp(spreadDegrees, 0f, 360f);
+
+        if (IsWizardEffect(effect))
+            requiredCharacter = PlayerCharacterId.Wizard;
     }
+
+    private static bool IsWizardEffect(PlayerCombatAugmentEffect candidate)
+    {
+        switch (candidate)
+        {
+            case PlayerCombatAugmentEffect.WizardBasicPierce:
+            case PlayerCombatAugmentEffect.WizardResonanceRadius:
+            case PlayerCombatAugmentEffect.WizardGravityRadius:
+            case PlayerCombatAugmentEffect.WizardResidualGravity:
+            case PlayerCombatAugmentEffect.WizardExtraField:
+            case PlayerCombatAugmentEffect.WizardFieldCollapse:
+            case PlayerCombatAugmentEffect.WizardOvercharge:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static WizardSkillKind RequiredWizardSkillKind(PlayerCombatAugmentEffect candidate)
+    {
+        switch (candidate)
+        {
+            case PlayerCombatAugmentEffect.WizardResonanceRadius:
+            case PlayerCombatAugmentEffect.WizardExtraField:
+            case PlayerCombatAugmentEffect.WizardFieldCollapse:
+                return WizardSkillKind.ResonanceField;
+            case PlayerCombatAugmentEffect.WizardGravityRadius:
+            case PlayerCombatAugmentEffect.WizardResidualGravity:
+                return WizardSkillKind.GravityCore;
+            case PlayerCombatAugmentEffect.WizardOvercharge:
+                return WizardSkillKind.Overdrive;
+            default:
+                return (WizardSkillKind)(-1);
+        }
+    }
+
 }

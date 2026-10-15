@@ -4,61 +4,65 @@ using UnityEngine.UI;
 
 public class IntroUIController : MonoBehaviour
 {
-    [Header("버튼 컴포넌트 설정")]
+    [Header("메인 메뉴 버튼")]
     [SerializeField] private Button gameStartButton;
     [SerializeField] private Button optionButton;
     [SerializeField] private Button quitButton;
-    [SerializeField] private Button ExitButton;
 
-
-    [Header("다음 씬 이름")]
-    [SerializeField] private string nextSceneName = "InGame";
-
-    [Header("패널 설정")]
-    [SerializeField] private GameObject OptionPanel;
+    [Header("옵션 패널")]
+    [SerializeField] private GameObject optionPanel;
+    [SerializeField] private Button closeOptionsButton;
 
     private void Awake()
     {
-        // 버튼 컴포넌트가 인스펙터에서 누락됐다면 자동으로 찾아주는 방어 코드
-        if (gameStartButton == null) gameStartButton = transform.Find("GameStartButton")?.GetComponent<Button>();
-        if (optionButton == null) optionButton = transform.Find("OptionsButton")?.GetComponent<Button>();
-        if (quitButton == null) quitButton = transform.Find("QuitButton")?.GetComponent<Button>();
+        if (gameStartButton == null || optionButton == null || quitButton == null
+            || optionPanel == null || closeOptionsButton == null)
+        {
+            Debug.LogError("IntroUIController requires all menu buttons and the options panel.", this);
+            enabled = false;
+            return;
+        }
+
+        optionPanel.SetActive(false);
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        // 각 버튼에 클릭 리스너(이벤트) 연결
-        if (gameStartButton != null)
-            gameStartButton.onClick.AddListener(OnGameStartClicked);
+        gameStartButton.onClick.AddListener(OnGameStartClicked);
+        optionButton.onClick.AddListener(OnOptionClicked);
+        quitButton.onClick.AddListener(OnQuitClicked);
+        closeOptionsButton.onClick.AddListener(OnCloseOptionsClicked);
+    }
 
-        if (optionButton != null)
-            optionButton.onClick.AddListener(OnOptionClicked);
-
-        if (quitButton != null)
-            quitButton.onClick.AddListener(OnQuitClicked);
+    private void OnDisable()
+    {
+        if (gameStartButton != null) gameStartButton.onClick.RemoveListener(OnGameStartClicked);
+        if (optionButton != null) optionButton.onClick.RemoveListener(OnOptionClicked);
+        if (quitButton != null) quitButton.onClick.RemoveListener(OnQuitClicked);
+        if (closeOptionsButton != null) closeOptionsButton.onClick.RemoveListener(OnCloseOptionsClicked);
     }
 
     private void OnGameStartClicked()
     {
-        SceneManager.LoadScene(nextSceneName);
+        SceneManager.LoadScene("SelectCharacter");
     }
 
     private void OnOptionClicked()
     {
-        OptionPanel.SetActive(true);
+        optionPanel.SetActive(true);
     }
-    private void OnExitClicked()
+
+    private void OnCloseOptionsClicked()
     {
-        OptionPanel.SetActive(false);
+        optionPanel.SetActive(false);
     }
 
     private void OnQuitClicked()
     {
-        Debug.Log("게임 종료!");
 #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false; // 에디터에서 플레이 모드 종료
+        UnityEditor.EditorApplication.isPlaying = false;
 #else
-        Application.Quit(); // 빌드된 게임 종료
+        Application.Quit();
 #endif
     }
 }

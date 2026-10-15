@@ -92,7 +92,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cff528de67f6fe24abcac10e3f09a209, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnManager
-  playerPrefab: {fileID: 1511182830752845224, guid: ee86f891727edcd4a892304c485ffa0b, type: 3}
+  playerPrefabs:
+  - {fileID: 1511182830752845224, guid: ee86f891727edcd4a892304c485ffa0b, type: 3}
+  - {fileID: 2495826255417891551, guid: a00b95da9253d3945b8d8a9a716728dc, type: 3}
+  - {fileID: 4938431607362285984, guid: 852dc87735c6c6644ac6dd1b631199e0, type: 3}
   enemyPrefab: {fileID: 7102015375107000001, guid: 51e0b0826579490cb6a7a4586c53f528, type: 3}
   enemySpawnEntries:
   - prefab: {fileID: 7102015375107000001, guid: 51e0b0826579490cb6a7a4586c53f528, type: 3}

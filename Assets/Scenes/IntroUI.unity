@@ -1059,9 +1059,8 @@ GameObject:
   - component: {fileID: 328808595}
   - component: {fileID: 328808594}
   - component: {fileID: 328808593}
-  - component: {fileID: 328808596}
   m_Layer: 5
-  m_Name: QuickGameButton
+  m_Name: ExitButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1169,24 +1168,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 328808591}
   m_CullTransparentMesh: 1
---- !u!114 &328808596
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 328808591}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16bbd530fbb089641bd99e642cc6244f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IntroUIController
-  gameStartButton: {fileID: 1553574466}
-  optionButton: {fileID: 0}
-  quitButton: {fileID: 328808593}
-  ExitButton: {fileID: 1244051203}
-  nextSceneName: InGame
-  OptionPanel: {fileID: 0}
 --- !u!1 &349202319
 GameObject:
   m_ObjectHideFlags: 0
@@ -2214,7 +2195,6 @@ GameObject:
   - component: {fileID: 766228448}
   - component: {fileID: 766228447}
   - component: {fileID: 766228446}
-  - component: {fileID: 766228449}
   m_Layer: 5
   m_Name: OptionButton
   m_TagString: Untagged
@@ -2324,24 +2304,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 766228444}
   m_CullTransparentMesh: 1
---- !u!114 &766228449
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 766228444}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16bbd530fbb089641bd99e642cc6244f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IntroUIController
-  gameStartButton: {fileID: 1553574466}
-  optionButton: {fileID: 0}
-  quitButton: {fileID: 328808593}
-  ExitButton: {fileID: 1244051203}
-  nextSceneName: InGame
-  OptionPanel: {fileID: 108720912}
 --- !u!1 &817614010
 GameObject:
   m_ObjectHideFlags: 0
@@ -2693,6 +2655,7 @@ GameObject:
   - component: {fileID: 1053698989}
   - component: {fileID: 1053698988}
   - component: {fileID: 1053698987}
+  - component: {fileID: 1053698991}
   m_Layer: 5
   m_Name: UICanvas
   m_TagString: Untagged
@@ -2785,6 +2748,23 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1053698991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1053698986}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16bbd530fbb089641bd99e642cc6244f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IntroUIController
+  gameStartButton: {fileID: 1553574466}
+  optionButton: {fileID: 766228446}
+  quitButton: {fileID: 328808593}
+  optionPanel: {fileID: 108720912}
+  closeOptionsButton: {fileID: 1244051203}
 --- !u!1 &1066170639
 GameObject:
   m_ObjectHideFlags: 0
@@ -2981,7 +2961,6 @@ GameObject:
   - component: {fileID: 1244051205}
   - component: {fileID: 1244051204}
   - component: {fileID: 1244051203}
-  - component: {fileID: 1244051202}
   m_Layer: 5
   m_Name: Exit Button
   m_TagString: Untagged
@@ -3009,24 +2988,6 @@ RectTransform:
   m_AnchoredPosition: {x: 410, y: -250}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1244051202
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1244051200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16bbd530fbb089641bd99e642cc6244f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IntroUIController
-  gameStartButton: {fileID: 1553574466}
-  optionButton: {fileID: 0}
-  quitButton: {fileID: 328808593}
-  ExitButton: {fileID: 1244051203}
-  nextSceneName: InGame
-  OptionPanel: {fileID: 108720912}
 --- !u!114 &1244051203
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3258,7 +3219,6 @@ GameObject:
   - component: {fileID: 1553574468}
   - component: {fileID: 1553574467}
   - component: {fileID: 1553574466}
-  - component: {fileID: 1553574469}
   m_Layer: 5
   m_Name: GameStartButton
   m_TagString: Untagged
@@ -3368,24 +3328,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1553574464}
   m_CullTransparentMesh: 1
---- !u!114 &1553574469
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1553574464}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16bbd530fbb089641bd99e642cc6244f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IntroUIController
-  gameStartButton: {fileID: 1553574466}
-  optionButton: {fileID: 0}
-  quitButton: {fileID: 328808593}
-  ExitButton: {fileID: 1244051203}
-  nextSceneName: InGame
-  OptionPanel: {fileID: 0}
 --- !u!1 &1556273927
 GameObject:
   m_ObjectHideFlags: 0
@@ -3443,7 +3385,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: QUICK GAME
+  m_text: EXIT
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}

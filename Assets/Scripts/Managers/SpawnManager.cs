@@ -12,7 +12,7 @@ public class SpawnManager : MonoBehaviour
     public static event Action<GameObject> OnPlayerSpawned;
 
     [Header("Prefabs")]
-    [SerializeField] private GameObject playerPrefab;
+    [SerializeField] private GameObject[] playerPrefabs;
     [SerializeField] private GameObject enemyPrefab;
     [SerializeField] private List<EnemySpawnEntry> enemySpawnEntries = new List<EnemySpawnEntry>();
 
@@ -50,6 +50,8 @@ public class SpawnManager : MonoBehaviour
     private Coroutine enemySpawnRoutine;
     private float spawnStartTime;
 
+    public GameObject SpawnedPlayer => spawnedPlayer;
+
     public int AliveEnemyCount
     {
         get
@@ -82,19 +84,37 @@ public class SpawnManager : MonoBehaviour
         // 맵 씬 로드가 끝난 뒤 플레이어와 적 스폰을 한 번에 초기화
         spawnStartTime = Time.time;
         ResetEnemyUnlockSpawns();
-        SpawnPlayer();
+        if (!SpawnPlayer()) return;
         CacheEnemySpawnPoints();
         SpawnInitialEnemies();
         StartEnemyAutoSpawn();
         TrySpawnUnlockEnemies();
     }
 
-    private void SpawnPlayer()
+    private bool SpawnPlayer()
     {
+        if (spawnedPlayer != null) return true;
+
+        GameObject playerPrefab = null;
+        var registeredIds = new HashSet<PlayerCharacterId>();
+        foreach (GameObject prefab in playerPrefabs ?? Array.Empty<GameObject>())
+        {
+            if (prefab == null || !prefab.TryGetComponent(out PlayerCharacter character)
+                || !Enum.IsDefined(typeof(PlayerCharacterId), character.CharacterId)
+                || !registeredIds.Add(character.CharacterId))
+            {
+                Debug.LogError("Player prefab catalog contains a missing or duplicate character ID.", this);
+                return false;
+            }
+
+            if (character.CharacterId == CharacterSelection.SelectedId)
+                playerPrefab = prefab;
+        }
+
         if (playerPrefab == null)
         {
-            Debug.LogError("Player prefab is not assigned.");
-            return;
+            Debug.LogError($"Player prefab is not assigned for {CharacterSelection.SelectedId}.", this);
+            return false;
         }
 
         GameObject[] spawnPoints = GameObject.FindGameObjectsWithTag("PlayerSpawnPoint");
@@ -102,20 +122,16 @@ public class SpawnManager : MonoBehaviour
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
             Debug.LogError("PlayerSpawnPoint tag could not be found.");
-            return;
+            return false;
         }
 
         int randomIndex = UnityEngine.Random.Range(0, spawnPoints.Length);
         Transform selectedSpawn = spawnPoints[randomIndex].transform;
 
-        GameObject previousPlayer = spawnedPlayer;
         spawnedPlayer = Instantiate(playerPrefab, selectedSpawn.position, selectedSpawn.rotation);
-        if (previousPlayer != null)
-        {
-            AugmentResourceLoader.Instance?.NotifyPlayerReplaced(previousPlayer);
-        }
-        OnPlayerSpawned?.Invoke(spawnedPlayer);
         BindPlayerLevelSystem(spawnedPlayer);
+        OnPlayerSpawned?.Invoke(spawnedPlayer);
+        return true;
     }
 
     private void CacheEnemySpawnPoints()

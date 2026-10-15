@@ -224,6 +224,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2d8b3f5e3aa8f5f4e89ecf8aa7fdf259, type: 3}
+--- !u!114 &114847658 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4377068760890138030, guid: 2d8b3f5e3aa8f5f4e89ecf8aa7fdf259, type: 3}
+  m_PrefabInstance: {fileID: 114847657}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474353c7c14a0a1499f56ef554f7991d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatsPanelUI
 --- !u!114 &122070651 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4032390586338557058, guid: 2d8b3f5e3aa8f5f4e89ecf8aa7fdf259, type: 3}
@@ -723,9 +734,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2423c7a2822b34d8f9d9d8d591f1768d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameEndHandler
-  stateManager: {fileID: 0}
-  stats: {fileID: 0}
-  levelSystem: {fileID: 0}
   delayBeforeEnding: 1.5
   endingSceneName: EndingScene
 --- !u!4 &1016436197
@@ -754,17 +762,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86d3cb5c4c493ee4ca4c48d14c3ad553, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AugmentPanelUI
---- !u!114 &1457678989 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7588769341373543451, guid: 2d8b3f5e3aa8f5f4e89ecf8aa7fdf259, type: 3}
-  m_PrefabInstance: {fileID: 114847657}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 474353c7c14a0a1499f56ef554f7991d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StatsPanelUI
 --- !u!1001 &1853777039
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -820,7 +817,7 @@ PrefabInstance:
     - target: {fileID: 6813259896320547655, guid: 4b469607cbd28e348974a7774e442e1d, type: 3}
       propertyPath: statsPanelUI
       value: 
-      objectReference: {fileID: 1457678989}
+      objectReference: {fileID: 114847658}
     - target: {fileID: 6813259896320547655, guid: 4b469607cbd28e348974a7774e442e1d, type: 3}
       propertyPath: augmentPanelUI
       value: 
