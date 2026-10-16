@@ -49,6 +49,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
         if (wizardCombat == null)
             wizardCombat = GetComponent<WizardCombat>();
 
+        bool empoweredWizardAttack = wizardCombat != null && wizardCombat.IsOverdriveActive;
         float overdriveDamage = wizardCombat != null ? wizardCombat.BasicDamageMultiplier : 1f;
         float visualScale = wizardCombat != null ? wizardCombat.BasicVisualScale : 1f;
         int additionalPierces = wizardCombat != null ? wizardCombat.BasicAdditionalPierces : 0;
@@ -83,6 +84,12 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
                 projectilePrefab,
                 projectileOrigin.position,
                 projectileRotation);
+            if (wizardCombat != null)
+            {
+                WizardProjectileVisual visual = projectile.gameObject.AddComponent<WizardProjectileVisual>();
+                visual.Configure(empoweredWizardAttack);
+            }
+
             // 피해 주체, 피해 유형, 속도, 사거리, 진행 방향 전달.
             projectile.Initialize(
                 damageDealer,
