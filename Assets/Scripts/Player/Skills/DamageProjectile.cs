@@ -21,6 +21,7 @@ public sealed class DamageProjectile : MonoBehaviour
     private bool initialized;
     private float explosionRadius;
     private ParticleSystem[] particles;
+    private WizardProjectileVisual wizardProjectileVisual;
     private int remainingPierces;
     private readonly HashSet<EnemyHealth> directHits = new HashSet<EnemyHealth>();
     private readonly SkillAreaQuery explosionQuery = new SkillAreaQuery();
@@ -55,6 +56,7 @@ public sealed class DamageProjectile : MonoBehaviour
                 main.scalingMode = ParticleSystemScalingMode.Hierarchy;
             }
         }
+        wizardProjectileVisual = GetComponent<WizardProjectileVisual>();
         initialized = true;
 
         body = GetComponent<Rigidbody>();
@@ -72,7 +74,7 @@ public sealed class DamageProjectile : MonoBehaviour
         float remaining = maxDistance - Vector3.Distance(body.position, spawnPosition);
         if (remaining <= 0.001f)
         {
-            Finish(null);
+            Finish(null, Vector3.zero);
             return;
         }
 
@@ -94,13 +96,14 @@ public sealed class DamageProjectile : MonoBehaviour
         {
             remainingPierces--;
             damageDealer.DealDamage(enemy, damage, damageType, spawnPosition);
+            wizardProjectileVisual?.OnSuccessfulHit(other.ClosestPoint(transform.position));
             return;
         }
 
-        Finish(enemy);
+        Finish(enemy, other.ClosestPoint(transform.position));
     }
 
-    private void Finish(EnemyHealth directTarget)
+    private void Finish(EnemyHealth directTarget, Vector3 hitPosition)
     {
         if (!initialized)
             return;
@@ -109,13 +112,18 @@ public sealed class DamageProjectile : MonoBehaviour
         if (explosionRadius <= 0f)
         {
             if (directTarget != null && damageDealer != null)
+            {
                 damageDealer.DealDamage(directTarget, damage, damageType, spawnPosition);
+                wizardProjectileVisual?.OnSuccessfulHit(hitPosition, true);
+            }
             Destroy(gameObject);
             return;
         }
 
         explosionQuery.DealDamage(damageDealer, body.position, explosionRadius, damage,
             damageType, spawnPosition, directTarget);
+        if (directTarget != null)
+            wizardProjectileVisual?.OnSuccessfulHit(hitPosition, true);
 
         foreach (Collider hitbox in GetComponentsInChildren<Collider>())
             hitbox.enabled = false;
