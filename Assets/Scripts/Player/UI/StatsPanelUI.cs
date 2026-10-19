@@ -1,10 +1,9 @@
 using UnityEngine;
 using TMPro;
 
-// 플레이어 스탯 패널을 현재 생성된 플레이어 데이터와 동기화
+// 스탯 패널. 스포너 스냅샷.
 public class StatsPanelUI : MonoBehaviour
 {
-    private GameObject currentPlayerObject;
     private PlayerStats playerStats;
 
     public TextMeshProUGUI damageText;
@@ -15,8 +14,8 @@ public class StatsPanelUI : MonoBehaviour
     private void OnEnable()
     {
         SpawnManager.OnPlayerSpawned += InitializeUI;
-        // 패널이 나중에 켜져 스폰 이벤트를 놓친 경우를 보정
-        TryInitializeFromScenePlayer();
+        // 이벤트 + 현재 스냅샷
+        InitializeUI(SpawnManager.Instance?.SpawnedPlayer);
     }
 
     private void OnDisable()
@@ -27,37 +26,19 @@ public class StatsPanelUI : MonoBehaviour
 
     private void InitializeUI(GameObject playerObject)
     {
-        if (playerObject == null)
-        {
-            return;
-        }
-
         UnbindPlayer();
-
-        currentPlayerObject = playerObject;
-        playerStats = playerObject.GetComponent<PlayerStats>();
-
-        if (playerStats != null)
-        {
-            playerStats.onStatsChanged += Refresh;
-        }
-
-        Refresh();
-    }
-
-    private void TryInitializeFromScenePlayer()
-    {
-        if (currentPlayerObject != null)
-        {
-            return;
-        }
-
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
 
         if (playerObject != null)
         {
-            InitializeUI(playerObject);
+            playerStats = playerObject.GetComponent<PlayerStats>();
+
+            if (playerStats != null)
+            {
+                playerStats.onStatsChanged += Refresh;
+            }
         }
+
+        Refresh();
     }
 
     public void Refresh()
@@ -120,7 +101,5 @@ public class StatsPanelUI : MonoBehaviour
             playerStats.onStatsChanged -= Refresh;
             playerStats = null;
         }
-
-        currentPlayerObject = null;
     }
 }

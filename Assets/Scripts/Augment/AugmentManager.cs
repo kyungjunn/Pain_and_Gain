@@ -3,6 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+// 적용 결과
+public enum AugmentApplyStatus
+{
+    Applied,
+    Stacked,
+    Failed,
+    Stale,
+    AlreadyMax,
+    Invalid
+}
+
 public struct StatReduceResult
 {
     // 감소 스탯
@@ -11,7 +22,7 @@ public struct StatReduceResult
     public float amount;
 }
 
-// 증강 추첨 및 적용.
+// 증강 추첨·적용. 세션 종료 없음.
 public class AugmentManager : MonoBehaviour
 {
     public static AugmentManager Instance;
@@ -19,6 +30,8 @@ public class AugmentManager : MonoBehaviour
     // 플레이어 구성 요소
     private PlayerStats playerStats;
     private PlayerAugments playerAugments;
+    private readonly HashSet<AugmentSO> failedDefinitions = new HashSet<AugmentSO>(); // 로드 실패 카드
+    private int boundSessionId; // 연결 세션
 
     [Header("Settings")]
     // 선택지 개수
@@ -26,12 +39,22 @@ public class AugmentManager : MonoBehaviour
 
     private void Awake()
     {
+        // 중복 거부
+        if (Instance != null && Instance != this)
+        {
+            enabled = false;
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
     }
 
     private void OnEnable()
     {
+        if (Instance != this) return;
         SpawnManager.OnPlayerSpawned += HandlePlayerSpawned;
+        // 이벤트 + 현재 스냅샷
+        HandlePlayerSpawned(SpawnManager.Instance != null ? SpawnManager.Instance.SpawnedPlayer : null);
     }
 
     private void OnDisable()
@@ -41,21 +64,29 @@ public class AugmentManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
-
-        AugmentResourceLoader host = AugmentResourceLoader.Instance;
-        host?.RequestEndCombatSession();
+        if (Instance == this) Instance = null;
     }
 
-    // 플레이어 연결
+    // 세션 로컬 상태만 해제
+    public void ClearSession()
+    {
+        playerStats = null;
+        playerAugments = null;
+        failedDefinitions.Clear();
+        boundSessionId = 0;
+    }
+
+    // 플레이어 스냅샷 연결
     private void HandlePlayerSpawned(GameObject playerObject)
     {
-        playerStats = playerObject.GetComponent<PlayerStats>();
-        playerAugments = playerObject.GetComponent<PlayerAugments>();
-        AugmentResourceLoader.Instance?.BindPlayer(playerObject);
+        int sessionId = GameManager.Instance != null ? GameManager.Instance.SessionId : 0;
+        if (boundSessionId != sessionId)
+        {
+            failedDefinitions.Clear();
+            boundSessionId = sessionId;
+        }
+        playerStats = playerObject != null ? playerObject.GetComponent<PlayerStats>() : null;
+        playerAugments = playerObject != null ? playerObject.GetComponent<PlayerAugments>() : null;
     }
 
     // 증강 선택지 추첨
@@ -69,12 +100,21 @@ public class AugmentManager : MonoBehaviour
     {
         List<AugmentSO> result = new List<AugmentSO>();
         AugmentResourceLoader host = AugmentResourceLoader.Instance;
-        if (host == null || !host.IsActiveSession)
+        GameManager session = GameManager.Instance;
+        if (host == null || session == null || !session.IsActiveSession || playerStats == null)
         {
             return result;
         }
 
-        List<AugmentSO> pool = host.CreateCandidatePool(playerAugments);
+        List<AugmentSO> pool = new List<AugmentSO>();
+        foreach (AugmentSO augment in host.Catalog)
+        {
+            if (augment == null || failedDefinitions.Contains(augment) ||
+                !augment.IsAvailableFor(playerStats.gameObject)) continue;
+            if (augment is SkillAugmentSO skill && playerAugments != null && playerAugments.IsAtMaxStacks(skill))
+                continue;
+            pool.Add(augment);
+        }
         if (keepVisible != null)
         {
             foreach (AugmentSO visible in keepVisible)
@@ -124,9 +164,12 @@ public class AugmentManager : MonoBehaviour
     // 증강 적용
     public IEnumerator ApplyAugmentRoutine(AugmentSO augment, int sessionId, int ticketId, System.Action<AugmentApplyStatus, string> completed)
     {
-        // 현재 전투가 맞는지 확인 (Loader 가 없거나 현재 전투의 SessionId 와 다르면 적용 X => Stale)
+        // 세션·플레이어 불일치 → Stale
         AugmentResourceLoader host = AugmentResourceLoader.Instance;
-        if (host == null || !host.BelongsToSession(sessionId))
+        GameManager session = GameManager.Instance;
+        PlayerAugments targetAugments = playerAugments;
+        if (host == null || session == null || !session.BelongsToSession(sessionId) ||
+            playerStats == null || session.CurrentPlayer != playerStats.gameObject)
         {
             completed?.Invoke(AugmentApplyStatus.Stale, null);
             yield break;
@@ -179,14 +222,16 @@ public class AugmentManager : MonoBehaviour
                 GameObject prefab = null;
                 string error = null;
                 // 처음 획득하는 스킬이면 프리팹 비동기 로딩
-                yield return host.LoadSkillPrefab(path, sessionId, (loaded, loadError) =>
+                yield return host.LoadSkillPrefab(path, (loaded, loadError) =>
                 {
                     prefab = loaded;
                     error = loadError;
                 });
 
                 // 로딩 후 세션과 플레이어 다시 확인
-                if (!host.BelongsToSession(sessionId) || playerAugments == null)
+                if (session == null || !session.BelongsToSession(sessionId) ||
+                    targetAugments == null || playerAugments != targetAugments ||
+                    session.CurrentPlayer != targetAugments.gameObject)
                 {
                     completed?.Invoke(AugmentApplyStatus.Stale, null);
                     yield break;
@@ -195,7 +240,7 @@ public class AugmentManager : MonoBehaviour
                 // 로드 실패시 증강 목록에서 제거
                 if (prefab == null)
                 {
-                    host.ExcludeFromCombat(skill);
+                    failedDefinitions.Add(skill);
                     completed?.Invoke(AugmentApplyStatus.Failed, error ?? $"스킬 로딩 실패: {skill.augmentName}");
                     yield break;
                 }
@@ -204,7 +249,7 @@ public class AugmentManager : MonoBehaviour
                 SkillAcquireStatus status = playerAugments.TryAcquireLoadedSkill(skill, prefab);
                 if (status == SkillAcquireStatus.Invalid)
                 {
-                    host.ExcludeFromCombat(skill);
+                    failedDefinitions.Add(skill);
                     completed?.Invoke(AugmentApplyStatus.Failed, $"스킬 적용 실패: {skill.augmentName}");
                     yield break;
                 }

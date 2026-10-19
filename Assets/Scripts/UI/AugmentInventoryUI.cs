@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+// 증강 인벤토리. 전투 씬은 스포너 권위.
 public sealed class AugmentInventoryUI : MonoBehaviour
 {
     [SerializeField] private RectTransform content;
@@ -19,14 +20,15 @@ public sealed class AugmentInventoryUI : MonoBehaviour
     private void OnEnable()
     {
         SpawnManager.OnPlayerSpawned += Bind;
-        Bind(GameObject.FindGameObjectWithTag("Player"));
+        // 스포너 스냅샷. 미리보기는 명시적 Bind 유지.
+        Bind(SpawnManager.Instance != null ? SpawnManager.Instance.SpawnedPlayer
+            : playerAugments != null ? playerAugments.gameObject : null);
     }
 
     private void OnDisable()
     {
         SpawnManager.OnPlayerSpawned -= Bind;
         if (playerAugments != null) playerAugments.onSkillsChanged -= Refresh;
-        playerAugments = null;
     }
 
     public void Bind(GameObject player)

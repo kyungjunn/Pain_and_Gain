@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-// 플레이어와 적 스폰, 레벨 기반 적 해금 스폰을 관리
+// 플레이어·적 스폰. 현재 플레이어 스냅샷.
 public class SpawnManager : MonoBehaviour
 {
     public static SpawnManager Instance;
 
+    // 생성·소실 알림
     public static event Action<GameObject> OnPlayerSpawned;
 
     [Header("Prefabs")]
@@ -69,8 +70,20 @@ public class SpawnManager : MonoBehaviour
         }
         else
         {
+            // 중복 거부
+            enabled = false;
             Destroy(gameObject);
         }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance != this) return;
+        Instance = null;
+        // 소유 플레이어 소실
+        GameManager.Instance?.NotifyPlayerUnavailable(spawnedPlayer);
+        spawnedPlayer = null;
+        OnPlayerSpawned?.Invoke(null);
     }
 
     private void OnDisable()
