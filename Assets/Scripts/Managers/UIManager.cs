@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// 선택권 큐·패널. 세션 종료 없음.
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
@@ -22,8 +23,15 @@ public class UIManager : MonoBehaviour
         }
         else
         {
+            // 중복 거부
+            enabled = false;
             Destroy(gameObject);
         }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     public void ShowLoadingUI(bool isShow)
@@ -46,6 +54,8 @@ public class UIManager : MonoBehaviour
 
     public void RequestAugmentChoice()
     {
+        // 비활성 세션: 티켓 거부
+        if (GameManager.Instance == null || !GameManager.Instance.IsActiveSession) return;
         pendingTickets++;
         if (!isAugmentPanelOpen)
         {
@@ -69,6 +79,7 @@ public class UIManager : MonoBehaviour
         ClosePanelAndResume();
     }
 
+    // 선택권·패널 무효
     public void ClearSession(bool resume)
     {
         pendingTickets = 0;
@@ -97,7 +108,7 @@ public class UIManager : MonoBehaviour
 
         isAugmentPanelOpen = true;
         currentTicketId = nextTicketId++;
-        int sessionId = AugmentResourceLoader.Instance?.SessionId ?? 0;
+        int sessionId = GameManager.Instance?.SessionId ?? 0;
         var options = AugmentManager.Instance.GetRandomAugments();
         augmentPanelUI.gameObject.SetActive(true);
 

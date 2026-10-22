@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// 인게임 씬의 빈 오브젝트(예: GameEndHandler)에 붙이는 스크립트
+// 사망 결과 저장 후 세션 종료 요청
 public class GameEndHandler : MonoBehaviour
 {
     private PlayerStateManager stateManager;
@@ -25,6 +25,7 @@ public class GameEndHandler : MonoBehaviour
     private void OnEnable()
     {
         SpawnManager.OnPlayerSpawned += BindPlayer;
+        // 이벤트 + 현재 스냅샷
         if (SpawnManager.Instance != null)
             BindPlayer(SpawnManager.Instance.SpawnedPlayer);
     }
@@ -66,7 +67,9 @@ public class GameEndHandler : MonoBehaviour
         if (ended) return; // 두 번 실행 방지
         ended = true;
 
-        GameResult.Data = BuildResult(); // 죽은 순간의 값을 바로 저장
+        GameResult.Data = BuildResult(); // 사망 순간 수치
+        // 결과 보존 후 세션 종료
+        GameManager.Instance?.NotifyPlayerUnavailable(stateManager.gameObject);
         StartCoroutine(LoadEndingAfterDelay());
     }
 

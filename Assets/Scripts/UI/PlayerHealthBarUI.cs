@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+// 체력바. 스포너 또는 부모 플레이어.
 public sealed class PlayerHealthBarUI : MonoBehaviour
 {
     [SerializeField] private Slider slider;
@@ -27,8 +28,9 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
     {
         if (bindSpawnedPlayer)
         {
+            // 이벤트 + 현재 스냅샷
             SpawnManager.OnPlayerSpawned += HandlePlayerSpawned;
-            HandlePlayerSpawned(GameObject.FindGameObjectWithTag("Player"));
+            HandlePlayerSpawned(SpawnManager.Instance?.SpawnedPlayer);
         }
         else
         {
@@ -41,7 +43,7 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
         // PlayerHealth initializes its current value in Awake, which may run after this UI binds.
         if (bindSpawnedPlayer)
         {
-            HandlePlayerSpawned(GameObject.FindGameObjectWithTag("Player"));
+            HandlePlayerSpawned(SpawnManager.Instance?.SpawnedPlayer);
         }
         else
         {

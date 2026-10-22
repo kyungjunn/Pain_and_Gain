@@ -4,12 +4,13 @@ using UnityEngine;
 public sealed class AugmentChoiceRewardSO : QuestRewardSO
 {
     public override string Description => $"증강 선택 {amount}회";
-    // 선택 UI 및 활성 증강 세션 확인
+    // 활성 세션·현재 플레이어
     protected override bool CanApplyTo(GameObject player) => UIManager.Instance != null
         && UIManager.Instance.augmentPanelUI != null
         && AugmentManager.Instance != null
-        && AugmentResourceLoader.Instance != null
-        && AugmentResourceLoader.Instance.IsActiveSession;
+        && GameManager.Instance != null
+        && GameManager.Instance.IsActiveSession
+        && GameManager.Instance.CurrentPlayer == player;
     protected override float Grant(GameObject player)
     {
         for (int i = 0; i < amount; i++)

@@ -21,6 +21,7 @@ public struct QuestPenaltyResult
     public bool HasPenalty => removedSkill != null || reducedStat.HasValue;
 }
 
+// 퀘스트 진행. 세션 종료 없음.
 public class QuestManager : MonoBehaviour
 {
     public static QuestManager Instance { get; private set; }
@@ -63,14 +64,21 @@ public class QuestManager : MonoBehaviour
         }
         else
         {
+            // 중복 거부
+            enabled = false;
             Destroy(gameObject);
         }
     }
 
     private void OnEnable()
     {
+        if (Instance != this) return;
+
         SpawnManager.OnPlayerSpawned += HandlePlayerSpawned;
         EnemyHealth.OnEnemyKilled += HandleEnemyKilled;
+        // 이벤트 + 현재 스냅샷
+        SpawnManager spawnManager = SpawnManager.Instance;
+        if (spawnManager != null) HandlePlayerSpawned(spawnManager.SpawnedPlayer);
     }
 
     private void OnDisable()
@@ -79,8 +87,31 @@ public class QuestManager : MonoBehaviour
         EnemyHealth.OnEnemyKilled -= HandleEnemyKilled;
     }
 
+    // 세션 종료: 진행 정지, 플레이어 참조 유지
+    public void ClearSession()
+    {
+        State = QuestState.Stopped;
+        countdown = 0f;
+        ClearEventMonster();
+        ClearCurrentQuest();
+    }
+
+    private static bool IsCombatSessionActive()
+    {
+        return GameManager.Instance != null && GameManager.Instance.IsActiveSession;
+    }
+
+    // 비활성 세션 → Stopped
+    private bool HaltIfSessionInactive()
+    {
+        if (IsCombatSessionActive()) return false;
+        if (State != QuestState.Stopped) ClearSession();
+        return true;
+    }
+
     private void Update()
     {
+        if (HaltIfSessionInactive()) return;
         if (player == null || (playerHealth != null && playerHealth.IsDead))
         {
             if (State != QuestState.Stopped)
@@ -123,8 +154,15 @@ public class QuestManager : MonoBehaviour
         }
     }
 
+    // 같은 생존 플레이어: 진행 유지
     private void HandlePlayerSpawned(GameObject playerObject)
     {
+        if (playerObject != null && playerObject == player
+            && (State != QuestState.Stopped || (playerHealth != null && playerHealth.IsDead)))
+        {
+            return;
+        }
+
         ClearEventMonster();
         // 플레이어 바인딩
         player = playerObject;
@@ -134,6 +172,7 @@ public class QuestManager : MonoBehaviour
         CurrentQuest = null;
         CurrentProgress = 0;
         RemainingTime = 0f;
+        countdown = 0f;
         State = QuestState.WaitingForAugment;
         CurrentReward = default;
     }
@@ -154,6 +193,7 @@ public class QuestManager : MonoBehaviour
 
     private void StartRandomQuest()
     {
+        if (HaltIfSessionInactive()) return;
         // 랜덤 퀘스트 시작
         RemoveInvalidQuests();
 
@@ -263,12 +303,14 @@ public class QuestManager : MonoBehaviour
 
     private bool CanResolveQuest()
     {
-        return State == QuestState.Active && CurrentQuest != null && player != null
+        return IsCombatSessionActive()
+            && State == QuestState.Active && CurrentQuest != null && player != null
             && (playerHealth == null || !playerHealth.IsDead);
     }
 
     private QuestPenaltyResult ApplyPenalty(QuestSO quest)
     {
+        if (!IsCombatSessionActive()) return default;
         // 설정된 능력만 손실 · 다른 종류로 전가 없음
         QuestPenaltyResult result = new QuestPenaltyResult();
 
@@ -346,5 +388,10 @@ public class QuestManager : MonoBehaviour
     {
         firstQuestDelay = Mathf.Max(0f, firstQuestDelay);
         questCooldown = Mathf.Max(0f, questCooldown);
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 }

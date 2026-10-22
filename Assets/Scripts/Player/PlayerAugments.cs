@@ -56,7 +56,7 @@ public class PlayerAugments : MonoBehaviour
             return SkillAcquireStatus.Invalid;
         }
 
-        // 캐릭터 전용 증강은 직접 호출 경로에서도 대상 플레이어를 검증한다.
+        // 캐릭터 전용 대상 검사
         if (!so.IsAvailableFor(gameObject))
         {
             return SkillAcquireStatus.Invalid;
@@ -171,7 +171,7 @@ public class PlayerAugments : MonoBehaviour
         return true;
     }
 
-    // 전체 효과 해제 (전투 종료 or 플레이어 제거 시)
+    // 전투 종료·플레이어 제거
     public void ReleaseAll()
     {
         foreach (KeyValuePair<SkillAugmentSO, AugmentSkill> pair in ownedSkills)
@@ -191,11 +191,7 @@ public class PlayerAugments : MonoBehaviour
     {
         ReleaseAll();
 
-        // 플레이어 사용 불가를 Loader에 전달
-        AugmentResourceLoader host = AugmentResourceLoader.Instance;
-        if (host != null)
-        {
-            host.NotifyPlayerUnavailable(gameObject);
-        }
+        // 소유 플레이어 소실 알림
+        GameManager.Instance?.NotifyPlayerUnavailable(gameObject);
     }
 }

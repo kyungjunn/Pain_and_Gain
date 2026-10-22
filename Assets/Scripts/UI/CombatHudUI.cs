@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-// 전투 HUD: 스킬 상태와 궁극기 게이지 표시. 수치 계산은 플레이어 컴포넌트 담당.
+// 전투 HUD. 수치 계산은 플레이어 측.
 public sealed class CombatHudUI : MonoBehaviour
 {
     [SerializeField] private Image basicAttackIcon;
@@ -26,10 +26,9 @@ public sealed class CombatHudUI : MonoBehaviour
 
     private void OnEnable()
     {
-        // 플레이어 교체 시 재연결하고, 이미 생성된 플레이어도 즉시 연결.
+        // 이벤트 + 현재 스냅샷
         SpawnManager.OnPlayerSpawned += Bind;
-        var player = GameObject.FindGameObjectWithTag("Player");
-        Bind(player);
+        Bind(SpawnManager.Instance?.SpawnedPlayer);
     }
 
     private void OnDisable()
