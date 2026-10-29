@@ -253,6 +253,12 @@ public class SpawnManager : MonoBehaviour
         enemySpawnRoutine = null;
     }
 
+    public void StopCombatSpawning()
+    {
+        StopEnemyAutoSpawn();
+        UnbindPlayerLevelSystem();
+    }
+
     private IEnumerator EnemySpawnRoutine()
     {
         while (true)

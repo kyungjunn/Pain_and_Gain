@@ -34,6 +34,10 @@ public class GameManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            GameResult.Clear();
+            RunStats.Reset();
+            Time.timeScale = 1f;
+            IsPaused = false;
         }
         else
         {
@@ -95,6 +99,7 @@ public class GameManager : MonoBehaviour
         SessionId = 0; // 이전 비동기 요청 무효
         GameObject player = currentPlayer;
         currentPlayer = null;
+        SpawnManager.Instance?.StopCombatSpawning();
         UIManager.Instance?.ClearSession(false);
         AugmentManager.Instance?.ClearSession();
         QuestManager.Instance?.ClearSession();

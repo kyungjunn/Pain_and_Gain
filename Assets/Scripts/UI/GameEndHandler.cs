@@ -18,7 +18,6 @@ public class GameEndHandler : MonoBehaviour
 
     private void Awake()
     {
-        RunStats.Reset(); // 새 판 시작: 킬 수 초기화
         ended = false;
     }
 
@@ -47,6 +46,7 @@ public class GameEndHandler : MonoBehaviour
 
     private void BindPlayer(GameObject player)
     {
+        if (stateManager != null && stateManager.gameObject == player) return;
         UnbindPlayer();
         if (player == null || ended) return;
         if (!player.TryGetComponent(out stateManager)
@@ -75,20 +75,8 @@ public class GameEndHandler : MonoBehaviour
 
     private ResultData BuildResult()
     {
-        return new ResultData
-        {
-            isVictory = false,
-            survivalTime = Time.time - combatStartTime,
-            monsterKills = RunStats.Kills,
-            finalLevel = levelSystem.level,
-
-            attackDamage = stats.AttackDamage,
-            hp = 0f,                // 죽은 순간이라 현재 체력은 0
-            maxHp = stats.HP,       // PlayerStats.HP는 최대 체력
-            speed = stats.MoveSpeed,
-            attackSpeed = stats.AttackSpeed,
-            defense = stats.Defense
-        };
+        return ResultData.Capture(stats, levelSystem, stats.GetComponent<PlayerAugments>(),
+            Time.time - combatStartTime, RunStats.Kills);
     }
 
     private IEnumerator LoadEndingAfterDelay()
