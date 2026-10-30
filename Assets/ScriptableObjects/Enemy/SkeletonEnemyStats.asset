@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   enemyName: Skeleton
   maxHealth: 20
-  expReward: 50
+  expReward: 25
   moveSpeed: 3.5
   acceleration: 8
   stoppingDistance: 1.8

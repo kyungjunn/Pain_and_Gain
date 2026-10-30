@@ -176,7 +176,7 @@ public static class LevelOneEnemySetup
         stats = ScriptableObject.CreateInstance<EnemyStats>();
         Set(stats, "enemyName", definition.Name);
         Set(stats, "maxHealth", 20);
-        Set(stats, "expReward", 50);
+        Set(stats, "expReward", 25);
         Set(stats, "attackDamage", 3);
         Set(stats, "moveSpeed", definition.Speed);
         Set(stats, "stoppingDistance", 1.1f);

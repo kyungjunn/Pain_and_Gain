@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   enemyName: Giant
   maxHealth: 80
-  expReward: 150
+  expReward: 100
   moveSpeed: 2.4
   acceleration: 6
   stoppingDistance: 2.6
