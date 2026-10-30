@@ -26,6 +26,9 @@ public sealed class WizardSkillSO : PlayerSkillSO
     [SerializeField, Min(0.1f)] private float resonanceFieldRange = 12f;
     [SerializeField, Min(0.1f)] private float resonanceFieldDuration = 5f;
     [SerializeField, Min(0.1f)] private float resonanceFieldRadius = 3f;
+    [SerializeField, Range(0f, 89f)] private float resonanceMaxPlacementSlope = 50f;
+    [Tooltip("Maximum perpendicular distance from the placement plane to perimeter ground samples, in metres.")]
+    [SerializeField, Min(0.01f)] private float resonanceMaxSurfaceDeviation = 0.2f;
     [SerializeField, Min(0.05f)] private float resonanceFieldTickInterval = 1f;
     [SerializeField, Min(0f)] private float resonanceFieldTickDamageMultiplier = 0.35f;
     [SerializeField, Min(0f)] private float resonanceDamageMultiplier = 0.65f;
@@ -57,6 +60,8 @@ public sealed class WizardSkillSO : PlayerSkillSO
     public float ResonanceFieldRange => resonanceFieldRange;
     public float ResonanceFieldDuration => resonanceFieldDuration;
     public float ResonanceFieldRadius => resonanceFieldRadius;
+    public float ResonanceMaxPlacementSlope => resonanceMaxPlacementSlope;
+    public float ResonanceMaxSurfaceDeviation => resonanceMaxSurfaceDeviation;
     public float ResonanceFieldTickInterval => resonanceFieldTickInterval;
     public float ResonanceFieldTickDamageMultiplier => resonanceFieldTickDamageMultiplier;
     public float ResonanceDamageMultiplier => resonanceDamageMultiplier;
@@ -96,6 +101,8 @@ public sealed class WizardSkillSO : PlayerSkillSO
         resonanceFieldRange = Mathf.Max(0.1f, resonanceFieldRange);
         resonanceFieldDuration = Mathf.Max(0.1f, resonanceFieldDuration);
         resonanceFieldRadius = Mathf.Max(0.1f, resonanceFieldRadius);
+        resonanceMaxPlacementSlope = Mathf.Clamp(resonanceMaxPlacementSlope, 0f, 89f);
+        resonanceMaxSurfaceDeviation = Mathf.Max(0.01f, resonanceMaxSurfaceDeviation);
         resonanceFieldTickInterval = Mathf.Max(0.05f, resonanceFieldTickInterval);
         resonanceFieldTickDamageMultiplier = Mathf.Max(0f, resonanceFieldTickDamageMultiplier);
         resonanceDamageMultiplier = Mathf.Max(0f, resonanceDamageMultiplier);
