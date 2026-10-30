@@ -9,7 +9,7 @@ public sealed class PlayerUltimateGauge : MonoBehaviour
     // 현재 게이지
     [SerializeField, Min(0f)] private float currentGauge;
     // 피해당 충전량
-    [SerializeField, Min(0f)] private float gaugePerDamage = 1f;
+    [SerializeField, Min(0f)] private float gaugePerDamage = 0.25f;
 
     private PlayerDamageDealer damageDealer;
     private NinjaUltimate ninjaUltimate;

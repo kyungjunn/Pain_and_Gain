@@ -345,7 +345,8 @@ public sealed class WizardCombat : MonoBehaviour
         else
         {
             ClearPreparedResonancePreviewCast();
-            if (!TryFindGroundPosition(skill.ResonanceFieldRange, out groundPosition, out groundNormal))
+            if (!TryFindGroundCandidate(skill, out groundPosition, out groundNormal, out bool validPlacement) ||
+                !validPlacement)
                 return false;
         }
 
@@ -627,27 +628,61 @@ public sealed class WizardCombat : MonoBehaviour
         DestroyVisual(visual);
     }
 
-    private bool TryFindGroundPosition(float range, out Vector3 groundPosition, out Vector3 groundNormal)
-    {
-        return TryFindGroundCandidate(range, out groundPosition, out groundNormal, out bool withinRange) &&
-               withinRange;
-    }
-
-    private bool TryFindGroundCandidate(float range, out Vector3 groundPosition, out Vector3 groundNormal,
-        out bool withinRange)
+    private bool TryFindGroundCandidate(WizardSkillSO skill, out Vector3 groundPosition,
+        out Vector3 groundNormal, out bool validPlacement)
     {
         groundPosition = default;
         groundNormal = Vector3.up;
-        withinRange = false;
+        validPlacement = false;
         Camera aimCamera = Camera.main;
-        if (aimCamera == null || owner == null)
+        if (aimCamera == null || owner == null || skill == null)
             return false;
 
         Ray aimRay = aimCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        if (!TryFindNearestPlacementSurface(aimRay, aimCamera.farClipPlane, out RaycastHit nearest))
+            return false;
+
+        // A hit remains visible even when its slope or surrounding surface prevents placement.
+        groundPosition = nearest.point;
+        groundNormal = nearest.normal.normalized;
+        Vector3 flatOffset = groundPosition - owner.transform.position;
+        flatOffset.y = 0f;
+        validPlacement = flatOffset.sqrMagnitude <= skill.ResonanceFieldRange * skill.ResonanceFieldRange &&
+                         IsResonanceSurfaceValid(skill, groundPosition, groundNormal);
+        return true;
+    }
+
+    private bool IsResonanceSurfaceValid(WizardSkillSO skill, Vector3 center, Vector3 normal)
+    {
+        float minimumUp = Mathf.Cos(skill.ResonanceMaxPlacementSlope * Mathf.Deg2Rad);
+        if (normal.y + 0.00001f < minimumUp)
+            return false;
+
+        const int perimeterSamples = 8;
+        Quaternion rotation = Quaternion.FromToRotation(Vector3.up, normal);
+        float probeHeight = skill.ResonanceFieldRadius + skill.ResonanceMaxSurfaceDeviation + 0.05f;
+        for (int i = 0; i < perimeterSamples; i++)
+        {
+            float angle = Mathf.PI * 2f * i / perimeterSamples;
+            Vector3 point = center + rotation * new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) *
+                skill.ResonanceFieldRadius;
+            Ray probe = new Ray(point + Vector3.up * probeHeight, Vector3.down);
+            if (!TryFindNearestPlacementSurface(probe, probeHeight * 2f, out RaycastHit surface) ||
+                surface.normal.y + 0.00001f < minimumUp ||
+                Mathf.Abs(Vector3.Dot(surface.point - center, normal)) > skill.ResonanceMaxSurfaceDeviation)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private bool TryFindNearestPlacementSurface(Ray ray, float distance, out RaycastHit nearest)
+    {
         int hitCount;
         while (true)
         {
-            hitCount = Physics.RaycastNonAlloc(aimRay, groundHitBuffer, aimCamera.farClipPlane, ~0,
+            hitCount = Physics.RaycastNonAlloc(ray, groundHitBuffer, distance, ~0,
                 QueryTriggerInteraction.Ignore);
             if (hitCount < groundHitBuffer.Length)
                 break;
@@ -655,7 +690,7 @@ public sealed class WizardCombat : MonoBehaviour
             System.Array.Resize(ref groundHitBuffer, groundHitBuffer.Length * 2);
         }
         bool hasNearest = false;
-        RaycastHit nearest = default;
+        nearest = default;
         for (int i = 0; i < hitCount; i++)
         {
             Collider hitCollider = groundHitBuffer[i].collider;
@@ -672,15 +707,7 @@ public sealed class WizardCombat : MonoBehaviour
             }
         }
 
-        if (!hasNearest || nearest.normal.y < Mathf.Cos(50f * Mathf.Deg2Rad))
-            return false;
-
-        Vector3 flatOffset = nearest.point - owner.transform.position;
-        flatOffset.y = 0f;
-        groundPosition = nearest.point;
-        groundNormal = nearest.normal.normalized;
-        withinRange = flatOffset.sqrMagnitude <= range * range;
-        return true;
+        return hasNearest;
     }
 
     private bool TryFindCoreOverlap(Vector3 center, float radius, ref Collider[] overlapBuffer)
@@ -1071,15 +1098,15 @@ public sealed class WizardCombat : MonoBehaviour
             return;
         }
 
-        preview.HasGroundTarget = TryFindGroundCandidate(preview.Skill.ResonanceFieldRange,
-            out Vector3 position, out Vector3 normal, out bool withinRange);
+        preview.HasGroundTarget = TryFindGroundCandidate(preview.Skill,
+            out Vector3 position, out Vector3 normal, out bool validPlacement);
         if (preview.HasGroundTarget)
         {
             preview.Center = position;
             preview.Normal = normal;
         }
 
-        preview.IsValid = preview.HasGroundTarget && withinRange && owner != null &&
+        preview.IsValid = preview.HasGroundTarget && validPlacement && owner != null &&
                           owner.ECharges > 0 && !IsOwnerDead() && !IsGamePaused;
 
         if (preview.RangeRenderer == null)

@@ -4,6 +4,7 @@ public static class GameResult
 {
     public static ResultData Data;
 
+    [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
     public static void Clear()
     {
         Data = null;
