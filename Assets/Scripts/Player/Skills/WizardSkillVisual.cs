@@ -12,7 +12,7 @@ public enum WizardSkillVisualRole
     OverdriveFinal
 }
 
-// Appearance belongs to the prefab; runtime owns playback and cleanup only.
+// 외형은 프리팹 담당, 실행 중 재생·정리만 제어
 public sealed class WizardSkillVisual : MonoBehaviour
 {
     private ParticleSystem[] systems;

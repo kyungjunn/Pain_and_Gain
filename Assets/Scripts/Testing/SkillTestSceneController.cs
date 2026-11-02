@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Scene-only test controls; production spawning and skill rules remain unchanged.
+// 테스트 씬 전용 조작: 실제 생성·스킬 규칙 유지
 public sealed class SkillTestSceneController : MonoBehaviour
 {
     [SerializeField] private GameObject[] characterPrefabs;
@@ -47,7 +47,7 @@ public sealed class SkillTestSceneController : MonoBehaviour
         currentPlayer = Instantiate(characterPrefabs[index], spawnPoint.position, spawnPoint.rotation);
         currentPlayer.name = characterPrefabs[index].name;
         FillUltimate();
-        // Existing HUD components bind the sole active Player on OnEnable.
+        // 화면 활성화 시 단일 플레이어 자동 연결
         hudRoot.SetActive(true);
         instructions.SetText("SKILL TEST  |  " + currentPlayer.name +
             "\nF1 Wizard   F2 Ninja   F3 Knight\nF4 Fill R   F5 Respawn / Reset\nWASD Move   Mouse Aim   LMB Attack   Q / E / R Skills   Tab Stats");

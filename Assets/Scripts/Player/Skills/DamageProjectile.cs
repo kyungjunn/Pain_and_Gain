@@ -1,4 +1,4 @@
-// Shared flight with piercing direct hits or a one-shot area explosion.
+// 공용 투사체: 관통 직격·단발 범위 폭발
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -44,7 +44,7 @@ public sealed class DamageProjectile : MonoBehaviour
         explosionRadius = Mathf.Max(0f, blastRadius);
         remainingPierces = Mathf.Max(0, additionalPierces);
         directHits.Clear();
-        // Scale the artwork, not the flight collider: a large R must not hit early.
+        // 연출만 확대: 충돌체 확대에 따른 조기 적중 방지
         foreach (Transform child in transform)
             child.localScale *= Mathf.Max(0.1f, visualScale);
         if (explosionRadius > 0f || !Mathf.Approximately(visualScale, 1f))
@@ -128,7 +128,7 @@ public sealed class DamageProjectile : MonoBehaviour
         foreach (Collider hitbox in GetComponentsInChildren<Collider>())
             hitbox.enabled = false;
 
-        // Reuse the projectile's green particles as a short, stationary burst.
+        // 투사체 입자를 짧은 고정 폭발로 재사용
         foreach (ParticleSystem particle in particles)
         {
             particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);

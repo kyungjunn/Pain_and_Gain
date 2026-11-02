@@ -156,6 +156,7 @@ public class GameManager : MonoBehaviour
         pendingMapLoad = asyncLoad;
         asyncLoad.allowSceneActivation = false;
 
+        // 활성화 대기 구간 제외: 실제 로딩 진행률 정규화
         while (asyncLoad.progress < 0.9f)
         {
             if (startupCancelled) yield break;
@@ -191,6 +192,7 @@ public class GameManager : MonoBehaviour
 
         mapScene = loadedScene;
         resourceLoader.InitializeMetadata();
+        // 맵 준비 후 세션 발급: 생성 콜백의 적용 권한 확보
         SessionId = nextSessionId++;
 
         if (SpawnManager.Instance != null)

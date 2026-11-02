@@ -54,7 +54,7 @@ public class LoadingPanelUI : MonoBehaviour
         // UI와 같은 건 unscaled를 사용
         progressBar.value = Mathf.MoveTowards(progressBar.value, targetProgress, fillSpeed * Time.unscaledDeltaTime);
 
-        if (progressBar.value >= 1f )
+        if (progressBar.value >= 1f)
         {
             isFillsDone = true;
         }

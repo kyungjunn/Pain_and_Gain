@@ -469,6 +469,7 @@ public sealed class PlayerSkillController : MonoBehaviour
         if (speedBonusRatio <= 0f)
             return;
 
+        // 기존 돌진 보너스 제외: 재발동 시 복리 증가 방지
         float moveSpeedWithoutDashBonus = stats.MoveSpeed -
                                           (dashMoveSpeedBonusActive ? dashMoveSpeedBonus : 0f);
         dashMoveSpeedBonus = Mathf.Max(0f, moveSpeedWithoutDashBonus) * speedBonusRatio;
@@ -528,6 +529,7 @@ public sealed class PlayerSkillController : MonoBehaviour
             return;
         }
 
+        // 시작 프레임·화면 조작 클릭의 설치 확정 방지
         if (mouse.leftButton.wasPressedThisFrame && Time.frameCount > resonancePreviewOpenedFrame &&
             !IsPointerOverUI())
         {

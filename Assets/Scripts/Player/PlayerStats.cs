@@ -39,7 +39,7 @@ public class PlayerStats : MonoBehaviour
     }
 
     // 증강 누적분을 비율만큼 감소시키고 실제 감소량을 반환.
-    // 누적치 × ratio만 빼므로 결과가 0 밑으로 갈 수 없고 base 스탯은 건드리지 않는다.
+    // 증강 누적치만 비례 감소: 기본 스탯 유지·음수 방지
     public float ReduceStatByRatio(AugmentType type, float ratio)
     {
         float current = GetAugmentBonus(type);
@@ -85,14 +85,14 @@ public class PlayerStats : MonoBehaviour
         onStatsChanged?.Invoke();
     }
 
-    // 임시 버프도 절대값으로 켜고(value) 끈다(0).
+    // 임시 버프 절대값 설정: 해제 시 영으로 초기화
     public void SetTempBonus(AugmentType type, float value)
     {
         tempBonus[type] = value;
         onStatsChanged?.Invoke();
     }
 
-    // Ability-owned temporary bonuses add independently to consumable buffs.
+    // 스킬별 임시 보너스: 소모품 버프와 독립 합산
     public void SetTemporaryBonus(object source, AugmentType type, float value)
     {
         if (source == null)
@@ -120,6 +120,7 @@ public class PlayerStats : MonoBehaviour
 
     private float GetTotalBonus(AugmentType type)
     {
+        // 증강·장비·소모품·스킬 보너스 합산
         return GetBonus(augmentBonus, type) + GetBonus(equipBonus, type) + GetBonus(tempBonus, type) +
                GetSourcedTemporaryBonus(type);
     }
