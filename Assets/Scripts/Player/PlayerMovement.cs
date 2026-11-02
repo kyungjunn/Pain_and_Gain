@@ -25,13 +25,13 @@ public class PlayerMovement : MonoBehaviour
         stats = GetComponent<PlayerStats>();
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    // 생성 후 최초 갱신 전 초기화
     void Start()
     {
         
     }
 
-    // Update is called once per frame
+    // 매 프레임 갱신
     void Update()
     {
         //Move();

@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // 새로운 Input System
+using UnityEngine.InputSystem; // 신규 입력 시스템
 
 public class PlayerInputHandler : MonoBehaviour
 {
@@ -37,7 +37,7 @@ public class PlayerInputHandler : MonoBehaviour
         }
     }
 
-    // 경험치 획득 테스트 input (X)
+    // 경험치 획득 테스트 입력
     public void OnExpTest(InputValue value)
     {
         if (value.isPressed)

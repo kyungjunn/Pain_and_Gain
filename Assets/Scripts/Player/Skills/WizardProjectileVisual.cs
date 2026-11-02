@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Added only to wizard basic projectiles; keeps all visual work off shared projectile owners.
+// 마법사 평타 전용 연출: 공용 투사체와 분리
 public sealed class WizardProjectileVisual : MonoBehaviour
 {
     private const int SourceParticleLimit = 32;
@@ -91,7 +91,7 @@ public sealed class WizardProjectileVisual : MonoBehaviour
         CreateHitSpark(glowMaterial);
     }
 
-    // Called only after DamageProjectile accepts a new, living enemy hit.
+    // 생존 적 신규 적중 확정 후 연출 호출
     public void OnSuccessfulHit(Vector3 hitPosition, bool projectileFinishes = false)
     {
         if (hitSpark == null || hitSparkReleased)

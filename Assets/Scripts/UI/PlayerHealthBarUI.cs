@@ -40,7 +40,7 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
 
     private void Start()
     {
-        // PlayerHealth initializes its current value in Awake, which may run after this UI binds.
+        // 초기화 순서 차이 대응: 연결 후 체력 재조회
         if (bindSpawnedPlayer)
         {
             HandlePlayerSpawned(SpawnManager.Instance?.SpawnedPlayer);

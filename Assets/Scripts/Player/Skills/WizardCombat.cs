@@ -5,7 +5,7 @@ using UnityEngine.AI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-// Runtime ownership for the wizard's independently tunable Q/E/R effects.
+// 마법사 스킬별 효과 상태·수명 관리
 public sealed class WizardCombat : MonoBehaviour
 {
     private const float ResidualGravityDuration = 2f;
@@ -150,7 +150,7 @@ public sealed class WizardCombat : MonoBehaviour
         }
     }
 
-    // Includes synchronous final-blast damage, but not its lingering visual.
+    // 종료 폭발 피해 포함, 잔여 연출 제외
     public bool IsUltimateActive =>
         isActiveAndEnabled && overdrive != null && !overdrive.Cancelled && !IsOwnerDead();
 
@@ -616,7 +616,7 @@ public sealed class WizardCombat : MonoBehaviour
 
     private IEnumerator CleanupBurst(WizardSkillVisual visual)
     {
-        // Particle lifetime owns the tail, with a bound for malformed assets.
+        // 입자 수명까지 연출 유지, 비정상 자산 대기 제한
         float endTime = Time.time + 12f;
         yield return null;
         while (visual != null && visual.IsAlive() && Time.time < endTime)
@@ -642,7 +642,7 @@ public sealed class WizardCombat : MonoBehaviour
         if (!TryFindNearestPlacementSurface(aimRay, aimCamera.farClipPlane, out RaycastHit nearest))
             return false;
 
-        // A hit remains visible even when its slope or surrounding surface prevents placement.
+        // 경사·주변 지형으로 설치 불가 시에도 적중 지점 유지
         groundPosition = nearest.point;
         groundNormal = nearest.normal.normalized;
         Vector3 flatOffset = groundPosition - owner.transform.position;
@@ -953,7 +953,7 @@ public sealed class WizardCombat : MonoBehaviour
             RefreshOverchargeExtension(activeOverdrive);
         }
 
-        // Finish every field's hit even if an earlier kill opened the paused level-up UI.
+        // 처치로 레벨업 화면이 열려도 모든 장판 타격 완료
         if (damageType != PlayerDamageType.BasicAttack)
             return;
 
@@ -970,7 +970,7 @@ public sealed class WizardCombat : MonoBehaviour
             if (offset.sqrMagnitude > field.Radius * field.Radius)
                 continue;
 
-            // Reserve this field's independent cooldown before re-entrant damage callbacks.
+            // 피해 콜백 재진입 전 장판별 재발동 기한 선점
             field.NextResonanceTime = Time.time + field.ResonanceCooldown;
             float radius = field.ResonanceRadius * (1f + Mathf.Max(0f,
                 GetCombatAugmentValue(PlayerCombatAugmentEffect.WizardResonanceRadius, field.Skill)));
@@ -1059,8 +1059,8 @@ public sealed class WizardCombat : MonoBehaviour
                 field.Center + Vector3.up * 0.04f, field.Radius / 2f);
     }
 
-    // Practical authoring radii: circle 3, vortex/slash 4, hit 2, final 5 units.
-    // Portal is reduced to a compact core; body aura retains its authored size.
+    // 제작 기준 반경: 원형 3, 소용돌이·참격 4, 타격 2, 종료 폭발 5
+    // 포탈 중심부 축소, 신체 오라 원본 크기 유지
     private WizardSkillVisual CreateVisual(GameObject prefab, string objectName,
         Vector3 position, float scale, bool continuous, Transform parent = null)
     {

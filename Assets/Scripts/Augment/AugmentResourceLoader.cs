@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 증강 자산. 로드·캐시·drain. 세션·플레이어 비소유.
+// 증강 자산 로드·캐시·해제 관리: 세션·플레이어와 독립
 public class AugmentResourceLoader : MonoBehaviour
 {
     private static AugmentResourceLoader instance;
@@ -32,7 +32,7 @@ public class AugmentResourceLoader : MonoBehaviour
             return;
         }
         instance = this;
-        DontDestroyOnLoad(gameObject); // 씬 파괴 후에도 drain 완료
+        DontDestroyOnLoad(gameObject); // 씬 파괴 후에도 자원 해제 완료
     }
 
     private void OnDestroy()
@@ -127,7 +127,7 @@ public class AugmentResourceLoader : MonoBehaviour
         inFlight.Clear();
         prefabCache.Clear();
         catalog.Clear();
-        yield return null; // 호출자 Destroy/핸들 할당 여유
+        yield return null; // 호출자 파괴·핸들 할당 대기
         foreach (ResourceRequest request in requests)
             if (request != null && !request.isDone) yield return request;
         requests.Clear();

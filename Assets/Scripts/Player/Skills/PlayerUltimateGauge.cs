@@ -36,7 +36,7 @@ public sealed class PlayerUltimateGauge : MonoBehaviour
     // 충전
     public void Add(float amount)
     {
-        // Lazy lookup also supports runtime factories that add combat after the gauge.
+        // 게이지 이후 추가된 전투 컴포넌트 지연 탐색
         if (ninjaUltimate == null)
             ninjaUltimate = GetComponent<NinjaUltimate>();
         if (wizardCombat == null)

@@ -312,7 +312,7 @@ public sealed class NinjaUltimate : MonoBehaviour
         float buffedAttackDamage,
         HashSet<EnemyHealth> hitThisTick)
     {
-        // Read at application so removing the augment during the dash cancels the pending burst.
+        // 폭발 직전 증강 재조회: 돌진 중 제거 반영
         float damageMultiplier = GetCombatAugmentValue(PlayerCombatAugmentEffect.UltimateEndBurst);
         if (damageMultiplier <= 0f || IsPlayerDead())
             return;
@@ -433,7 +433,7 @@ public sealed class NinjaUltimate : MonoBehaviour
 
     private float GetAugmentedStormRadius()
     {
-        // Sample live so removing the augment stops affecting pending storm ticks and burst radius.
+        // 범위 실시간 조회: 증강 제거 즉시 반영
         float baseRadius = SafeAtLeast(stormRadius, MinimumDistance, 2f);
         float rangeBonus = GetCombatAugmentValue(PlayerCombatAugmentEffect.UltimateStormRange);
         return SafeAtLeast(baseRadius * (1f + rangeBonus), MinimumDistance, baseRadius);
