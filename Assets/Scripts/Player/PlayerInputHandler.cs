@@ -37,12 +37,4 @@ public class PlayerInputHandler : MonoBehaviour
         }
     }
 
-    // 경험치 획득 테스트 입력
-    public void OnExpTest(InputValue value)
-    {
-        if (value.isPressed)
-        {
-            levelSystem.AddExp(25);
-        }
-    }
 }
