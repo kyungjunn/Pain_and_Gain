@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // 신규 입력 시스템
+using UnityEngine.InputSystem; // 새로운 Input System
 
 public class PlayerInputHandler : MonoBehaviour
 {

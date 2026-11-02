@@ -25,13 +25,11 @@ public class PlayerMovement : MonoBehaviour
         stats = GetComponent<PlayerStats>();
     }
 
-    // 생성 후 최초 갱신 전 초기화
     void Start()
     {
         
     }
 
-    // 매 프레임 갱신
     void Update()
     {
         //Move();

@@ -164,7 +164,7 @@ public class AugmentManager : MonoBehaviour
     // 증강 적용
     public IEnumerator ApplyAugmentRoutine(AugmentSO augment, int sessionId, int ticketId, System.Action<AugmentApplyStatus, string> completed)
     {
-        // 세션·플레이어 불일치 요청 무효화
+        // 세션·플레이어 불일치 -> 요청 무효화(Stale)
         AugmentResourceLoader host = AugmentResourceLoader.Instance;
         GameManager session = GameManager.Instance;
         PlayerAugments targetAugments = playerAugments;
@@ -203,7 +203,7 @@ public class AugmentManager : MonoBehaviour
                     yield break;
                 }
 
-                // 최대 중첩 시 추가 적용 차단
+                // 최대 중첩 상태라면 => 추가 적용 차단(AlreadyMax)
                 if (playerAugments.IsAtMaxStacks(skill))
                 {
                     completed?.Invoke(AugmentApplyStatus.AlreadyMax, null);
@@ -260,7 +260,7 @@ public class AugmentManager : MonoBehaviour
                     yield break;
                 }
 
-                // 신규 적용·중첩 결과 반환
+                // 신규 적용·중첩 AugmentApplyStatus로 결과 반환
                 completed?.Invoke(status == SkillAcquireStatus.Stacked ? AugmentApplyStatus.Stacked : AugmentApplyStatus.Applied, null);
                 yield break;
 

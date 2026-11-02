@@ -51,10 +51,10 @@ public class LoadingPanelUI : MonoBehaviour
             return;
         }
 
-        // 일시정지와 무관한 화면 갱신
+        // UI와 같은 건 unscaled를 사용
         progressBar.value = Mathf.MoveTowards(progressBar.value, targetProgress, fillSpeed * Time.unscaledDeltaTime);
 
-        if (progressBar.value >= 1f )
+        if (progressBar.value >= 1f)
         {
             isFillsDone = true;
         }
