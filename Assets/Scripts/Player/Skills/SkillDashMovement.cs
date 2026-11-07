@@ -2,9 +2,36 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-// 공용 돌진 이동. 타격/이펙트는 각 스킬의 onStep에서 처리.
+// 공용 돌진 이동과 지형 검사. 타격/이펙트는 각 스킬의 onStep에서 처리.
 public static class SkillDashMovement
 {
+    public static float GetTerrainLimitedDistance(Transform actor, Vector3 direction, float distance)
+    {
+        CapsuleCollider capsule = actor.GetComponent<CapsuleCollider>();
+        direction.y = 0f;
+        if (capsule == null || direction.sqrMagnitude <= Mathf.Epsilon)
+            return distance;
+
+        direction.Normalize();
+        // 발밑 바닥이 시작 지점에서 걸리지 않도록 검사 캡슐을 살짝 올린다.
+        float scale = Mathf.Max(Mathf.Abs(actor.lossyScale.x), Mathf.Abs(actor.lossyScale.z));
+        float radius = capsule.radius * scale * 0.9f;
+        float halfHeight = capsule.height * Mathf.Abs(actor.lossyScale.y) * 0.5f;
+        Vector3 center = actor.TransformPoint(capsule.center);
+        Vector3 bottom = center + Vector3.up * (-halfHeight + radius + 0.15f);
+        Vector3 top = center + Vector3.up * (halfHeight - radius);
+
+        float limit = distance;
+        foreach (RaycastHit hit in Physics.CapsuleCastAll(bottom, top, radius, direction, distance,
+                     Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            if (hit.collider is TerrainCollider)
+                limit = Mathf.Min(limit, Mathf.Max(0f, hit.distance - 0.05f));
+        }
+
+        return limit;
+    }
+
     public static IEnumerator Move(
         Transform actor, Vector3 direction, float distance, float duration,
         Action<Vector3, Vector3, float> onStep,

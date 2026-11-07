@@ -42,7 +42,7 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
         direction.Normalize();
 
         // 시작 시 한 번 지형 충돌 거리 측정.
-        float allowedDistance = GetTerrainLimitedDistance(owner, direction);
+        float allowedDistance = SkillDashMovement.GetTerrainLimitedDistance(owner.transform, direction, distance);
 
         // 돌진 중 일반 이동 잠금. 종료/중단 시 반드시 해제.
         bool movementLockBeforeDash = owner.IsMovementLocked;
@@ -76,33 +76,6 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
             if (owner != null)
                 owner.SetMovementLocked(owner.IsPlayerDead ? false : movementLockBeforeDash);
         }
-    }
-
-    private float GetTerrainLimitedDistance(PlayerSkillController owner, Vector3 direction)
-    {
-        // 플레이어 캡슐 크기로 전방 검사; 캡슐이 없으면 기존 거리 유지.
-        CapsuleCollider capsule = owner.GetComponent<CapsuleCollider>();
-        if (capsule == null || direction.sqrMagnitude <= Mathf.Epsilon)
-            return distance;
-
-        // 발밑 바닥이 돌진 시작 지점에서 걸리지 않도록 검사 캡슐을 살짝 올림.
-        float scale = Mathf.Max(Mathf.Abs(owner.transform.lossyScale.x), Mathf.Abs(owner.transform.lossyScale.z));
-        float radius = capsule.radius * scale * 0.9f;
-        float halfHeight = capsule.height * Mathf.Abs(owner.transform.lossyScale.y) * 0.5f;
-        Vector3 center = owner.transform.TransformPoint(capsule.center);
-        Vector3 bottom = center + Vector3.up * (-halfHeight + radius + 0.15f);
-        Vector3 top = center + Vector3.up * (halfHeight - radius);
-
-        float limit = distance;
-        // 지형만 선택하고 가장 가까운 충돌 직전 거리로 제한.
-        foreach (RaycastHit hit in Physics.CapsuleCastAll(bottom, top, radius, direction, distance,
-                     Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
-        {
-            if (hit.collider is TerrainCollider)
-                limit = Mathf.Min(limit, Mathf.Max(0f, hit.distance - 0.05f));
-        }
-
-        return limit;
     }
 
     private void OnValidate()

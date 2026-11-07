@@ -204,7 +204,8 @@ public sealed class NinjaUltimate : MonoBehaviour
     {
         // 돌진 시작 지점, 제한된 거리/시간, 이펙트 간격 준비.
         Vector3 dashStart = transform.position;
-        float distance = SafeAtLeast(dashDistance, MinimumDistance, 7f);
+        float distance = SkillDashMovement.GetTerrainLimitedDistance(transform, direction,
+            SafeAtLeast(dashDistance, MinimumDistance, 7f));
         float duration = SafeAtLeast(dashDuration, MinimumDuration, 0.28f);
         float nextTrailDistance = 0f;
         int trailCount = 0;
