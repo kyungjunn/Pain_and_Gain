@@ -8,6 +8,8 @@ public sealed class DamageProjectile : MonoBehaviour
     [Header("Launch height correction")]
     [SerializeField, Range(0f, 30f)] private float horizontalAimAngle = 8f;
     [SerializeField, Range(0f, 60f)] private float verticalAimAngle = 35f;
+    [Tooltip("비행 중 높이 추적 속도(도/초). 좌우 방향은 추적하지 않는다.")]
+    [SerializeField, Min(0f)] private float verticalTrackingSpeed = 360f;
     private static readonly ProjectileHeightAim HeightAim = new ProjectileHeightAim();
 
     private PlayerDamageDealer damageDealer;
@@ -17,6 +19,10 @@ public sealed class DamageProjectile : MonoBehaviour
     private float moveSpeed;
     private int damage;
     private Vector3 moveDirection;
+    private Vector3 planarDirection;
+    private Collider aimTarget;
+    private EnemyHealth aimTargetHealth;
+    private bool hadAimTarget;
     private Rigidbody body;
     private bool initialized;
     private float explosionRadius;
@@ -37,7 +43,10 @@ public sealed class DamageProjectile : MonoBehaviour
         maxDistance = Mathf.Max(0.1f, distance);
         moveSpeed = Mathf.Max(0f, speed);
         moveDirection = HeightAim.Resolve(transform.position, direction, maxDistance,
-            dealer != null ? dealer.transform : null, horizontalAimAngle, verticalAimAngle);
+            dealer != null ? dealer.transform : null, horizontalAimAngle, verticalAimAngle, out aimTarget);
+        aimTargetHealth = aimTarget != null ? aimTarget.GetComponentInParent<EnemyHealth>() : null;
+        hadAimTarget = aimTarget != null;
+        planarDirection = Vector3.ProjectOnPlane(moveDirection, Vector3.up).normalized;
         if (direction.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.FromToRotation(direction.normalized, moveDirection) * transform.rotation;
         spawnPosition = transform.position;
@@ -78,8 +87,47 @@ public sealed class DamageProjectile : MonoBehaviour
             return;
         }
 
+        TrackTargetHeight(remaining);
         float step = Mathf.Min(moveSpeed * Time.fixedDeltaTime, remaining);
         body.MovePosition(body.position + moveDirection * step);
+    }
+
+    // 비행 중 높이만 보정: 수평 진행 방향은 플레이어 조준 그대로 유지
+    private void TrackTargetHeight(float remaining)
+    {
+        if (verticalTrackingSpeed <= 0f || planarDirection.sqrMagnitude < 0.001f || !hadAimTarget)
+            return;
+
+        if (aimTarget == null || !aimTarget.enabled || aimTargetHealth == null || aimTargetHealth.IsDead)
+        {
+            // 추적 대상이 사라진 경우, 같은 수평 방향 콘 안에서 재탐색
+            HeightAim.Resolve(body.position, planarDirection, remaining,
+                damageDealer != null ? damageDealer.transform : null,
+                horizontalAimAngle, verticalAimAngle, out aimTarget);
+            aimTargetHealth = aimTarget != null ? aimTarget.GetComponentInParent<EnemyHealth>() : null;
+            if (aimTarget == null)
+            {
+                hadAimTarget = false;
+                return;
+            }
+        }
+
+        Vector3 offset = aimTarget.bounds.center - body.position;
+        float along = Vector3.Dot(offset, planarDirection);
+        if (along <= 0.05f)
+            return;
+
+        float desiredPitch = Mathf.Clamp(Mathf.Atan2(offset.y, along) * Mathf.Rad2Deg,
+            -verticalAimAngle, verticalAimAngle);
+        float currentPitch = Mathf.Asin(Mathf.Clamp(moveDirection.y, -1f, 1f)) * Mathf.Rad2Deg;
+        float pitch = Mathf.MoveTowards(currentPitch, desiredPitch, verticalTrackingSpeed * Time.fixedDeltaTime);
+        if (Mathf.Approximately(pitch, currentPitch))
+            return;
+
+        float radians = pitch * Mathf.Deg2Rad;
+        Vector3 next = planarDirection * Mathf.Cos(radians) + Vector3.up * Mathf.Sin(radians);
+        body.MoveRotation(Quaternion.FromToRotation(moveDirection, next) * body.rotation);
+        moveDirection = next;
     }
 
     // 적 적중
