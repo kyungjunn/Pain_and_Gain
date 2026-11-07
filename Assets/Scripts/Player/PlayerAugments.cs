@@ -201,6 +201,7 @@ public class PlayerAugments : MonoBehaviour
         ReleaseAll();
 
         // 소유 플레이어 소실 알림
-        GameManager.Instance?.NotifyPlayerUnavailable(gameObject);
+        if (GameManager.Instance != null)
+            GameManager.Instance.NotifyPlayerUnavailable(gameObject);
     }
 }

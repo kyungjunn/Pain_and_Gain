@@ -133,19 +133,22 @@ public class GameManager : MonoBehaviour
     public void EndCombatSession(int expectedSessionId)
     {
         if (!BelongsToSession(expectedSessionId)) return;
-        ClearHitStop(false);
-        OnCombatSessionEnding?.Invoke(SessionId);
-        CinemachineImpulseManager.Instance.Clear();
-        SessionId = 0; // 이전 비동기 요청 무효
+        int endingSessionId = SessionId;
+        SessionId = 0; // 먼저 무효화해서 파괴 알림의 재진입을 차단한다.
+        AugmentResourceLoader loader = resourceLoader;
+        resourceLoader = null;
         GameObject player = currentPlayer;
         currentPlayer = null;
-        SpawnManager.Instance?.StopCombatSpawning();
-        UIManager.Instance?.ClearSession(false);
-        AugmentManager.Instance?.ClearSession();
-        QuestManager.Instance?.ClearSession();
+        ClearHitStop(false);
+        OnCombatSessionEnding?.Invoke(endingSessionId);
+        CinemachineImpulseManager.Instance.Clear();
+        if (SpawnManager.Instance != null) SpawnManager.Instance.StopCombatSpawning();
+        if (UIManager.Instance != null) UIManager.Instance.ClearSession(false);
+        if (AugmentManager.Instance != null) AugmentManager.Instance.ClearSession();
+        if (QuestManager.Instance != null) QuestManager.Instance.ClearSession();
         if (player != null && player.TryGetComponent(out PlayerAugments augments))
             augments.ReleaseAll();
-        resourceLoader?.ReleaseResources();
+        if (loader != null) loader.ReleaseResources();
         IsPaused = false;
         Time.timeScale = 1f;
         SetCursor(true);

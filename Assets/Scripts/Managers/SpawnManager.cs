@@ -81,7 +81,8 @@ public class SpawnManager : MonoBehaviour
         if (Instance != this) return;
         Instance = null;
         // 소유 플레이어 소실
-        GameManager.Instance?.NotifyPlayerUnavailable(spawnedPlayer);
+        if (GameManager.Instance != null)
+            GameManager.Instance.NotifyPlayerUnavailable(spawnedPlayer);
         spawnedPlayer = null;
         OnPlayerSpawned?.Invoke(null);
     }
