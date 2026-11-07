@@ -181,6 +181,10 @@ public sealed class PlayerSkillController : MonoBehaviour
             return;
         }
 
+        // 히트 스톱은 조준 취소가 아니라 짧은 전투 시간 정지다.
+        if (GameManager.Instance != null && GameManager.Instance.IsHitStopped)
+            return;
+
         if (Time.timeScale <= 0f || (GameManager.Instance != null && GameManager.Instance.IsPaused))
         {
             CancelWizardResonancePreview();
@@ -682,7 +686,8 @@ public sealed class PlayerSkillController : MonoBehaviour
     private bool CanCast()
     {
         return isActiveAndEnabled &&
-               (GameManager.Instance == null || !GameManager.Instance.IsPaused) &&
+               (GameManager.Instance == null ||
+                (!GameManager.Instance.IsPaused && !GameManager.Instance.IsHitStopped)) &&
                !IsPlayerDead;
     }
 

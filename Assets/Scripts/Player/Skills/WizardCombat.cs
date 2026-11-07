@@ -1666,6 +1666,14 @@ public sealed class WizardCombat : MonoBehaviour
         playerAugments = GetComponent<PlayerAugments>();
     }
 
-    private static bool IsGamePaused => Time.timeScale <= 0f ||
-        (GameManager.Instance != null && GameManager.Instance.IsPaused);
+    private static bool IsGamePaused
+    {
+        get
+        {
+            GameManager gameManager = GameManager.Instance;
+            return gameManager != null
+                ? gameManager.IsPaused || (Time.timeScale <= 0f && !gameManager.IsHitStopped)
+                : Time.timeScale <= 0f;
+        }
+    }
 }
