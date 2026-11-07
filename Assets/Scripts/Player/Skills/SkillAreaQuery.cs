@@ -35,7 +35,8 @@ public sealed class SkillAreaQuery
     }
 
     public void DealDamage(PlayerDamageDealer dealer, Vector3 center, float radius, int damage,
-        PlayerDamageType type, Vector3? source = null, EnemyHealth directTarget = null)
+        PlayerDamageType type, Vector3? source = null, EnemyHealth directTarget = null,
+        PlayerSkillSO sourceSkill = null)
     {
         if (dealer == null)
             return;
@@ -49,7 +50,7 @@ public sealed class SkillAreaQuery
         {
             EnemyHealth enemy = enemies[i];
             if (enemy != null && !enemy.IsDead)
-                dealer.DealDamage(enemy, damage, type, source ?? center);
+                dealer.DealDamage(enemy, damage, type, source ?? center, sourceSkill);
         }
     }
 }

@@ -292,10 +292,9 @@ public static class LevelOneEnemySetup
         quest.objectiveType = QuestObjectiveType.HuntEventMonster;
         quest.targetAmount = 1;
         quest.timeLimit = 45f;
+        quest.rewardPool = AssetDatabase.LoadAssetAtPath<QuestRewardPoolSO>("Assets/Prefabs/Quest/Data/StandardRewards.asset");
         quest.eventMonsterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFolder + "/RabbitEnemy.prefab");
-        quest.penaltyType = QuestPenaltyType.StatReduce;
-        quest.statReduceMin = 0.1f;
-        quest.statReduceMax = 0.2f;
+        quest.category = QuestCategory.Normal;
         AssetDatabase.CreateAsset(quest, path);
     }
 

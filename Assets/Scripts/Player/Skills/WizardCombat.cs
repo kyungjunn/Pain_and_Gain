@@ -498,7 +498,8 @@ public sealed class WizardCombat : MonoBehaviour
                 skill.GravityCoreBlastRadius,
                 CalculateDamage(skill.GravityCoreDamageMultiplier),
                 PlayerDamageType.Skill,
-                owner.transform.position);
+                owner.transform.position,
+                sourceSkill: skill);
 
             if (CanRunEffects())
             {
@@ -548,7 +549,8 @@ public sealed class WizardCombat : MonoBehaviour
                         state.WaveRadius,
                         CalculateDamage(state.WaveDamageMultiplier),
                         PlayerDamageType.Skill,
-                        center);
+                        center,
+                        sourceSkill: state.Skill);
                     if (CanRunEffects() && !state.Cancelled)
                     {
                         PlayBurst(overdriveWavePrefab, "WizardOverdriveWave",
@@ -573,7 +575,8 @@ public sealed class WizardCombat : MonoBehaviour
                 state.FinalBlastRadius,
                 CalculateDamage(state.FinalDamageMultiplier),
                 PlayerDamageType.Skill,
-                finalCenter);
+                finalCenter,
+                sourceSkill: state.Skill);
 
             if (CanRunEffects())
             {
@@ -980,7 +983,8 @@ public sealed class WizardCombat : MonoBehaviour
                 radius,
                 field.ResonanceDamage,
                 PlayerDamageType.Skill,
-                owner.transform.position);
+                owner.transform.position,
+                sourceSkill: field.Skill);
 
             if (!CanRunEffects())
                 return;
@@ -1019,7 +1023,8 @@ public sealed class WizardCombat : MonoBehaviour
                 field.Radius,
                 field.TickDamage,
                 PlayerDamageType.Skill,
-                field.Center);
+                field.Center,
+                sourceSkill: field.Skill);
         }
     }
 
@@ -1053,7 +1058,8 @@ public sealed class WizardCombat : MonoBehaviour
             field.Radius,
             CalculateDamage(collapseDamageMultiplier),
             PlayerDamageType.Skill,
-            field.Center);
+            field.Center,
+            sourceSkill: field.Skill);
         if (CanRunEffects())
             PlayBurst(resonanceHitPrefab, "WizardFieldCollapse",
                 field.Center + Vector3.up * 0.04f, field.Radius / 2f);
