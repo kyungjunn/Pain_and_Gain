@@ -12,14 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db43c40b9cf85354da000bef094c3c30, type: 3}
   m_Name: KillEnemies_01
   m_EditorClassIdentifier: Assembly-CSharp::QuestSO
-  questName: "\uC77C\uBC18 \u2014 \uC801 \uCC98\uCE58"
-  description: "45\uCD08 \uC548\uC5D0 \uC77C\uBC18 \uC801 8\uB9C8\uB9AC\uB97C \uCC98\uCE58\uD558\uC138\uC694."
-  category: 1
+  questName: "\uAE34\uAE09 \uCC98\uCE58"
+  description: "\uC81C\uD55C\uC2DC\uAC04 \uC548\uC5D0 \uC801 3\uB9C8\uB9AC \uCC98\uCE58"
   objectiveType: 0
-  skillHitCountingRule: 0
-  targetAmount: 8
-  timeLimit: 45
-  eventMonsterPrefab: {fileID: 0}
-  eventMonsterBeaconPrefab: {fileID: 0}
-  successReward: {fileID: 0}
-  rewardPool: {fileID: 11400000, guid: 486c538127e9f401aa07289761e7ee43, type: 2}
+  targetAmount: 3
+  timeLimit: 30
+  rewardPool: {fileID: 11400000, guid: 17de3b42d7c643269b05eb618c432904, type: 2}
+  penaltyType: 0
+  statReduceMin: 0.25
+  statReduceMax: 0.5

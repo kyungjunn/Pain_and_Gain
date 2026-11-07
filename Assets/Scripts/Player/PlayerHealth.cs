@@ -12,7 +12,6 @@ public class PlayerHealth : LivingEntity
     public int CurrentHealth { get; private set; }
     public bool IsDead { get; private set; }
     public Action onHealthChanged;
-    public event Action<int> OnDamaged;
 
     private PlayerStateManager stateManager;
     private Animator animator;
@@ -36,11 +35,6 @@ public class PlayerHealth : LivingEntity
         rb = GetComponent<Rigidbody>();
 
         CurrentHealth = MaxHealth;
-
-        if (GetComponent<CombatDamageNumbers>() == null)
-            gameObject.AddComponent<CombatDamageNumbers>();
-        if (GetComponent<PlayerCombatFeedback>() == null)
-            gameObject.AddComponent<PlayerCombatFeedback>();
     }
 
     private void OnEnable()
@@ -67,14 +61,9 @@ public class PlayerHealth : LivingEntity
         }
 
         // 방어력을 적용하되 최소 1 피해는 보장
-        int previousHealth = CurrentHealth;
         int finalDamage = Mathf.Max(1, damage - Defense);
         CurrentHealth = Mathf.Max(CurrentHealth - finalDamage, 0);
-        int actualDamage = previousHealth - CurrentHealth;
         onHealthChanged?.Invoke();
-
-        if (actualDamage > 0)
-            OnDamaged?.Invoke(actualDamage);
 
         if (CurrentHealth == 0)
         {

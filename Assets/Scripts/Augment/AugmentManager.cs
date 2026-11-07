@@ -90,22 +90,6 @@ public class AugmentManager : MonoBehaviour
     }
 
     // 증강 선택지 추첨
-    public bool AreAllAugmentsExhausted()
-    {
-        var host = AugmentResourceLoader.Instance;
-        if (host == null || host.IsReleasing || host.Catalog.Count == 0 || playerStats == null)
-            return false;
-        foreach (AugmentSO augment in host.Catalog)
-        {
-            if (augment == null || !augment.IsAvailableFor(playerStats.gameObject)) continue;
-            if (augment is SkillAugmentSO skill && playerAugments != null && playerAugments.IsAtMaxStacks(skill))
-                continue;
-            // 로드 실패 카드는 소진된 카드가 아니다.
-            return false;
-        }
-        return true;
-    }
-
     public List<AugmentSO> GetRandomAugments()
     {
         return GetRandomAugments(null);

@@ -122,7 +122,7 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
         {
             EnemyHealth enemy = hitEnemies[i];
             if (enemy != null)
-                damageDealer.DealDamage(enemy, damage, PlayerDamageType.Skill, sourceSkill: skill);
+                damageDealer.DealDamage(enemy, damage, PlayerDamageType.Skill);
         }
     }
 }

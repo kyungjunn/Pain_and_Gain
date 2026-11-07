@@ -323,15 +323,6 @@ public static class LevelOneEnemyValidation
         var questSpawn = new GameObject("RabbitQuestSpawn");
         questSpawn.tag = "EnemySpawnPoint";
         questSpawn.transform.position = Vector3.right * 8;
-        var sessionObject = new GameObject("QuestValidationSession");
-        sessionObject.SetActive(false);
-        var session = sessionObject.AddComponent<GameManager>();
-        GameManager previousSession = GameManager.Instance;
-        GameManager.Instance = session;
-        typeof(GameManager).GetProperty("SessionId").SetValue(session, 1);
-        SetPrivate(session, "currentPlayer", player);
-        var level = player.AddComponent<PlayerLevelSystem>();
-        level.requiredExp = 100000;
         var spawnManager = new GameObject("SpawnManager").AddComponent<SpawnManager>();
         var questManager = new GameObject("QuestManager").AddComponent<QuestManager>();
         var rabbitQuest = Object.Instantiate(AssetDatabase.LoadAssetAtPath<QuestSO>("Assets/Prefabs/Quest/Data/HuntRabbit.asset"));
@@ -344,23 +335,14 @@ public static class LevelOneEnemyValidation
             weight = 1
         });
         rabbitQuest.rewardPool = rewardPool;
-        const string tutorialKey = "QuestManager.TutorialComplete.v1";
-        bool hadTutorialHistory = PlayerPrefs.HasKey(tutorialKey);
-        int tutorialHistory = PlayerPrefs.GetInt(tutorialKey);
-        PlayerPrefs.SetInt(tutorialKey, 1);
         typeof(QuestManager).GetMethod("HandlePlayerSpawned",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
             .Invoke(questManager, new object[] { player });
-        if (hadTutorialHistory) PlayerPrefs.SetInt(tutorialKey, tutorialHistory);
-        else PlayerPrefs.DeleteKey(tutorialKey);
         SetPrivate(questManager, "quests", new List<QuestSO> { rabbitQuest });
         int succeeded = 0, failed = 0;
         questManager.onQuestSucceeded += (_, __) => succeeded++;
         questManager.onQuestFailed += (_, __) => failed++;
-        InvokePrivate(questManager, "StartNormalQuestPreview");
-        Require(questManager.State == QuestState.Preview && questManager.RemainingTime == 0f,
-            "Rabbit quest previews before its time limit starts");
-        InvokePrivate(questManager, "StartPreviewedQuest");
+        InvokePrivate(questManager, "StartRandomQuest");
         Require(questManager.State == QuestState.Active && questManager.CurrentQuest == rabbitQuest,
             "Rabbit quest starts with countdown and event spawn");
         var questRabbit = Object.FindObjectsByType<PassiveEnemyRoamer>(FindObjectsSortMode.None).Single();
@@ -379,7 +361,6 @@ public static class LevelOneEnemyValidation
         Require((beacon.transform.position - questRabbit.transform.position - beaconOffset).sqrMagnitude < 0.001f,
             "beacon follows the roaming rabbit");
         var dummy = new GameObject("OrdinaryKill").AddComponent<EnemyHealth>();
-        SetPrivate(dummy, "expReward", 0);
         dummy.TakeDamage(100);
         Require(questManager.CurrentProgress == 0 && questManager.State == QuestState.Active,
             "Ordinary kills do not complete rabbit quest");
@@ -390,8 +371,7 @@ public static class LevelOneEnemyValidation
         Object.Destroy(questRabbit.gameObject);
         yield return null;
         Require(beacon == null, "beacon disappears after rabbit quest succeeds");
-        InvokePrivate(questManager, "StartNormalQuestPreview");
-        InvokePrivate(questManager, "StartPreviewedQuest");
+        InvokePrivate(questManager, "StartRandomQuest");
         var timedRabbit = Object.FindObjectsByType<PassiveEnemyRoamer>(FindObjectsSortMode.None).Single();
         var timedBeacon = timedRabbit.GetComponentInChildren<QuestTargetBeacon>();
         Require(timedBeacon != null, "next rabbit quest creates a new beacon");
@@ -404,22 +384,16 @@ public static class LevelOneEnemyValidation
         Require(timedRabbit == null, "Expired event rabbit is removed");
         Require(timedBeacon == null, "beacon is removed on timeout");
         var regularQuest = ScriptableObject.CreateInstance<QuestSO>();
-        var experienceReward = ScriptableObject.CreateInstance<ExperienceRewardSO>();
-        rewardPool.entries.Clear();
-        rewardPool.entries.Add(new QuestRewardEntry { reward = experienceReward, weight = 1 });
         regularQuest.objectiveType = QuestObjectiveType.KillEnemies;
         regularQuest.targetAmount = 2;
         regularQuest.rewardPool = rewardPool;
         SetPrivate(questManager, "quests", new List<QuestSO> { regularQuest });
-        InvokePrivate(questManager, "StartNormalQuestPreview");
-        InvokePrivate(questManager, "StartPreviewedQuest");
+        InvokePrivate(questManager, "StartRandomQuest");
         var ordinaryOne = new GameObject("OrdinaryOne").AddComponent<EnemyHealth>();
-        SetPrivate(ordinaryOne, "expReward", 0);
         ordinaryOne.TakeDamage(100);
         Require(questManager.CurrentProgress == 1 && questManager.State == QuestState.Active,
             "Existing kill quest still counts ordinary enemies");
         var ordinaryTwo = new GameObject("OrdinaryTwo").AddComponent<EnemyHealth>();
-        SetPrivate(ordinaryTwo, "expReward", 0);
         ordinaryTwo.TakeDamage(100);
         Require(succeeded == 2 && questManager.State == QuestState.Countdown,
             "Existing kill quest still completes");
@@ -427,11 +401,6 @@ public static class LevelOneEnemyValidation
         Object.Destroy(rabbitQuest);
         Object.Destroy(rewardPool);
         Object.Destroy(healReward);
-        Object.Destroy(experienceReward);
-        questManager.ClearSession();
-        Object.Destroy(questManager.gameObject);
-        GameManager.Instance = previousSession;
-        Object.Destroy(sessionObject);
         Object.Destroy(player);
     }
 

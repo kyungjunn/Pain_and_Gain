@@ -7,7 +7,7 @@ public struct QuestRewardResult
     public bool applied;
     public float grantedAmount;
 
-    public string Description => !applied
-        ? "보상 지급 실패"
-        : reward != null ? reward.DescribeGranted(grantedAmount) : "추가 보상 없음";
+    public string Description => applied && reward != null
+        ? reward.DescribeGranted(grantedAmount)
+        : "보상 지급 실패";
 }

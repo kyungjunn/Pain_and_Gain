@@ -12,30 +12,16 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
 
     private PlayerHealth playerHealth;
     private Camera cachedCamera;
-    private HealthDamageTrail damageTrail;
 
     private void Awake()
     {
-        if (valueText != null)
-        {
-            valueText.outlineColor = Color.black;
-            valueText.outlineWidth = 0.2f;
-            valueText.fontMaterial.EnableKeyword("OUTLINE_ON");
-        }
         if (slider != null)
         {
             slider.minValue = 0f;
             slider.maxValue = 1f;
             slider.wholeNumbers = false;
             slider.interactable = false;
-            CreateDamageTrail();
         }
-    }
-
-    private void CreateDamageTrail()
-    {
-        if (slider.fillRect == null) return;
-        damageTrail = HealthDamageTrail.Create(slider.fillRect.parent, Vector2.zero);
     }
 
     private void OnEnable()
@@ -117,7 +103,6 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
         }
 
         playerHealth = health;
-        if (damageTrail != null) damageTrail.Clear();
 
         if (playerHealth != null)
         {
@@ -131,7 +116,6 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
     {
         if (playerHealth == null)
         {
-            if (damageTrail != null) damageTrail.Clear();
             if (slider != null)
             {
                 slider.SetValueWithoutNotify(0f);
@@ -148,7 +132,6 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
         int currentHealth = playerHealth.CurrentHealth;
         int maxHealth = playerHealth.MaxHealth;
         float normalizedHealth = maxHealth > 0 ? Mathf.Clamp01((float)currentHealth / maxHealth) : 0f;
-        if (damageTrail != null) damageTrail.SetHealth(currentHealth, maxHealth);
 
         if (slider != null)
         {

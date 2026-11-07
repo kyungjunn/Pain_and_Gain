@@ -11,11 +11,14 @@ public class BossHealthBar : MonoBehaviour
     [SerializeField] private float topOffset = 36f;
     [SerializeField] private float barWidth = 600f;
     [SerializeField] private float barHeight = 30f;
+    [SerializeField] private float fillSpeed = 3f;
+    [SerializeField] private float damageLagSpeed = 0.45f;
     [SerializeField] private float deathVisibleDuration = 1.25f;
 
     [Header("Colors")]
     [SerializeField] private Color frameColor = new Color(0.03f, 0.025f, 0.02f, 0.96f);
     [SerializeField] private Color backgroundColor = new Color(0.08f, 0.07f, 0.06f, 0.94f);
+    [SerializeField] private Color damageColor = new Color(0.84f, 0.64f, 0.28f, 0.95f);
     [SerializeField] private Color fillColor = new Color(0.48f, 0.045f, 0.035f, 0.98f);
 
     private const float BarPadding = 3f;
@@ -23,9 +26,11 @@ public class BossHealthBar : MonoBehaviour
     private EnemyHealth enemyHealth;
     private GameObject hudRoot;
     private RectTransform currentFillRect;
-    private HealthDamageTrail damageTrail;
+    private RectTransform damageFillRect;
     private TextMeshProUGUI healthText;
     private float targetPercent = 1f;
+    private float displayedPercent = 1f;
+    private float damagePercent = 1f;
     private float hideAtTime = -1f;
 
     private float InnerBarWidth => Mathf.Max(1f, barWidth - BarPadding * 2f);
@@ -46,8 +51,6 @@ public class BossHealthBar : MonoBehaviour
         if (enemyHealth != null)
         {
             enemyHealth.OnHealthChanged += HandleHealthChanged;
-            RefreshTarget();
-            ApplyVisuals();
         }
     }
 
@@ -59,6 +62,18 @@ public class BossHealthBar : MonoBehaviour
 
     private void Update()
     {
+        float deltaTime = Time.unscaledDeltaTime;
+        displayedPercent = Mathf.MoveTowards(displayedPercent, targetPercent, fillSpeed * deltaTime);
+
+        if (damagePercent > targetPercent)
+        {
+            damagePercent = Mathf.MoveTowards(damagePercent, targetPercent, damageLagSpeed * deltaTime);
+        }
+        else
+        {
+            damagePercent = targetPercent;
+        }
+
         ApplyVisuals();
 
         if (hideAtTime >= 0f && Time.unscaledTime >= hideAtTime && hudRoot != null)
@@ -73,7 +88,6 @@ public class BossHealthBar : MonoBehaviour
         {
             enemyHealth.OnHealthChanged -= HandleHealthChanged;
         }
-        if (damageTrail != null) damageTrail.Clear();
     }
 
     private void OnDestroy()
@@ -87,8 +101,6 @@ public class BossHealthBar : MonoBehaviour
     private void HandleHealthChanged(int currentHealth, int maxHealth)
     {
         targetPercent = maxHealth > 0 ? Mathf.Clamp01((float)currentHealth / maxHealth) : 0f;
-        if (damageTrail != null) damageTrail.SetHealth(currentHealth, maxHealth);
-        ApplyVisuals();
 
         if (currentHealth <= 0)
         {
@@ -104,14 +116,20 @@ public class BossHealthBar : MonoBehaviour
         }
 
         targetPercent = enemyHealth.HealthPercent;
-        if (damageTrail != null) damageTrail.SetHealth(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
+        displayedPercent = targetPercent;
+        damagePercent = targetPercent;
     }
 
     private void ApplyVisuals()
     {
         if (currentFillRect != null)
         {
-            currentFillRect.sizeDelta = new Vector2(InnerBarWidth * targetPercent, barHeight - BarPadding * 2f);
+            currentFillRect.sizeDelta = new Vector2(InnerBarWidth * displayedPercent, barHeight - BarPadding * 2f);
+        }
+
+        if (damageFillRect != null)
+        {
+            damageFillRect.sizeDelta = new Vector2(InnerBarWidth * damagePercent, barHeight - BarPadding * 2f);
         }
 
         if (healthText != null && enemyHealth != null)
@@ -160,8 +178,8 @@ public class BossHealthBar : MonoBehaviour
         Image background = CreateImage("Background", frameRect, backgroundColor);
         StretchToParent(background.rectTransform, BarPadding);
 
+        damageFillRect = CreateFill("DamageFill", frameRect, damageColor);
         currentFillRect = CreateFill("CurrentFill", frameRect, fillColor);
-        damageTrail = HealthDamageTrail.Create(frameRect, Vector2.one * BarPadding);
 
         healthText = CreateText("HealthValue", frameRect, string.Empty, 15f, FontStyles.Bold);
         StretchToParent(healthText.rectTransform, 0f);
@@ -235,6 +253,8 @@ public class BossHealthBar : MonoBehaviour
         topOffset = Mathf.Max(0f, topOffset);
         barWidth = Mathf.Max(240f, barWidth);
         barHeight = Mathf.Max(18f, barHeight);
+        fillSpeed = Mathf.Max(0.1f, fillSpeed);
+        damageLagSpeed = Mathf.Max(0.05f, damageLagSpeed);
         deathVisibleDuration = Mathf.Max(0f, deathVisibleDuration);
     }
 }

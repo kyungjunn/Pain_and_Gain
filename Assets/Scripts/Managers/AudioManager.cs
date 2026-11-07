@@ -19,8 +19,6 @@ public class AudioManager : MonoBehaviour
     public AudioClip enemyHitClip;
     public AudioClip enemyDeathClip;
     public AudioClip levelUpClip;
-    private float nextPlayerHitTime;
-    private float nextEnemyHitTime;
 
     private void Awake()
     {
@@ -81,15 +79,11 @@ public class AudioManager : MonoBehaviour
 
     public void PlayPlayerHit()
     {
-        if (Time.unscaledTime < nextPlayerHitTime) return;
-        nextPlayerHitTime = Time.unscaledTime + 0.08f;
         PlaySFX(playerHitClip);
     }
 
     public void PlayEnemyHit()
     {
-        if (Time.unscaledTime < nextEnemyHitTime) return;
-        nextEnemyHitTime = Time.unscaledTime + 0.06f;
         PlaySFX(enemyHitClip);
     }
 
