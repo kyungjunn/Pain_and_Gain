@@ -6,6 +6,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Player/Skills/Ninja Dash")]
 public sealed class NinjaDashSkillSO : PlayerSkillSO
 {
+    [SerializeField] private AudioClip dashStartSfx;
     [SerializeField, Min(0.1f)] private float distance = 7f;
     [SerializeField, Min(0.05f)] private float duration = 0.28f;
     [SerializeField, Min(0.1f)] private float hitRadius = 1.1f;
@@ -48,6 +49,9 @@ public sealed class NinjaDashSkillSO : PlayerSkillSO
         owner.SetMovementLocked(true);
         try
         {
+            if (owner.isActiveAndEnabled && !owner.IsPlayerDead && dashStartSfx != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlaySFX(dashStartSfx);
+
             yield return SkillDashMovement.Move(owner.transform, direction, allowedDistance, duration,
                 (start, end, traveled) =>
                 {

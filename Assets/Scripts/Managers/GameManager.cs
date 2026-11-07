@@ -260,18 +260,22 @@ public class GameManager : MonoBehaviour
 
     public void PauseGame()
     {
+        bool enteringPause = !IsPaused;
         IsPaused = true;
         ClearHitStop(false);
         Time.timeScale = 0f;
         SetCursor(true);
+        if (enteringPause && AudioManager.Instance != null) AudioManager.Instance.PlayPause();
     }
 
     public void ResumeGame()
     {
+        bool leavingPause = IsPaused;
         ClearHitStop(false);
         IsPaused = false;
         Time.timeScale = 1f;
         SetCursor(false);
+        if (leavingPause && AudioManager.Instance != null) AudioManager.Instance.PlayResume();
     }
 
     public bool RequestHitStop()

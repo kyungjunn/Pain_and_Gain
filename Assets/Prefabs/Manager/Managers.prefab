@@ -180,11 +180,15 @@ MonoBehaviour:
   uiClickClip: {fileID: 0}
   gameStartClip: {fileID: 0}
   gameOverClip: {fileID: 0}
-  playerAttackClip: {fileID: 8300000, guid: 76fec2fb6f5b84898b881413995e1d88, type: 3}
-  playerHitClip: {fileID: 8300000, guid: 38e779b7f269c41bd8bf6c6f53c552be, type: 3}
-  enemyHitClip: {fileID: 8300000, guid: 8806dd10525b54cfa910128d195d678b, type: 3}
-  enemyDeathClip: {fileID: 8300000, guid: 38e779b7f269c41bd8bf6c6f53c552be, type: 3}
+  playerHitClip: {fileID: 8300000, guid: 8b23b175a78d6b5458322e3a6c9905d0, type: 3}
+  enemyHitClip: {fileID: 8300000, guid: 7c47b20bb9874304a809dc5580d403ba, type: 3}
+  enemyDeathClip: {fileID: 8300000, guid: 7c47b20bb9874304a809dc5580d403ba, type: 3}
   levelUpClip: {fileID: 8300000, guid: c2aa156fb923e489692bfcb373b51ca0, type: 3}
+  healClip: {fileID: 8300000, guid: cfce0cea076109f478783201b2a9f57f, type: 3}
+  skillDeniedClip: {fileID: 8300000, guid: 1ed8fb76fc64e4e46847348138782234, type: 3}
+  encounterClip: {fileID: 8300000, guid: 21c4a490b24ba2045bc815f7626a40ef, type: 3}
+  pauseClip: {fileID: 8300000, guid: b83bf8726a7fac349a54389f0c57cda6, type: 3}
+  resumeClip: {fileID: 8300000, guid: e58d8bd078f188a4ba314e933b98528b, type: 3}
 --- !u!114 &5081865081350110725
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -32,5 +32,5 @@ MonoBehaviour:
   hitVfxPrefab: {fileID: 7856939199014537196, guid: 212ef1a41838ce044a9ac54994866708, type: 3}
   hitVfxOffset: {x: 0, y: 0.1, z: 0}
   hitVfxScale: 1
-  dashStartSfx: {fileID: 8300000, guid: 76fec2fb6f5b84898b881413995e1d88, type: 3}
-  dashHitSfx: {fileID: 8300000, guid: 38e779b7f269c41bd8bf6c6f53c552be, type: 3}
+  dashStartSfx: {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
+  dashHitSfx: {fileID: 0}

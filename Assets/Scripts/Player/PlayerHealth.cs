@@ -91,8 +91,11 @@ public class PlayerHealth : LivingEntity
 
         int previousHealth = CurrentHealth;
         CurrentHealth = Mathf.Min(CurrentHealth + amount, MaxHealth);
+        int healed = CurrentHealth - previousHealth;
         onHealthChanged?.Invoke();
-        return CurrentHealth - previousHealth;
+        if (healed > 0 && AudioManager.Instance != null)
+            AudioManager.Instance.PlayHeal();
+        return healed;
     }
 
     private int Defense => stats != null ? Mathf.RoundToInt(stats.Defense) : 0;

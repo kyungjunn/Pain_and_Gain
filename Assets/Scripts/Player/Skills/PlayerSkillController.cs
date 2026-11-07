@@ -227,7 +227,7 @@ public sealed class PlayerSkillController : MonoBehaviour
         if (value.isPressed)
         {
             CancelWizardResonancePreview();
-            TryCast(skillQ, false);
+            if (!TryCast(skillQ, false)) PlaySkillDeniedFeedback();
         }
     }
 
@@ -263,22 +263,22 @@ public sealed class PlayerSkillController : MonoBehaviour
                 if (IsPointerOverUI())
                     return;
 
-                if (IsWizardResonancePreviewActive)
-                    TryConfirmWizardResonancePreview();
-                else
-                    TryBeginWizardResonancePreview();
+                bool accepted = IsWizardResonancePreviewActive
+                    ? TryConfirmWizardResonancePreview()
+                    : TryBeginWizardResonancePreview();
+                if (!accepted) PlaySkillDeniedFeedback();
                 return;
             }
 
-            TryCast(skillE, true);
+            if (!TryCast(skillE, true)) PlaySkillDeniedFeedback();
         }
     }
 
     // R 입력. 게이지 풀일 때만 시전.
     public void OnUltimate(InputValue value)
     {
-        if (value.isPressed)
-            TryUseUltimate();
+        if (value.isPressed && !TryUseUltimate())
+            PlaySkillDeniedFeedback();
     }
 
     public bool TryUseUltimate()
@@ -537,7 +537,7 @@ public sealed class PlayerSkillController : MonoBehaviour
         if (mouse.leftButton.wasPressedThisFrame && Time.frameCount > resonancePreviewOpenedFrame &&
             !IsPointerOverUI())
         {
-            TryConfirmWizardResonancePreview();
+            if (!TryConfirmWizardResonancePreview()) PlaySkillDeniedFeedback();
         }
     }
 
@@ -680,6 +680,12 @@ public sealed class PlayerSkillController : MonoBehaviour
 
         if (animator != null && !string.IsNullOrWhiteSpace(skill.AnimationTrigger))
             animator.SetTrigger(skill.AnimationTrigger);
+    }
+
+    private void PlaySkillDeniedFeedback()
+    {
+        if (Time.timeScale > 0f && CanCast() && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySkillDenied();
     }
 
     // 일시정지/사망 차단

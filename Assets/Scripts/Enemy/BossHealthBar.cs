@@ -48,6 +48,8 @@ public class BossHealthBar : MonoBehaviour
             enemyHealth.OnHealthChanged += HandleHealthChanged;
             RefreshTarget();
             ApplyVisuals();
+            if (!enemyHealth.IsDead && AudioManager.Instance != null)
+                AudioManager.Instance.PlayEncounter();
         }
     }
 

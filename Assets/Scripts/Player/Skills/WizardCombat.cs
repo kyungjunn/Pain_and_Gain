@@ -111,6 +111,13 @@ public sealed class WizardCombat : MonoBehaviour
     [SerializeField] private GameObject overdriveWavePrefab;
     [SerializeField] private GameObject overdriveFinalPrefab;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip gravityPullSfx;
+    [SerializeField] private AudioClip gravityBlastSfx;
+    [SerializeField] private AudioClip resonanceCastSfx;
+    [SerializeField] private AudioClip overdriveStartSfx;
+    [SerializeField] private AudioClip overdriveFinalSfx;
+
     [Header("Resonance Preview")]
     [SerializeField] private Color previewValidColor = new Color(0.72f, 0.38f, 1f, 0.95f);
     [SerializeField] private Color previewInvalidColor = new Color(1f, 0.12f, 0.12f, 0.95f);
@@ -374,6 +381,7 @@ public sealed class WizardCombat : MonoBehaviour
         resonanceFields.Add(field);
         EnforceResonanceFieldCapacity();
         CancelResonancePreview();
+        PlaySkillSfx(resonanceCastSfx);
         return true;
     }
 
@@ -400,6 +408,7 @@ public sealed class WizardCombat : MonoBehaviour
         state.Aura = CreateVisual(overdriveAuraPrefab, "WizardOverdriveAura",
             Vector3.up, 1f, true, owner.transform);
         overdrive = state;
+        PlaySkillSfx(overdriveStartSfx);
         StartCoroutine(RunOverdrive(state));
         return true;
     }
@@ -469,6 +478,7 @@ public sealed class WizardCombat : MonoBehaviour
                 }
             }
             float pullEndTime = Time.time + skill.GravityCorePullDuration;
+            bool pullStarted = false;
             while (Time.time < pullEndTime)
             {
                 if (!CanRunEffects())
@@ -477,6 +487,12 @@ public sealed class WizardCombat : MonoBehaviour
                 {
                     yield return null;
                     continue;
+                }
+
+                if (!pullStarted)
+                {
+                    pullStarted = true;
+                    PlaySkillSfx(gravityPullSfx);
                 }
 
                 float pullRadius = GetAugmentedGravityPullRadius(skill);
@@ -491,6 +507,7 @@ public sealed class WizardCombat : MonoBehaviour
             if (!CanRunEffects())
                 yield break;
 
+            PlaySkillSfx(gravityBlastSfx);
             SkillAreaQuery blastQuery = new SkillAreaQuery();
             blastQuery.DealDamage(
                 damageDealer,
@@ -569,6 +586,7 @@ public sealed class WizardCombat : MonoBehaviour
             state.Aura = null;
 
             Vector3 finalCenter = owner.transform.position;
+            PlaySkillSfx(overdriveFinalSfx);
             state.FinalBlastQuery.DealDamage(
                 damageDealer,
                 finalCenter,
@@ -607,6 +625,13 @@ public sealed class WizardCombat : MonoBehaviour
             floor = hit;
         }
         return nearest < float.PositiveInfinity && Vector3.Dot(floor.normal, Vector3.up) >= 0.5f;
+    }
+
+    private static void PlaySkillSfx(AudioClip clip)
+    {
+        AudioManager audioManager = AudioManager.Instance;
+        if (audioManager != null && clip != null)
+            audioManager.PlaySFX(clip);
     }
 
     private void PlayBurst(GameObject prefab, string name,

@@ -1026,6 +1026,7 @@ public class QuestManager : MonoBehaviour
 
         ClearChallengeZone();
         StartActiveQuest();
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayEncounter();
         onChallengeZoneChanged?.Invoke();
     }
 

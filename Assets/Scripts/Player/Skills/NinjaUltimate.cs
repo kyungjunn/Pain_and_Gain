@@ -15,6 +15,10 @@ public sealed class NinjaUltimate : MonoBehaviour
     [SerializeField] private Transform handAnchor;
     [SerializeField] private Animator animator;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip readySfx;
+    [SerializeField] private AudioClip lightningSfx;
+
     [Header("Ready")]
     [SerializeField, Min(MinimumDuration)] private float readyDuration = 5f;
     [SerializeField, Min(0f)] private float attackBonusRatio = 0.5f;
@@ -130,6 +134,8 @@ public sealed class NinjaUltimate : MonoBehaviour
         stats.SetTemporaryBonus(this, AugmentType.AttackDamage, attackBonus);
         stats.SetTemporaryBonus(this, AugmentType.MoveSpeed, moveBonus);
         animator.CrossFadeInFixedTime("UltimateReady", 0.05f, 1);
+        if (CanUseAbility() && readySfx != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySFX(readySfx);
         return true;
     }
 
@@ -167,6 +173,8 @@ public sealed class NinjaUltimate : MonoBehaviour
         stateManager.ChangeState(PlayerState.Attack);
         animator.CrossFadeInFixedTime("UltimateDash", 0.05f, 1);
 
+        if (CanUseAbility() && lightningSfx != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySFX(lightningSfx);
         dashAndStormRoutine = StartCoroutine(DashAndStorm(direction, buffedAttackDamage, stormDamage));
         return true;
     }

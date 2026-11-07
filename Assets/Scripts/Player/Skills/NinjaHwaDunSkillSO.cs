@@ -6,6 +6,7 @@ using UnityEngine;
 public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
 {
     [SerializeField] private GameObject flamethrowerPrefab;
+    [SerializeField] private AudioClip castSfx;
     [SerializeField, Min(0.05f)] private float duration = 2f;
     [SerializeField, Min(0.05f)] private float tickInterval = 0.25f;
     [SerializeField, Min(0f)] private float damageMultiplier = 1f;
@@ -58,7 +59,11 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
         // 이펙트 자체의 자동 종료 대신 채널이 종료 시점 관리.
         FireBaseScript fire = instance.GetComponent<FireBaseScript>();
         if (fire != null)
+        {
             fire.Duration = 99999f;
+            // 화둔 시작음은 매니저에서 재생하므로 에셋에 내장된 소리는 중복 재생하지 않는다.
+            fire.AudioSource = null;
+        }
 
         // 지속 피해 대상 탐색용 트리거 영역 확보.
         BoxCollider box = instance.GetComponent<BoxCollider>();
@@ -81,6 +86,8 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
             (owner.Stats != null ? owner.Stats.AttackDamage : 10f) * effectiveDamageMultiplier));
         NinjaHwaDunChannel channel = instance.AddComponent<NinjaHwaDunChannel>();
         channel.Initialize(owner, this, damage, tickInterval, effectiveDuration);
+        if (owner.isActiveAndEnabled && !owner.IsPlayerDead && castSfx != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySFX(castSfx);
         return true;
     }
 
