@@ -18,8 +18,11 @@ public class EnemyHealthBar : MonoBehaviour
     private EnemyHealth enemyHealth;
     private Canvas canvas;
     private RectTransform fillRect;
+    private HealthDamageTrail damageTrail;
     private Transform cameraTransform;
     private float hideAtTime;
+    private int lastHealth;
+    private int lastMaxHealth;
 
     private void Awake()
     {
@@ -37,6 +40,10 @@ public class EnemyHealthBar : MonoBehaviour
         if (enemyHealth != null)
         {
             enemyHealth.OnHealthChanged += HandleHealthChanged;
+            lastHealth = enemyHealth.CurrentHealth;
+            lastMaxHealth = enemyHealth.MaxHealth;
+            Refresh();
+            SetVisible(!showOnlyWhenDamaged && !enemyHealth.IsDead);
         }
     }
 
@@ -52,6 +59,8 @@ public class EnemyHealthBar : MonoBehaviour
         {
             enemyHealth.OnHealthChanged -= HandleHealthChanged;
         }
+        if (damageTrail != null) damageTrail.Clear();
+        SetVisible(false);
     }
 
     private void LateUpdate()
@@ -84,14 +93,14 @@ public class EnemyHealthBar : MonoBehaviour
     {
         Refresh();
 
-        if (enemyHealth == null || enemyHealth.IsDead || currentHealth <= 0)
+        if (enemyHealth == null)
         {
             SetVisible(false);
             return;
         }
 
         SetVisible(true);
-        hideAtTime = Time.time + visibleDuration;
+        hideAtTime = Time.time + (currentHealth <= 0 ? HealthDamageTrail.TotalDuration : visibleDuration);
     }
 
     // 현재 체력 비율에 맞춰 Fill 오브젝트의 실제 가로 길이를 조정
@@ -104,6 +113,13 @@ public class EnemyHealthBar : MonoBehaviour
 
         float percent = Mathf.Clamp01(enemyHealth.HealthPercent);
         fillRect.sizeDelta = new Vector2(GetFillWidth(percent), GetFillHeight());
+        if (damageTrail != null)
+        {
+            damageTrail.SetHealth(lastHealth, lastMaxHealth);
+            damageTrail.SetHealth(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
+        }
+        lastHealth = enemyHealth.CurrentHealth;
+        lastMaxHealth = enemyHealth.MaxHealth;
     }
 
     private void CreateHealthBar()
@@ -134,6 +150,7 @@ public class EnemyHealthBar : MonoBehaviour
         fillRect.pivot = new Vector2(0f, 0.5f);
         fillRect.anchoredPosition = new Vector2(HorizontalPadding * 0.5f, 0f);
         fillRect.sizeDelta = new Vector2(GetFillWidth(1f), GetFillHeight());
+        damageTrail = HealthDamageTrail.Create(canvasRect, new Vector2(HorizontalPadding * 0.5f, VerticalPadding * 0.5f));
 
         SetVisible(!showOnlyWhenDamaged);
     }

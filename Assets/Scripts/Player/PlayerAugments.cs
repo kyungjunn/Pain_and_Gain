@@ -30,6 +30,15 @@ public class PlayerAugments : MonoBehaviour
         return so != null && ownedSkills.ContainsKey(so);
     }
 
+    public SkillAugmentSO GetSkillDefinition(AugmentSkill instance)
+    {
+        foreach (var entry in ownedSkills)
+        {
+            if (entry.Value == instance) return entry.Key;
+        }
+        return null;
+    }
+
     public bool IsAtMaxStacks(SkillAugmentSO so)
     {
         if (so == null || !ownedSkills.TryGetValue(so, out AugmentSkill skill))
@@ -192,6 +201,7 @@ public class PlayerAugments : MonoBehaviour
         ReleaseAll();
 
         // 소유 플레이어 소실 알림
-        GameManager.Instance?.NotifyPlayerUnavailable(gameObject);
+        if (GameManager.Instance != null)
+            GameManager.Instance.NotifyPlayerUnavailable(gameObject);
     }
 }

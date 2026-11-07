@@ -180,11 +180,15 @@ MonoBehaviour:
   uiClickClip: {fileID: 0}
   gameStartClip: {fileID: 0}
   gameOverClip: {fileID: 0}
-  playerAttackClip: {fileID: 8300000, guid: 76fec2fb6f5b84898b881413995e1d88, type: 3}
-  playerHitClip: {fileID: 0}
-  enemyHitClip: {fileID: 0}
-  enemyDeathClip: {fileID: 8300000, guid: 38e779b7f269c41bd8bf6c6f53c552be, type: 3}
+  playerHitClip: {fileID: 8300000, guid: 8b23b175a78d6b5458322e3a6c9905d0, type: 3}
+  enemyHitClip: {fileID: 8300000, guid: 7c47b20bb9874304a809dc5580d403ba, type: 3}
+  enemyDeathClip: {fileID: 8300000, guid: 7c47b20bb9874304a809dc5580d403ba, type: 3}
   levelUpClip: {fileID: 8300000, guid: c2aa156fb923e489692bfcb373b51ca0, type: 3}
+  healClip: {fileID: 8300000, guid: cfce0cea076109f478783201b2a9f57f, type: 3}
+  skillDeniedClip: {fileID: 8300000, guid: 1ed8fb76fc64e4e46847348138782234, type: 3}
+  encounterClip: {fileID: 8300000, guid: 21c4a490b24ba2045bc815f7626a40ef, type: 3}
+  pauseClip: {fileID: 8300000, guid: b83bf8726a7fac349a54389f0c57cda6, type: 3}
+  resumeClip: {fileID: 8300000, guid: e58d8bd078f188a4ba314e933b98528b, type: 3}
 --- !u!114 &5081865081350110725
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -199,9 +203,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::QuestManager
   quests:
   - {fileID: 11400000, guid: 6a144991c3784314793144c6917d33ca, type: 2}
+  - {fileID: 11400000, guid: acb1d045a7d7b49269b95302f217a8a2, type: 2}
   - {fileID: 11400000, guid: a36d8d4fef0100d43b3f2fb4827dcb41, type: 2}
-  firstQuestDelay: 12
+  tutorialQuests:
+  - {fileID: 11400000, guid: 4e895a8781d67455098ef34c7dedb50f, type: 2}
+  - {fileID: 11400000, guid: 6b6ae45a762ed416bafd3f616936906b, type: 2}
+  - {fileID: 11400000, guid: 04a99bbe6723c4affa347cc928121398, type: 2}
+  - {fileID: 11400000, guid: 3a4ea14fac845485095e7ea7ca71ddd0, type: 2}
+  riskChallengeQuest: {fileID: 11400000, guid: 2bf5d9efe55574245b9ff4055f576b18, type: 2}
+  challengeZonePrefab: {fileID: 5520825767464707444, guid: 3b52009255d1b4bdda2e07092e4f3759, type: 3}
+  firstQuestDelay: 15
   questCooldown: 45
+  normalPreviewDuration: 3
+  challengeLifetime: 30
+  challengeDwellDuration: 1.5
+  normalExperienceRatio: 0.2
+  normalHealingRatio: 0.15
+  tutorialHealingRatio: 0.1
 --- !u!82 &8997208331547504212
 AudioSource:
   m_ObjectHideFlags: 0

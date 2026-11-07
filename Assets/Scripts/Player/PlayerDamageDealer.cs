@@ -12,9 +12,10 @@ public class PlayerDamageDealer : MonoBehaviour
 {
     public event Action<int, PlayerDamageType> OnDamageDealt;
     public event Action<EnemyHealth, Vector3, int, PlayerDamageType> OnTargetDamaged;
+    public event Action<EnemyHealth, int, PlayerSkillSO> OnSkillTargetDamaged;
 
     public int DealDamage(EnemyHealth enemy, int damage, PlayerDamageType damageType,
-        Vector3? attackSourcePosition = null)
+        Vector3? attackSourcePosition = null, PlayerSkillSO sourceSkill = null)
     {
         if (enemy == null || enemy.IsDead || damage <= 0)
         {
@@ -41,6 +42,8 @@ public class PlayerDamageDealer : MonoBehaviour
         {
             OnDamageDealt?.Invoke(actualDamage, damageType);
             OnTargetDamaged?.Invoke(enemy, hitPosition, actualDamage, damageType);
+            if (damageType == PlayerDamageType.Skill && sourceSkill != null)
+                OnSkillTargetDamaged?.Invoke(enemy, actualDamage, sourceSkill);
         }
 
         return actualDamage;

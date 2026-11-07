@@ -13,6 +13,7 @@ public class AugmentResourceLoader : MonoBehaviour
     private Coroutine releaseRoutine;
     private int resourceGeneration;
     private bool ready;
+    private bool isQuitting;
 
     public static AugmentResourceLoader Instance => instance;
     public IReadOnlyList<AugmentSO> Catalog => catalog;
@@ -37,7 +38,18 @@ public class AugmentResourceLoader : MonoBehaviour
 
     private void OnDestroy()
     {
+        ready = false;
+        resourceGeneration++;
+        releaseRoutine = null;
+        inFlight.Clear();
+        prefabCache.Clear();
+        catalog.Clear();
         if (instance == this) instance = null;
+    }
+
+    private void OnApplicationQuit()
+    {
+        isQuitting = true;
     }
 
     public IEnumerator WaitForRelease()
@@ -115,7 +127,7 @@ public class AugmentResourceLoader : MonoBehaviour
 
     public void ReleaseResources()
     {
-        if (IsReleasing || (!ready && inFlight.Count == 0)) return;
+        if (this == null || isQuitting || IsReleasing || (!ready && inFlight.Count == 0)) return;
         ready = false;
         resourceGeneration++;
         releaseRoutine = StartCoroutine(ReleaseRoutine());

@@ -249,7 +249,7 @@ public sealed class SwordSpinSkillSO : PlayerSkillSO
             damagedEnemies.Add(enemy);
             Vector3 hitPosition = hit.bounds.center;
             int dealt = owner.DamageDealer.DealDamage(
-                enemy, damage, damageType, owner.transform.position);
+                enemy, damage, damageType, owner.transform.position, this);
             if (dealt <= 0)
                 continue;
 

@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    [SerializeField] private AudioClip basicAttackClip;
     private static readonly int AttackSpeedParameter = Animator.StringToHash("AttackSpeed");
 
     private PlayerInputHandler input;
@@ -102,7 +103,7 @@ public class PlayerController : MonoBehaviour
 
                 if (AudioManager.Instance != null)
                 {
-                    AudioManager.Instance.PlayPlayerAttack();
+                    AudioManager.Instance.PlaySFX(basicAttackClip);
                 }
 
             }

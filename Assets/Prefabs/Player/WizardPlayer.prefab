@@ -51,6 +51,10 @@ PrefabInstance:
       propertyPath: baseAttackSpeed
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2126891989114054287, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: basicAttackClip
+      value: 
+      objectReference: {fileID: 8300000, guid: eaae8fe8d600e1f459f34aa5757fa3b8, type: 3}
     - target: {fileID: 3149081206460350233, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: m_Actions
       value: 
@@ -232,6 +236,11 @@ MonoBehaviour:
   overdriveAuraPrefab: {fileID: 3190493304793549181, guid: d967f5c1404234b27930fbe4e44bf7ed, type: 3}
   overdriveWavePrefab: {fileID: 5590185487083544308, guid: 993067932f0a64ed5b6d61e5b56430b3, type: 3}
   overdriveFinalPrefab: {fileID: 1889994154918722592, guid: b7bb3aa3fcbfa4e61849b120d9763e4e, type: 3}
+  gravityPullSfx: {fileID: 8300000, guid: 7a9de5c4d998126449cf964a6b27a8b0, type: 3}
+  gravityBlastSfx: {fileID: 8300000, guid: b7f8695cf65a4f24eb37544298821146, type: 3}
+  resonanceCastSfx: {fileID: 8300000, guid: 00e4eb96f4f6cc249a632e4027644cad, type: 3}
+  overdriveStartSfx: {fileID: 8300000, guid: b0e62ed71b1538648b719821f4f63b4c, type: 3}
+  overdriveFinalSfx: {fileID: 8300000, guid: b7f8695cf65a4f24eb37544298821146, type: 3}
   previewValidColor: {r: 0.48, g: 0.3, b: 1, a: 0.95}
   previewInvalidColor: {r: 1, g: 0.12, b: 0.12, a: 0.95}
   previewFillOpacity: 0.18

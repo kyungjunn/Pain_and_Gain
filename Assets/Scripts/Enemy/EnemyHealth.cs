@@ -51,15 +51,15 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         OnHealthChanged?.Invoke(CurrentHealth, MaxHealth);
         hitFeedback?.Play();
 
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlayEnemyHit();
-        }
-
         if (CurrentHealth == 0)
         {
             Die();
             return;
+        }
+
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayEnemyHit();
         }
 
         enemyAnimator?.PlayHit();

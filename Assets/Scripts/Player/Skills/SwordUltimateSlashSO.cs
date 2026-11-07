@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 전사 R: 빠른 연속 참격 4회 + 대형 광역 VFX.
+// 전사 R: 빠른 연속 참격 6회 + 대형 광역 VFX.
 // 궁극기 게이지 확인/소비는 PlayerSkillController가 담당한다.
 [CreateAssetMenu(menuName = "Player/Skills/Sword Ultimate Slash")]
 public sealed class SwordUltimateSlashSO : PlayerSkillSO
@@ -14,8 +14,8 @@ public sealed class SwordUltimateSlashSO : PlayerSkillSO
     [SerializeField] private LayerMask enemyLayers = ~0;
 
     [Header("Rapid Slashes")]
-    [SerializeField, Range(1, 8)] private int slashCount = 4;
-    [SerializeField, Min(0.06f)] private float slashInterval = 0.24f;
+    [SerializeField, Range(1, 8)] private int slashCount = 6;
+    [SerializeField, Min(0.06f)] private float slashInterval = 0.144f;
     [SerializeField, Min(0f)] private float impactDelay = 0.12f;
     [SerializeField, Min(0f)] private float recoveryTime = 0.16f;
     [SerializeField, Min(0.1f)] private float slashAnimationSpeed = 5.5f;
@@ -55,7 +55,7 @@ public sealed class SwordUltimateSlashSO : PlayerSkillSO
         Animator animator = owner.GetComponentInChildren<Animator>();
         float previousAnimationSpeed = animator != null ? animator.speed : 1f;
 
-        // 공격력 x4의 기존 총 피해를 4회로 나눈다. 네 번 모두 맞아도 총 피해는 그대로.
+        // 기존 총 피해를 참격 수로 나눠 모든 참격이 맞아도 총 피해는 그대로 유지한다.
         PlayerAugments augments = owner.GetComponent<PlayerAugments>();
         float damageBonus = augments != null
             ? augments.GetCombatAugmentValue(PlayerCombatAugmentEffect.SkillDamage, this)

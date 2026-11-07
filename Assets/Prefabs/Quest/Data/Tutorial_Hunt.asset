@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db43c40b9cf85354da000bef094c3c30, type: 3}
+  m_Name: Tutorial_Hunt
+  m_EditorClassIdentifier: Assembly-CSharp::QuestSO
+  questName: "\uAE38\uC7A1\uC774 \u2014 \uBAA9\uD45C \uCD94\uC801"
+  description: "\uBE44\uCF58\uC73C\uB85C \uD45C\uC2DC\uB41C \uC5F0\uC2B5 \uD1A0\uB07C\uB97C
+    \uCC3E\uC544 \uCC98\uCE58\uD558\uC138\uC694."
+  category: 0
+  objectiveType: 1
+  skillHitCountingRule: 0
+  targetAmount: 1
+  timeLimit: 0
+  eventMonsterPrefab: {fileID: 1647588856111179663, guid: 0db0255fe219c26498708f44585747a9, type: 3}
+  eventMonsterBeaconPrefab: {fileID: 7938867002401111200, guid: 8f4c868b63d12ce216a8ffe3dc27e30d, type: 3}
+  successReward: {fileID: 11400000, guid: a31dc926e8ab47bb96cf78178d702002, type: 2}
+  rewardPool: {fileID: 0}

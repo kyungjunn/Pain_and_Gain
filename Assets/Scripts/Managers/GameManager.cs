@@ -1,10 +1,14 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Unity.Cinemachine;
 
 // 전투 세션 소유자. 시작·종료·현재 플레이어.
 public class GameManager : MonoBehaviour
 {
+    private const float HitStopDuration = 0.05f;
+
     public static GameManager Instance;
     private static int nextSessionId = 1;
     private AugmentResourceLoader resourceLoader;
@@ -12,12 +16,17 @@ public class GameManager : MonoBehaviour
     private GameObject currentPlayer;
     private AsyncOperation pendingMapLoad;
     private bool startupCancelled;
+    private double hitStopDeadline;
+    private float timeScaleBeforeHitStop = 1f;
+    private int hitStopSessionId;
 
     public int SessionId { get; private set; }
     public GameObject CurrentPlayer => currentPlayer;
     public bool IsActiveSession => Instance == this && SessionId != 0;
 
     public bool IsPaused { get; private set; }
+    public bool IsHitStopped { get; private set; }
+    public event Action<int> OnCombatSessionEnding;
 
     [Header("불러올 맵 씬 이름")]
     [SerializeField] private string mapSceneName = "Map";
@@ -38,6 +47,8 @@ public class GameManager : MonoBehaviour
             RunStats.Reset();
             Time.timeScale = 1f;
             IsPaused = false;
+            CinemachineImpulseManager.Instance.Clear();
+            CinemachineImpulseManager.Instance.IgnoreTimeScale = true;
         }
         else
         {
@@ -59,7 +70,11 @@ public class GameManager : MonoBehaviour
         SpawnManager.OnPlayerSpawned -= BindPlayer;
         SceneManager.sceneUnloaded -= HandleSceneUnloaded;
         CancelStartup();
-        EndCombatSession(SessionId);
+        if (Instance == this)
+        {
+            ClearHitStop(false);
+            EndCombatSession(SessionId);
+        }
     }
 
     private void Start()
@@ -76,6 +91,28 @@ public class GameManager : MonoBehaviour
             EndCombatSession(SessionId);
             Instance = null;
         }
+    }
+
+    private void Update()
+    {
+        if (!IsHitStopped)
+            return;
+
+        if (IsPaused)
+        {
+            ClearHitStop(false);
+            Time.timeScale = 0f;
+            return;
+        }
+
+        if (!BelongsToSession(hitStopSessionId) || IsCurrentPlayerDeadOrUnavailable())
+        {
+            ClearHitStop(true);
+            return;
+        }
+
+        if (Time.unscaledTimeAsDouble >= hitStopDeadline)
+            ClearHitStop(true);
     }
 
     // 토큰 일치 + 활성 세션
@@ -96,16 +133,22 @@ public class GameManager : MonoBehaviour
     public void EndCombatSession(int expectedSessionId)
     {
         if (!BelongsToSession(expectedSessionId)) return;
-        SessionId = 0; // 이전 비동기 요청 무효
+        int endingSessionId = SessionId;
+        SessionId = 0; // 먼저 무효화해서 파괴 알림의 재진입을 차단한다.
+        AugmentResourceLoader loader = resourceLoader;
+        resourceLoader = null;
         GameObject player = currentPlayer;
         currentPlayer = null;
-        SpawnManager.Instance?.StopCombatSpawning();
-        UIManager.Instance?.ClearSession(false);
-        AugmentManager.Instance?.ClearSession();
-        QuestManager.Instance?.ClearSession();
+        ClearHitStop(false);
+        OnCombatSessionEnding?.Invoke(endingSessionId);
+        CinemachineImpulseManager.Instance.Clear();
+        if (SpawnManager.Instance != null) SpawnManager.Instance.StopCombatSpawning();
+        if (UIManager.Instance != null) UIManager.Instance.ClearSession(false);
+        if (AugmentManager.Instance != null) AugmentManager.Instance.ClearSession();
+        if (QuestManager.Instance != null) QuestManager.Instance.ClearSession();
         if (player != null && player.TryGetComponent(out PlayerAugments augments))
             augments.ReleaseAll();
-        resourceLoader?.ReleaseResources();
+        if (loader != null) loader.ReleaseResources();
         IsPaused = false;
         Time.timeScale = 1f;
         SetCursor(true);
@@ -217,16 +260,57 @@ public class GameManager : MonoBehaviour
 
     public void PauseGame()
     {
+        bool enteringPause = !IsPaused;
         IsPaused = true;
+        ClearHitStop(false);
         Time.timeScale = 0f;
         SetCursor(true);
+        if (enteringPause && AudioManager.Instance != null) AudioManager.Instance.PlayPause();
     }
 
     public void ResumeGame()
     {
+        bool leavingPause = IsPaused;
+        ClearHitStop(false);
         IsPaused = false;
         Time.timeScale = 1f;
         SetCursor(false);
+        if (leavingPause && AudioManager.Instance != null) AudioManager.Instance.PlayResume();
+    }
+
+    public bool RequestHitStop()
+    {
+        if (!IsActiveSession || IsPaused || IsHitStopped || Time.timeScale <= 0f ||
+            IsCurrentPlayerDeadOrUnavailable())
+            return false;
+
+        hitStopSessionId = SessionId;
+        timeScaleBeforeHitStop = Time.timeScale;
+        hitStopDeadline = Time.unscaledTimeAsDouble + HitStopDuration;
+        IsHitStopped = true;
+        Time.timeScale = 0f;
+        return true;
+    }
+
+    private bool IsCurrentPlayerDeadOrUnavailable()
+    {
+        if (currentPlayer == null || !currentPlayer.TryGetComponent(out PlayerHealth health))
+            return true;
+
+        return health.IsDead || health.CurrentHealth <= 0;
+    }
+
+    private void ClearHitStop(bool restoreTimeScale)
+    {
+        if (!IsHitStopped)
+            return;
+
+        IsHitStopped = false;
+        hitStopDeadline = 0f;
+        hitStopSessionId = 0;
+
+        if (restoreTimeScale && !IsPaused && Mathf.Approximately(Time.timeScale, 0f))
+            Time.timeScale = timeScaleBeforeHitStop;
     }
 
     public void SetCursor(bool visible)

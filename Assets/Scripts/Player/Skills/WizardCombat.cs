@@ -111,6 +111,13 @@ public sealed class WizardCombat : MonoBehaviour
     [SerializeField] private GameObject overdriveWavePrefab;
     [SerializeField] private GameObject overdriveFinalPrefab;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip gravityPullSfx;
+    [SerializeField] private AudioClip gravityBlastSfx;
+    [SerializeField] private AudioClip resonanceCastSfx;
+    [SerializeField] private AudioClip overdriveStartSfx;
+    [SerializeField] private AudioClip overdriveFinalSfx;
+
     [Header("Resonance Preview")]
     [SerializeField] private Color previewValidColor = new Color(0.72f, 0.38f, 1f, 0.95f);
     [SerializeField] private Color previewInvalidColor = new Color(1f, 0.12f, 0.12f, 0.95f);
@@ -374,6 +381,7 @@ public sealed class WizardCombat : MonoBehaviour
         resonanceFields.Add(field);
         EnforceResonanceFieldCapacity();
         CancelResonancePreview();
+        PlaySkillSfx(resonanceCastSfx);
         return true;
     }
 
@@ -400,6 +408,7 @@ public sealed class WizardCombat : MonoBehaviour
         state.Aura = CreateVisual(overdriveAuraPrefab, "WizardOverdriveAura",
             Vector3.up, 1f, true, owner.transform);
         overdrive = state;
+        PlaySkillSfx(overdriveStartSfx);
         StartCoroutine(RunOverdrive(state));
         return true;
     }
@@ -469,6 +478,7 @@ public sealed class WizardCombat : MonoBehaviour
                 }
             }
             float pullEndTime = Time.time + skill.GravityCorePullDuration;
+            bool pullStarted = false;
             while (Time.time < pullEndTime)
             {
                 if (!CanRunEffects())
@@ -477,6 +487,12 @@ public sealed class WizardCombat : MonoBehaviour
                 {
                     yield return null;
                     continue;
+                }
+
+                if (!pullStarted)
+                {
+                    pullStarted = true;
+                    PlaySkillSfx(gravityPullSfx);
                 }
 
                 float pullRadius = GetAugmentedGravityPullRadius(skill);
@@ -491,6 +507,7 @@ public sealed class WizardCombat : MonoBehaviour
             if (!CanRunEffects())
                 yield break;
 
+            PlaySkillSfx(gravityBlastSfx);
             SkillAreaQuery blastQuery = new SkillAreaQuery();
             blastQuery.DealDamage(
                 damageDealer,
@@ -498,7 +515,8 @@ public sealed class WizardCombat : MonoBehaviour
                 skill.GravityCoreBlastRadius,
                 CalculateDamage(skill.GravityCoreDamageMultiplier),
                 PlayerDamageType.Skill,
-                owner.transform.position);
+                owner.transform.position,
+                sourceSkill: skill);
 
             if (CanRunEffects())
             {
@@ -548,7 +566,8 @@ public sealed class WizardCombat : MonoBehaviour
                         state.WaveRadius,
                         CalculateDamage(state.WaveDamageMultiplier),
                         PlayerDamageType.Skill,
-                        center);
+                        center,
+                        sourceSkill: state.Skill);
                     if (CanRunEffects() && !state.Cancelled)
                     {
                         PlayBurst(overdriveWavePrefab, "WizardOverdriveWave",
@@ -567,13 +586,15 @@ public sealed class WizardCombat : MonoBehaviour
             state.Aura = null;
 
             Vector3 finalCenter = owner.transform.position;
+            PlaySkillSfx(overdriveFinalSfx);
             state.FinalBlastQuery.DealDamage(
                 damageDealer,
                 finalCenter,
                 state.FinalBlastRadius,
                 CalculateDamage(state.FinalDamageMultiplier),
                 PlayerDamageType.Skill,
-                finalCenter);
+                finalCenter,
+                sourceSkill: state.Skill);
 
             if (CanRunEffects())
             {
@@ -604,6 +625,13 @@ public sealed class WizardCombat : MonoBehaviour
             floor = hit;
         }
         return nearest < float.PositiveInfinity && Vector3.Dot(floor.normal, Vector3.up) >= 0.5f;
+    }
+
+    private static void PlaySkillSfx(AudioClip clip)
+    {
+        AudioManager audioManager = AudioManager.Instance;
+        if (audioManager != null && clip != null)
+            audioManager.PlaySFX(clip);
     }
 
     private void PlayBurst(GameObject prefab, string name,
@@ -980,7 +1008,8 @@ public sealed class WizardCombat : MonoBehaviour
                 radius,
                 field.ResonanceDamage,
                 PlayerDamageType.Skill,
-                owner.transform.position);
+                owner.transform.position,
+                sourceSkill: field.Skill);
 
             if (!CanRunEffects())
                 return;
@@ -1019,7 +1048,8 @@ public sealed class WizardCombat : MonoBehaviour
                 field.Radius,
                 field.TickDamage,
                 PlayerDamageType.Skill,
-                field.Center);
+                field.Center,
+                sourceSkill: field.Skill);
         }
     }
 
@@ -1053,7 +1083,8 @@ public sealed class WizardCombat : MonoBehaviour
             field.Radius,
             CalculateDamage(collapseDamageMultiplier),
             PlayerDamageType.Skill,
-            field.Center);
+            field.Center,
+            sourceSkill: field.Skill);
         if (CanRunEffects())
             PlayBurst(resonanceHitPrefab, "WizardFieldCollapse",
                 field.Center + Vector3.up * 0.04f, field.Radius / 2f);
@@ -1666,6 +1697,14 @@ public sealed class WizardCombat : MonoBehaviour
         playerAugments = GetComponent<PlayerAugments>();
     }
 
-    private static bool IsGamePaused => Time.timeScale <= 0f ||
-        (GameManager.Instance != null && GameManager.Instance.IsPaused);
+    private static bool IsGamePaused
+    {
+        get
+        {
+            GameManager gameManager = GameManager.Instance;
+            return gameManager != null
+                ? gameManager.IsPaused || (Time.timeScale <= 0f && !gameManager.IsHitStopped)
+                : Time.timeScale <= 0f;
+        }
+    }
 }
