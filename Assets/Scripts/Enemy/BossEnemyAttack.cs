@@ -44,7 +44,7 @@ public class BossEnemyAttack : EnemyAttack
     {
         get
         {
-            if (!IsAttackReady) return false;
+            if (!CanAttack || !IsAttackReady) return false;
             QueueAttackIfNeeded();
             return !queuedStrongAttack;
         }
@@ -58,7 +58,7 @@ public class BossEnemyAttack : EnemyAttack
 
     public override bool TryAttack(Transform target)
     {
-        if (target == null || !IsAttackReady || !IsTargetInRange(target))
+        if (!CanAttack || target == null || !target.gameObject.activeInHierarchy || !IsAttackReady || !IsTargetInRange(target))
         {
             return false;
         }
@@ -233,6 +233,15 @@ public class BossEnemyAttack : EnemyAttack
         {
             strongAttackIndicator.SetActive(false);
         }
+    }
+
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        HideStrongAttackIndicator();
+        hasQueuedAttack = false;
+        queuedStrongAttack = false;
+        useStrongAttack = false;
     }
 
     private void CreateStrongAttackIndicator()
