@@ -90,6 +90,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     // 이동 잠금, 종료 대기 스킬, E 무기 이펙트, 닌자 궁극기 상태.
     private bool movementLocked;
     private PlayerSkillSO deferredCooldownSkill;
+    private NinjaHwaDunChannel hwaDunChannel;
     private Coroutine skillEWeaponRoutine;
     private NinjaUltimate ninjaUltimate;
     private int resonancePreviewOpenedFrame = -1;
@@ -98,6 +99,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     public Transform SkillOrigin => skillOrigin;
     public PlayerStats Stats => stats;
     public PlayerDamageDealer DamageDealer => damageDealer;
+    internal bool HasActiveHwaDunChannel => hwaDunChannel != null;
     public bool IsMovementLocked => movementLocked;
     public bool IsUltimateDashing => ninjaUltimate != null && ninjaUltimate.IsDashing;
     public bool IsWizardResonancePreviewActive
@@ -168,7 +170,9 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void Update()
     {
-        // 채널링 중 사망하면 대기 중인 쿨타임을 시작.
+        // 채널링 중 사망하면 피해를 중단하고 대기 중인 쿨타임을 시작.
+        if (IsPlayerDead)
+            CancelHwaDunChannel();
         if (deferredCooldownSkill != null &&
             IsPlayerDead)
             CompleteDeferredSkill(deferredCooldownSkill);
@@ -214,6 +218,7 @@ public sealed class PlayerSkillController : MonoBehaviour
         }
         if (skillEWeapon != null)
             skillEWeapon.SetActive(false);
+        CancelHwaDunChannel();
         if (deferredCooldownSkill != null)
             CompleteDeferredSkill(deferredCooldownSkill);
 
@@ -312,6 +317,30 @@ public sealed class PlayerSkillController : MonoBehaviour
     {
         // 지속형 스킬 종료 알림을 받아 지연 쿨타임 완료.
         CompleteDeferredSkill(skill);
+    }
+
+    internal bool TryOwnHwaDunChannel(NinjaHwaDunChannel channel)
+    {
+        if (channel == null || HasActiveHwaDunChannel || !isActiveAndEnabled || IsPlayerDead)
+            return false;
+
+        hwaDunChannel = channel;
+        return true;
+    }
+
+    internal void NotifyHwaDunChannelFinished(NinjaHwaDunChannel channel, PlayerSkillSO skill)
+    {
+        if (hwaDunChannel != channel)
+            return;
+
+        hwaDunChannel = null;
+        NotifyChannelFinished(skill);
+    }
+
+    private void CancelHwaDunChannel()
+    {
+        if (hwaDunChannel != null)
+            hwaDunChannel.StopChannel();
     }
 
     public bool TryBeginWizardResonancePreview()
@@ -505,6 +534,7 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void HandlePlayerDeath()
     {
+        CancelHwaDunChannel();
         CancelWizardResonancePreview();
         ClearDashMoveSpeedBonus();
         movementLocked = false;

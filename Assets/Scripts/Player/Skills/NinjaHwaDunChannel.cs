@@ -17,13 +17,16 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
     private int damage;
     private bool stopped;
 
-    public void Initialize(
+    public bool Initialize(
         PlayerSkillController skillOwner,
         PlayerSkillSO channelSkill,
         int tickDamage,
         float interval,
         float channelDuration)
     {
+        if (stopped || skillOwner == null || !skillOwner.TryOwnHwaDunChannel(this))
+            return false;
+
         // 시전자/스킬 정보 및 피해 간격, 종료 시각 기록.
         owner = skillOwner;
         skill = channelSkill;
@@ -38,6 +41,7 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
             hitbox = gameObject.AddComponent<FireAuraHitbox>();
 
         IgnoreOwnerColliders();
+        return true;
     }
 
     private void Update()
@@ -46,15 +50,15 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
         if (stopped)
             return;
 
-        if (owner == null || IsOwnerDead())
+        if (owner == null || !owner.isActiveAndEnabled || owner.IsPlayerDead)
         {
-            StopChannel(false);
+            StopChannel();
             return;
         }
 
         if (Time.time >= endTime)
         {
-            StopChannel(true);
+            StopChannel();
             return;
         }
 
@@ -66,7 +70,17 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
         ApplyTickDamage();
     }
 
-    private void StopChannel(bool notifyOwner)
+    private void OnDisable()
+    {
+        StopChannel();
+    }
+
+    private void OnDestroy()
+    {
+        StopChannel();
+    }
+
+    public void StopChannel()
     {
         // 중복 종료 방지 및 히트박스 비활성화.
         if (stopped)
@@ -78,22 +92,22 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
         Collider collider = GetComponent<Collider>();
         if (collider != null)
             collider.enabled = false;
+        if (hitbox != null)
+            hitbox.enabled = false;
+        hitEnemies.Clear();
 
         FireBaseScript fire = GetComponent<FireBaseScript>();
         // 화염 이펙트 정지. 이펙트 스크립트가 없으면 오브젝트 제거.
-        if (fire != null)
+        // Stop은 활성 오브젝트에서 코루틴으로 잔여 파티클을 정리한다.
+        if (fire != null && gameObject.activeInHierarchy)
             fire.Stop();
         else
             Destroy(gameObject);
 
-        if (notifyOwner && owner != null)
-            // 정상 종료만 컨트롤러에 알려 지연된 쿨타임 시작.
-            owner.NotifyChannelFinished(skill);
-    }
-    private bool IsOwnerDead()
-    {
-        PlayerStateManager stateManager = owner != null ? owner.GetComponent<PlayerStateManager>() : null;
-        return stateManager != null && stateManager.CurrentState == PlayerState.Dead;
+        if (owner != null)
+            owner.NotifyHwaDunChannelFinished(this, skill);
+        owner = null;
+        damageDealer = null;
     }
 
     private void IgnoreOwnerColliders()
@@ -120,6 +134,9 @@ public sealed class NinjaHwaDunChannel : MonoBehaviour
         hitbox.GetEnemies(hitEnemies);
         for (int i = 0; i < hitEnemies.Count; i++)
         {
+            if (stopped || owner == null || !owner.isActiveAndEnabled || owner.IsPlayerDead)
+                break;
+
             EnemyHealth enemy = hitEnemies[i];
             if (enemy != null)
                 damageDealer.DealDamage(enemy, damage, PlayerDamageType.Skill, sourceSkill: skill);

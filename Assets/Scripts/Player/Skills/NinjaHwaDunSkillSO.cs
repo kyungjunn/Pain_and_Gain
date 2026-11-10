@@ -20,10 +20,10 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
     {
         // 필수 참조 및 기존 화둔 채널 중복 검사.
         if (flamethrowerPrefab == null || owner == null || owner.SkillOrigin == null ||
-            owner.DamageDealer == null)
+            owner.DamageDealer == null || !owner.isActiveAndEnabled || owner.IsPlayerDead)
             return false;
 
-        if (owner.GetComponentInChildren<NinjaHwaDunChannel>(true) != null)
+        if (owner.HasActiveHwaDunChannel)
             return false;
 
         // 전투 증강의 피해/범위/지속시간 보너스를 각각 조회.
@@ -85,7 +85,11 @@ public sealed class NinjaHwaDunSkillSO : PlayerSkillSO
         int damage = Mathf.Max(1, Mathf.RoundToInt(
             (owner.Stats != null ? owner.Stats.AttackDamage : 10f) * effectiveDamageMultiplier));
         NinjaHwaDunChannel channel = instance.AddComponent<NinjaHwaDunChannel>();
-        channel.Initialize(owner, this, damage, tickInterval, effectiveDuration);
+        if (!channel.Initialize(owner, this, damage, tickInterval, effectiveDuration))
+        {
+            Object.Destroy(instance);
+            return false;
+        }
         if (owner.isActiveAndEnabled && !owner.IsPlayerDead && castSfx != null && AudioManager.Instance != null)
             AudioManager.Instance.PlaySFX(castSfx);
         return true;
