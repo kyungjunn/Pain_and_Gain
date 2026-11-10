@@ -2,6 +2,7 @@
 using UnityEngine;
 
 // 플레이어 현재 체력, 피격, 회복을 관리
+[RequireComponent(typeof(PlayerStateManager), typeof(Rigidbody))]
 public class PlayerHealth : LivingEntity
 {
     [SerializeField] private PlayerStats stats;
@@ -26,11 +27,6 @@ public class PlayerHealth : LivingEntity
         }
 
         stateManager = GetComponent<PlayerStateManager>();
-        if (stateManager == null)
-        {
-            // 같은 오브젝트에 없으면 씬 전체에서 찾음
-            stateManager = FindFirstObjectByType<PlayerStateManager>();
-        }
 
         animator = GetComponentInChildren<Animator>();
         rb = GetComponent<Rigidbody>();
@@ -49,6 +45,8 @@ public class PlayerHealth : LivingEntity
         {
             stats.onStatsChanged += HandleStatsChanged;
         }
+
+        HandleStatsChanged();
     }
 
     private void OnDisable()

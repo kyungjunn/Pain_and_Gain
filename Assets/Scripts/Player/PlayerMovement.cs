@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody), typeof(PlayerStateManager))]
 public class PlayerMovement : MonoBehaviour
 {
     public float moveSpeed = 5f; // 플레이어 이동속도 (PlayerStats가 없을 때만 사용)
@@ -8,6 +9,11 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce = 5f;
     private Rigidbody rb;
     private PlayerStats stats;
+    private PlayerStateManager stateManager;
+    private PlayerSkillController skillController;
+    private Vector3 desiredMovement;
+    private bool jumpQueued;
+    private bool controlsHorizontalVelocity;
 
     // 이동속도 증강/페널티가 실제 이동에 반영되도록 PlayerStats를 우선 사용
     private float MoveSpeed => stats != null ? stats.MoveSpeed : moveSpeed;
@@ -23,20 +29,70 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         stats = GetComponent<PlayerStats>();
+        stateManager = GetComponent<PlayerStateManager>();
+        skillController = GetComponent<PlayerSkillController>();
     }
 
-    void Start()
+    private bool IsMovementBlocked =>
+        (GameManager.Instance != null && GameManager.Instance.IsPaused) ||
+        Time.timeScale <= 0f ||
+        stateManager.CurrentState == PlayerState.Dead ||
+        (skillController != null && skillController.IsMovementLocked);
+
+    private void OnDisable()
     {
-        
+        StopMovement();
     }
 
-    void Update()
+    private void FixedUpdate()
     {
-        //Move();
+        if (IsMovementBlocked)
+        {
+            StopMovement();
+            return;
+        }
+
+        if (rb.isKinematic)
+        {
+            desiredMovement = Vector3.zero;
+            jumpQueued = false;
+            controlsHorizontalVelocity = false;
+            return;
+        }
+
+        Vector3 velocity = desiredMovement * MoveSpeed;
+        velocity.y = rb.linearVelocity.y;
+        rb.linearVelocity = velocity;
+        controlsHorizontalVelocity = true;
+
+        if (jumpQueued)
+        {
+            jumpQueued = false;
+            rb.linearVelocity = new Vector3(velocity.x, 0f, velocity.z);
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+    }
+
+    public void StopMovement()
+    {
+        desiredMovement = Vector3.zero;
+        jumpQueued = false;
+
+        // Release only the velocity owned by normal movement, not skill motion.
+        if (controlsHorizontalVelocity && rb != null && !rb.isKinematic)
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+
+        controlsHorizontalVelocity = false;
     }
 
     public void Move(Vector2 input)
     {
+        if (!isActiveAndEnabled || IsMovementBlocked)
+        {
+            StopMovement();
+            return;
+        }
+
         // 카메라 기준 방향
         Vector3 forward = cameraTransform.forward;
         Vector3 right = cameraTransform.right;
@@ -52,17 +108,16 @@ public class PlayerMovement : MonoBehaviour
         Vector3 move = forward * input.y + right * input.x;
 
         // 대각선 속도 보정
-        move = move.normalized;
-
-        transform.Translate(move * MoveSpeed * Time.deltaTime, Space.World);
+        desiredMovement = Vector3.ClampMagnitude(move, 1f);
     }
 
     public bool Jump()
     {
-        if (CheckGrounded()) 
+        if (isActiveAndEnabled && !IsMovementBlocked && !rb.isKinematic &&
+            !jumpQueued && CheckGrounded())
         {
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            // True means accepted; the impulse is consumed once by FixedUpdate.
+            jumpQueued = true;
             return true;
         }
 
