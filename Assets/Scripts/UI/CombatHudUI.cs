@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -16,6 +17,7 @@ public sealed class CombatHudUI : MonoBehaviour
     [SerializeField] private GameObject statsPanel;
     private PlayerSkillController skills;
     private PlayerUltimateGauge gauge;
+    private GameObject selectionBeforeStats;
     private static readonly Color Charging = new Color(0.28f, 0.82f, 1f);
     private static readonly Color Ready = new Color(1f, 0.75f, 0.25f);
 
@@ -35,7 +37,7 @@ public sealed class CombatHudUI : MonoBehaviour
     {
         SpawnManager.OnPlayerSpawned -= Bind;
         Unbind();
-        statsPanel.SetActive(false);
+        SetStatsPanelVisible(false);
     }
 
     private void Unbind()
@@ -71,12 +73,39 @@ public sealed class CombatHudUI : MonoBehaviour
     {
         // Tab: 능력치 패널 토글. 쿨타임: 매 프레임 표시 갱신.
         if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
-            statsPanel.SetActive(!statsPanel.activeSelf);
+            SetStatsPanelVisible(!statsPanel.activeSelf);
         RefreshSkills();
         bool recast = skills != null && skills.UltimateRecastReady;
         // 궁극기 충전 완료 또는 재시전 가능 시 강조색 적용.
         ultimateKey.color = recast || (gauge != null && gauge.IsFull) ? Ready : Color.white;
         ultimateFill.color = recast || (gauge != null && gauge.IsFull) ? Ready : Charging;
+    }
+
+    private void SetStatsPanelVisible(bool visible)
+    {
+        var events = EventSystem.current;
+        if (visible && events != null)
+            selectionBeforeStats = events.currentSelectedGameObject;
+        var selected = events != null ? events.currentSelectedGameObject : null;
+        bool ownsFocus = selected != null && selected.transform.IsChildOf(statsPanel.transform);
+        statsPanel.SetActive(visible);
+        if (events == null) return;
+        if (visible)
+        {
+            foreach (Selectable control in statsPanel.GetComponentsInChildren<Selectable>())
+                if (control.IsInteractable())
+                {
+                    events.SetSelectedGameObject(control.gameObject);
+                    break;
+                }
+        }
+        else
+        {
+            if (ownsFocus)
+                events.SetSelectedGameObject(selectionBeforeStats != null && selectionBeforeStats.activeInHierarchy
+                    ? selectionBeforeStats : null);
+            selectionBeforeStats = null;
+        }
     }
 
     private void RefreshSkills()
