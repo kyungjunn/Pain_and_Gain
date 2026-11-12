@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
@@ -51,6 +52,7 @@ public class AugmentPanelUI : MonoBehaviour
     public void Setup(List<AugmentSO> augments, int session, int ticket)
     {
         StopRoutines();
+        EventSystem.current?.SetSelectedGameObject(null);
         sessionId = session;
         ticketId = ticket;
         consumed = false;
@@ -73,6 +75,11 @@ public class AugmentPanelUI : MonoBehaviour
         SetStatus(message);
         SetSkipVisible(true);
         SetAllInteractable(false);
+        if (EventSystem.current != null && skipButton != null
+            && skipButton.IsActive() && skipButton.IsInteractable())
+        {
+            EventSystem.current.SetSelectedGameObject(skipButton.gameObject);
+        }
     }
 
     // 증강 선택
@@ -84,6 +91,7 @@ public class AugmentPanelUI : MonoBehaviour
         }
 
         state = PanelState.Loading;
+        ClearPanelFocus();
         SetAllInteractable(false);
         SetSkipVisible(false);
         SetStatus("스킬을 준비하는 중...");
@@ -166,6 +174,7 @@ public class AugmentPanelUI : MonoBehaviour
     public void Invalidate()
     {
         StopRoutines();
+        ClearPanelFocus();
         consumed = true;
         state = PanelState.Closed;
         ShowOptions(null);
@@ -186,6 +195,10 @@ public class AugmentPanelUI : MonoBehaviour
 
         state = PanelState.Ready;
         SetAllInteractable(true);
+        for (int i = 0; i < optionUIs.Count; i++)
+        {
+            if (optionUIs[i].Focus()) break;
+        }
     }
 
     // 선택지 표시
@@ -281,6 +294,17 @@ public class AugmentPanelUI : MonoBehaviour
     private void OnDisable()
     {
         StopRoutines();
+        ClearPanelFocus();
+    }
+
+    private void ClearPanelFocus()
+    {
+        if (EventSystem.current == null) return;
+        GameObject selected = EventSystem.current.currentSelectedGameObject;
+        if (selected != null && selected.transform.IsChildOf(transform))
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
     }
 
     private void OnValidate()

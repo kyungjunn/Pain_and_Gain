@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -52,6 +53,22 @@ public class ResultScreenUI : MonoBehaviour
             Show(GameResult.Data);   // 인게임에서 넘어온 실제 결과
         else if (testData != null)
             Show(testData);          // 엔딩 씬만 단독 실행할 때 테스트용
+
+        FocusHomeButton();
+    }
+
+    private void OnEnable()
+    {
+        FocusHomeButton();
+    }
+
+    private void FocusHomeButton()
+    {
+        if (EventSystem.current != null && homeButton != null
+            && homeButton.IsActive() && homeButton.IsInteractable())
+        {
+            EventSystem.current.SetSelectedGameObject(homeButton.gameObject);
+        }
     }
 
     private void OnDestroy()
@@ -81,6 +98,7 @@ public class ResultScreenUI : MonoBehaviour
 
         BuildAugmentSlots(data);
         gameObject.SetActive(true);
+        FocusHomeButton();
     }
 
     private void BuildAugmentSlots(ResultData data)

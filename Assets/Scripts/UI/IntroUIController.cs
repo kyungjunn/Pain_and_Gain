@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -32,6 +34,25 @@ public class IntroUIController : MonoBehaviour
         optionButton.onClick.AddListener(OnOptionClicked);
         quitButton.onClick.AddListener(OnQuitClicked);
         closeOptionsButton.onClick.AddListener(OnCloseOptionsClicked);
+        SelectButton(gameStartButton);
+    }
+
+    private void Start()
+    {
+        SelectButton(gameStartButton);
+    }
+
+    private void Update()
+    {
+        if (!optionPanel.activeSelf) return;
+
+        var inputModule = EventSystem.current != null
+            ? EventSystem.current.currentInputModule as InputSystemUIInputModule : null;
+        if (inputModule != null && inputModule.cancel != null
+            && inputModule.cancel.action != null && inputModule.cancel.action.WasPressedThisFrame())
+        {
+            OnCloseOptionsClicked();
+        }
     }
 
     private void OnDisable()
@@ -49,12 +70,29 @@ public class IntroUIController : MonoBehaviour
 
     private void OnOptionClicked()
     {
+        gameStartButton.interactable = false;
+        optionButton.interactable = false;
+        quitButton.interactable = false;
         optionPanel.SetActive(true);
+        SelectButton(closeOptionsButton);
     }
 
     private void OnCloseOptionsClicked()
     {
         optionPanel.SetActive(false);
+        gameStartButton.interactable = true;
+        optionButton.interactable = true;
+        quitButton.interactable = true;
+        SelectButton(optionButton);
+    }
+
+    private static void SelectButton(Button button)
+    {
+        if (EventSystem.current != null && button != null
+            && button.IsActive() && button.IsInteractable())
+        {
+            EventSystem.current.SetSelectedGameObject(button.gameObject);
+        }
     }
 
     private void OnQuitClicked()

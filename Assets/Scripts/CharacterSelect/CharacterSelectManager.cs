@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class CharacterSelectManager : MonoBehaviour
 {
@@ -9,6 +11,8 @@ public class CharacterSelectManager : MonoBehaviour
     [Header("이동할 인게임 씬 이름")]
     public string inGameSceneName = "InGame"; // 실제 인게임 씬 파일 이름으로 설정하세요.
 
+    [SerializeField] private Button initialSelectionButton;
+
     private static readonly PlayerCharacterId[] ButtonCharacters =
     {
         PlayerCharacterId.Ninja, PlayerCharacterId.Sword, PlayerCharacterId.Wizard
@@ -16,10 +20,25 @@ public class CharacterSelectManager : MonoBehaviour
 
     private PlayerCharacterId selectedCharacter = PlayerCharacterId.Ninja;
 
+    private void OnEnable()
+    {
+        FocusInitialButton();
+    }
+
     void Start()
     {
         // 시작할 때 기본으로 0번(닌자) 캐릭터만 연기 켜기
         SelectCharacter(0);
+        FocusInitialButton();
+    }
+
+    private void FocusInitialButton()
+    {
+        if (EventSystem.current != null && initialSelectionButton != null
+            && initialSelectionButton.IsActive() && initialSelectionButton.IsInteractable())
+        {
+            EventSystem.current.SetSelectedGameObject(initialSelectionButton.gameObject);
+        }
     }
 
     void Update()
