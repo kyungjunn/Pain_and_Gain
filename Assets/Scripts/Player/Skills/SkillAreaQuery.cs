@@ -9,6 +9,13 @@ public sealed class SkillAreaQuery
     private readonly HashSet<EnemyHealth> uniqueEnemies = new HashSet<EnemyHealth>();
     private readonly List<EnemyHealth> enemies = new List<EnemyHealth>();
 
+    public void ClearResults()
+    {
+        uniqueEnemies.Clear();
+        enemies.Clear();
+        Array.Clear(colliders, 0, colliders.Length);
+    }
+
     public IReadOnlyList<EnemyHealth> Collect(Vector3 center, float radius, int layers = ~0)
     {
         int count;
