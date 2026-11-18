@@ -9,6 +9,14 @@ public sealed class SkillAreaQuery
     private readonly HashSet<EnemyHealth> uniqueEnemies = new HashSet<EnemyHealth>();
     private readonly List<EnemyHealth> enemies = new List<EnemyHealth>();
 
+    // 풀 반환 시 적·콜라이더 참조 해제 · 진행 중 피해 콜백 종료 후 호출
+    public void ClearResults()
+    {
+        uniqueEnemies.Clear();
+        enemies.Clear();
+        Array.Clear(colliders, 0, colliders.Length);
+    }
+
     public IReadOnlyList<EnemyHealth> Collect(Vector3 center, float radius, int layers = ~0)
     {
         int count;

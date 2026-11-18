@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(PlayerInputHandler), typeof(PlayerMovement), typeof(PlayerStateManager))]
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private AudioClip basicAttackClip;
@@ -19,35 +20,38 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         EnsureCombatComponents();
-        playerStats = GetComponent<PlayerStats>();
-        SubscribeToStats();
-    }
-
-    private void OnEnable()
-    {
-        SubscribeToStats();
-    }
-
-    private void OnDisable()
-    {
-        UnsubscribeFromStats();
-    }
-
-    private void Start()
-    {
         input = GetComponent<PlayerInputHandler>();
         movement = GetComponent<PlayerMovement>();
         playerAttack = GetComponent<IPlayerBasicAttack>();
         anim = GetComponentInChildren<Animator>();
         stateManager = GetComponent<PlayerStateManager>();
         skillController = GetComponent<PlayerSkillController>();
+        playerStats = GetComponent<PlayerStats>();
+    }
+
+    private void OnEnable()
+    {
+        SubscribeToStats();
         UpdateAttackAnimationSpeed();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeFromStats();
+        if (movement != null)
+            movement.StopMovement();
+        if (input != null)
+        {
+            input.AttackTriggered = false;
+            input.JumpTriggered = false;
+        }
     }
 
     private void Update()
     {
-        if (GameManager.Instance != null && GameManager.Instance.IsPaused)
+        if (Time.timeScale <= 0f || (GameManager.Instance != null && GameManager.Instance.IsPaused))
         {
+            movement.StopMovement();
             if (input != null)
             {
                 input.AttackTriggered = false;
@@ -59,7 +63,9 @@ public class PlayerController : MonoBehaviour
 
         if (stateManager.CurrentState == PlayerState.Dead)
         {
+            movement.StopMovement();
             input.AttackTriggered = false;
+            input.JumpTriggered = false;
             return;
         }
 
@@ -67,6 +73,8 @@ public class PlayerController : MonoBehaviour
 
         if (skillController == null || !skillController.IsMovementLocked)
             movement.Move(input.MoveInput);
+        else
+            movement.StopMovement();
 
         bool isGrounded = movement.CheckGrounded();
 

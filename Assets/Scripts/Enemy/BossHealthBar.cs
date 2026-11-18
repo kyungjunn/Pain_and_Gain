@@ -134,7 +134,7 @@ public class BossHealthBar : MonoBehaviour
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
+        scaler.matchWidthOrHeight = 1f;
 
         RectTransform container = CreateRect("BossHealthContainer", hudRoot.transform);
         container.anchorMin = new Vector2(0.5f, 1f);

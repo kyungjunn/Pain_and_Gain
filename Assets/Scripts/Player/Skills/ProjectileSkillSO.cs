@@ -15,21 +15,17 @@ public sealed class ProjectileSkillSO : PlayerSkillSO
     [SerializeField, Min(0.1f)] private float visualScale = 1f;
     [SerializeField, Min(0f)] private float explosionRadius;
 
-    // 발사체 생성
+    // 기본 공격과 소유자 풀 공유 · 대여 실패 시 시전 실패
     public override bool Cast(PlayerSkillController owner, PlayerDamageType damageType)
     {
         if (owner == null || projectilePrefab == null || owner.SkillOrigin == null || owner.DamageDealer == null)
             return false;
 
-        DamageProjectile projectile = Instantiate(
-            projectilePrefab,
-            owner.SkillOrigin.position,
-            owner.SkillOrigin.rotation);
-
         float attackDamage = owner.Stats != null ? owner.Stats.AttackDamage : 10f;
         int damage = Mathf.Max(1, Mathf.RoundToInt(attackDamage * damageMultiplier));
-        projectile.Initialize(owner.DamageDealer, damageType, damage, speed, maxDistance,
-            owner.SkillOrigin.forward, explosionRadius, visualScale);
-        return true;
+        PlayerProjectilePool pool = PlayerProjectilePool.GetOrCreate(owner.DamageDealer);
+        return pool.Spawn(projectilePrefab, owner.SkillOrigin.position,
+            owner.SkillOrigin.rotation, damageType, damage, speed, maxDistance,
+            owner.SkillOrigin.forward, explosionRadius, visualScale) != null;
     }
 }

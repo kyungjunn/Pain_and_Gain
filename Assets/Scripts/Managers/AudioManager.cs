@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// 사운드 싱글턴. 중복 거부.
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
@@ -31,7 +32,19 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            enabled = false;
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     public void PlayBGM(AudioClip bgmClip)

@@ -1,17 +1,153 @@
 // 공용 투사체: 관통 직격·단발 범위 폭발
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public sealed class DamageProjectile : MonoBehaviour
 {
+    // 보관 → 준비 → 비행 → 피해 처리 → 잔상/반환 · 취소 시 폐기
+    private enum LeasePhase
+    {
+        Idle,
+        Preparing,
+        Flying,
+        Resolving,
+        Finishing,
+        ReturnPending,
+        Cancelled,
+        Disposed
+    }
+
+    private struct ParticleSnapshot
+    {
+        public ParticleSystem Particle;
+        public ParticleSystemScalingMode ScalingMode;
+        public bool Loop;
+        public bool PlayOnAwake;
+        public ParticleSystem.MinMaxCurve StartLifetime;
+        public float StartLifetimeMultiplier;
+        public ParticleSystem.MinMaxCurve StartSpeed;
+        public ParticleSystem.MinMaxCurve StartSize;
+        public float StartSizeMultiplier;
+        public int MaxParticles;
+        public ParticleSystem.MinMaxGradient StartColor;
+        public bool ColorOverLifetimeEnabled;
+        public ParticleSystem.MinMaxGradient ColorOverLifetime;
+        public bool EmissionEnabled;
+        public ParticleSystem.MinMaxCurve RateOverTime;
+        public float RateOverTimeMultiplier;
+
+        public static ParticleSnapshot Capture(ParticleSystem particle)
+        {
+            ParticleSystem.MainModule main = particle.main;
+            ParticleSystem.ColorOverLifetimeModule color = particle.colorOverLifetime;
+            ParticleSystem.EmissionModule emission = particle.emission;
+            return new ParticleSnapshot
+            {
+                Particle = particle,
+                ScalingMode = main.scalingMode,
+                Loop = main.loop,
+                PlayOnAwake = main.playOnAwake,
+                StartLifetime = CopyCurve(main.startLifetime),
+                StartLifetimeMultiplier = main.startLifetimeMultiplier,
+                StartSpeed = CopyCurve(main.startSpeed),
+                StartSize = CopyCurve(main.startSize),
+                StartSizeMultiplier = main.startSizeMultiplier,
+                MaxParticles = main.maxParticles,
+                StartColor = CopyGradient(main.startColor),
+                ColorOverLifetimeEnabled = color.enabled,
+                ColorOverLifetime = CopyGradient(color.color),
+                EmissionEnabled = emission.enabled,
+                RateOverTime = CopyCurve(emission.rateOverTime),
+                RateOverTimeMultiplier = emission.rateOverTimeMultiplier
+            };
+        }
+
+        public void Restore(bool suppressPlayOnAwake)
+        {
+            if (Particle == null)
+                return;
+
+            ParticleSystem.MainModule main = Particle.main;
+            main.scalingMode = ScalingMode;
+            main.loop = Loop;
+            main.playOnAwake = suppressPlayOnAwake ? false : PlayOnAwake;
+            main.startLifetime = StartLifetime;
+            main.startLifetimeMultiplier = StartLifetimeMultiplier;
+            main.startSpeed = StartSpeed;
+            main.startSize = StartSize;
+            main.startSizeMultiplier = StartSizeMultiplier;
+            main.maxParticles = MaxParticles;
+            main.startColor = StartColor;
+
+            ParticleSystem.ColorOverLifetimeModule color = Particle.colorOverLifetime;
+            color.enabled = ColorOverLifetimeEnabled;
+            color.color = ColorOverLifetime;
+
+            ParticleSystem.EmissionModule emission = Particle.emission;
+            emission.enabled = EmissionEnabled;
+            emission.rateOverTime = RateOverTime;
+            emission.rateOverTimeMultiplier = RateOverTimeMultiplier;
+        }
+    }
+
+    // 곡선·그라디언트 원본 복제 · 구조체 복사만으로 내부 상태 격리 불가
+    private static ParticleSystem.MinMaxCurve CopyCurve(ParticleSystem.MinMaxCurve value)
+    {
+        if (value.curveMin != null)
+            value.curveMin = CopyAnimationCurve(value.curveMin);
+        if (value.curveMax != null)
+            value.curveMax = CopyAnimationCurve(value.curveMax);
+        return value;
+    }
+
+    private static AnimationCurve CopyAnimationCurve(AnimationCurve value)
+    {
+        return new AnimationCurve(value.keys) { preWrapMode = value.preWrapMode, postWrapMode = value.postWrapMode };
+    }
+
+    private static ParticleSystem.MinMaxGradient CopyGradient(ParticleSystem.MinMaxGradient value)
+    {
+        if (value.gradientMin != null)
+            value.gradientMin = CopyColorGradient(value.gradientMin);
+        if (value.gradientMax != null)
+            value.gradientMax = CopyColorGradient(value.gradientMax);
+        return value;
+    }
+
+    private static Gradient CopyColorGradient(Gradient value)
+    {
+        var copy = new Gradient { mode = value.mode };
+        copy.SetKeys(value.colorKeys, value.alphaKeys);
+        return copy;
+    }
+
+    private struct ColliderSnapshot
+    {
+        public Collider Collider;
+        public bool Enabled;
+    }
+
+    private struct RendererSnapshot
+    {
+        public Renderer Renderer;
+        public bool Enabled;
+    }
+
     [Header("Launch height correction")]
     [SerializeField, Range(0f, 30f)] private float horizontalAimAngle = 8f;
     [SerializeField, Range(0f, 60f)] private float verticalAimAngle = 35f;
     [Tooltip("비행 중 높이 추적 속도(도/초). 좌우 방향은 추적하지 않는다.")]
     [SerializeField, Min(0f)] private float verticalTrackingSpeed = 360f;
+
     private static readonly ProjectileHeightAim HeightAim = new ProjectileHeightAim();
 
+    private readonly HashSet<EnemyHealth> directHits = new HashSet<EnemyHealth>();
+    private readonly SkillAreaQuery explosionQuery = new SkillAreaQuery();
+
+    private DamageProjectile poolPrefab;
+    private PlayerProjectilePool poolOwner;
     private PlayerDamageDealer damageDealer;
     private PlayerDamageType damageType;
     private Vector3 spawnPosition;
@@ -24,60 +160,278 @@ public sealed class DamageProjectile : MonoBehaviour
     private EnemyHealth aimTargetHealth;
     private bool hadAimTarget;
     private Rigidbody body;
-    private bool initialized;
     private float explosionRadius;
-    private ParticleSystem[] particles;
-    private WizardProjectileVisual wizardProjectileVisual;
     private int remainingPierces;
-    private readonly HashSet<EnemyHealth> directHits = new HashSet<EnemyHealth>();
-    private readonly SkillAreaQuery explosionQuery = new SkillAreaQuery();
+    private ProjectileVisualMode visualMode;
+    private WizardProjectileVisual wizardProjectileVisual;
 
-    // 발사 설정
-    public void Initialize(PlayerDamageDealer dealer, PlayerDamageType type, int value,
-        float speed, float distance, Vector3 direction, float blastRadius = 0f, float visualScale = 1f,
-        int additionalPierces = 0)
+    private Transform[] originalImmediateChildren;
+    private Vector3[] originalImmediateChildScales;
+    private ParticleSystem[] sourceParticles;
+    private ParticleSystem[] wizardExplosionParticles;
+    private ParticleSnapshot[] sourceParticleSnapshots;
+    private ColliderSnapshot[] colliderSnapshots;
+    private RendererSnapshot[] rendererSnapshots;
+    private Vector3 originalRootScale;
+    private bool originalUseGravity;
+    private bool originalIsKinematic;
+    private bool originalDetectCollisions;
+    private CollisionDetectionMode originalCollisionDetectionMode;
+    private bool cacheBuilt;
+
+    private LeasePhase phase = LeasePhase.Idle;
+    private int ownerGeneration;
+    private int resolutionDepth;
+    private float finishDeadline;
+    private float hitSparkDeadline;
+    private int finishLeaseId;
+    private int finishOwnerGeneration;
+
+    public int LeaseId { get; private set; }
+    public bool IsLeaseActive => phase == LeasePhase.Preparing || phase == LeasePhase.Flying ||
+        phase == LeasePhase.Resolving || phase == LeasePhase.Finishing || phase == LeasePhase.ReturnPending;
+
+    internal DamageProjectile PoolPrefab => poolPrefab;
+
+    private void Awake()
     {
+        EnsurePoolCache();
+    }
+
+    internal void InitializePoolObject(DamageProjectile prefab)
+    {
+        poolPrefab = prefab;
+        EnsurePoolCache();
+    }
+
+    private void EnsurePoolCache()
+    {
+        if (cacheBuilt)
+            return;
+
+        body = GetComponent<Rigidbody>();
+        if (body == null)
+            throw new InvalidOperationException("DamageProjectile requires a Rigidbody.");
+
+        originalRootScale = transform.localScale;
+        int childCount = transform.childCount;
+        originalImmediateChildren = new Transform[childCount];
+        originalImmediateChildScales = new Vector3[childCount];
+        for (int i = 0; i < childCount; i++)
+        {
+            Transform child = transform.GetChild(i);
+            originalImmediateChildren[i] = child;
+            originalImmediateChildScales[i] = child.localScale;
+        }
+
+        Collider[] colliders = GetComponentsInChildren<Collider>(true);
+        colliderSnapshots = new ColliderSnapshot[colliders.Length];
+        for (int i = 0; i < colliders.Length; i++)
+            colliderSnapshots[i] = new ColliderSnapshot { Collider = colliders[i], Enabled = colliders[i].enabled };
+
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        rendererSnapshots = new RendererSnapshot[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+            rendererSnapshots[i] = new RendererSnapshot { Renderer = renderers[i], Enabled = renderers[i].enabled };
+
+        sourceParticles = GetComponentsInChildren<ParticleSystem>(true);
+        sourceParticleSnapshots = new ParticleSnapshot[sourceParticles.Length];
+        for (int i = 0; i < sourceParticles.Length; i++)
+        {
+            sourceParticleSnapshots[i] = ParticleSnapshot.Capture(sourceParticles[i]);
+            sourceParticles[i].Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ParticleSystem.MainModule main = sourceParticles[i].main;
+            main.playOnAwake = false;
+        }
+
+        wizardProjectileVisual = GetComponent<WizardProjectileVisual>();
+        if (wizardProjectileVisual != null)
+            wizardProjectileVisual.CacheSourceParticles(sourceParticles);
+
+        originalUseGravity = body.useGravity;
+        originalIsKinematic = body.isKinematic;
+        originalDetectCollisions = body.detectCollisions;
+        originalCollisionDetectionMode = body.collisionDetectionMode;
+        cacheBuilt = true;
+    }
+
+    // 비활성 초기화 · 원본 복원 → 발사 데이터·조준·물리 설정 → 활성화
+    internal bool PrepareLease(PlayerProjectilePool owner, PlayerDamageDealer dealer, int capturedOwnerGeneration,
+        Vector3 position, Quaternion rotation, PlayerDamageType type, int value, float speed, float distance,
+        Vector3 direction, float blastRadius, float visualScale, int additionalPierces,
+        ProjectileVisualMode requestedVisualMode)
+    {
+        EnsurePoolCache();
+        if (phase != LeasePhase.Idle || owner == null || dealer == null)
+            return false;
+
+        // 객체 재사용마다 새 대여 ID · 이전 반환 요청 구분
+        LeaseId = unchecked(LeaseId + 1);
+        if (LeaseId == 0)
+            LeaseId = 1;
+
+        phase = LeasePhase.Preparing;
+        poolOwner = owner;
         damageDealer = dealer;
+        ownerGeneration = capturedOwnerGeneration;
         damageType = type;
         damage = Mathf.Max(1, value);
         maxDistance = Mathf.Max(0.1f, distance);
         moveSpeed = Mathf.Max(0f, speed);
-        moveDirection = HeightAim.Resolve(transform.position, direction, maxDistance,
-            dealer != null ? dealer.transform : null, horizontalAimAngle, verticalAimAngle, out aimTarget);
+        explosionRadius = Mathf.Max(0f, blastRadius);
+        remainingPierces = Mathf.Max(0, additionalPierces);
+        visualMode = requestedVisualMode == ProjectileVisualMode.Basic ||
+                     requestedVisualMode == ProjectileVisualMode.Empowered
+            ? requestedVisualMode
+            : ProjectileVisualMode.None;
+        directHits.Clear();
+        explosionQuery.ClearResults();
+        finishDeadline = 0f;
+        hitSparkDeadline = 0f;
+        finishLeaseId = 0;
+        finishOwnerGeneration = 0;
+
+        // 크기·파티클 복원 후 연출 적용 · 누적 배율 방지
+        RestoreOriginalState();
+        if (visualMode != ProjectileVisualMode.None && wizardProjectileVisual == null)
+        {
+            wizardProjectileVisual = gameObject.AddComponent<WizardProjectileVisual>();
+            wizardProjectileVisual.CacheSourceParticles(sourceParticles);
+        }
+        wizardProjectileVisual?.PrepareLease(visualMode);
+        if (visualMode != ProjectileVisualMode.None && wizardExplosionParticles == null)
+            wizardExplosionParticles = GetComponentsInChildren<ParticleSystem>(true);
+
+        float scale = Mathf.Max(0.1f, visualScale);
+        for (int i = 0; i < originalImmediateChildren.Length; i++)
+        {
+            Transform child = originalImmediateChildren[i];
+            if (child != null)
+                child.localScale = originalImmediateChildScales[i] * scale;
+        }
+
+        bool useHierarchyParticleScaling = explosionRadius > 0f || !Mathf.Approximately(scale, 1f);
+        for (int i = 0; i < sourceParticleSnapshots.Length; i++)
+        {
+            ParticleSystem particle = sourceParticleSnapshots[i].Particle;
+            if (particle != null)
+                particle.scalingMode = useHierarchyParticleScaling
+                    ? ParticleSystemScalingMode.Hierarchy
+                    : sourceParticleSnapshots[i].ScalingMode;
+        }
+        wizardProjectileVisual?.ApplyLaunchScale(scale, useHierarchyParticleScaling, visualMode);
+
+        moveDirection = HeightAim.Resolve(position, direction, maxDistance,
+            dealer.transform, horizontalAimAngle, verticalAimAngle, out aimTarget);
         aimTargetHealth = aimTarget != null ? aimTarget.GetComponentInParent<EnemyHealth>() : null;
         hadAimTarget = aimTarget != null;
         planarDirection = Vector3.ProjectOnPlane(moveDirection, Vector3.up).normalized;
+        Quaternion finalRotation = rotation;
         if (direction.sqrMagnitude > 0.001f)
-            transform.rotation = Quaternion.FromToRotation(direction.normalized, moveDirection) * transform.rotation;
-        spawnPosition = transform.position;
-        explosionRadius = Mathf.Max(0f, blastRadius);
-        remainingPierces = Mathf.Max(0, additionalPierces);
-        directHits.Clear();
-        // 연출만 확대: 충돌체 확대에 따른 조기 적중 방지
-        foreach (Transform child in transform)
-            child.localScale *= Mathf.Max(0.1f, visualScale);
-        if (explosionRadius > 0f || !Mathf.Approximately(visualScale, 1f))
-        {
-            particles = GetComponentsInChildren<ParticleSystem>(true);
-            foreach (ParticleSystem particle in particles)
-            {
-                var main = particle.main;
-                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
-            }
-        }
-        wizardProjectileVisual = GetComponent<WizardProjectileVisual>();
-        initialized = true;
+            finalRotation = Quaternion.FromToRotation(direction.normalized, moveDirection) * rotation;
 
-        body = GetComponent<Rigidbody>();
+        transform.localScale = originalRootScale;
+        transform.SetPositionAndRotation(position, finalRotation);
         body.useGravity = false;
         body.isKinematic = true;
+        body.detectCollisions = originalDetectCollisions;
         body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        body.position = position;
+        body.rotation = finalRotation;
+        spawnPosition = position;
+
+        for (int i = 0; i < colliderSnapshots.Length; i++)
+        {
+            Collider collider = colliderSnapshots[i].Collider;
+            if (collider != null)
+                collider.enabled = colliderSnapshots[i].Enabled;
+        }
+
+        for (int i = 0; i < rendererSnapshots.Length; i++)
+        {
+            Renderer renderer = rendererSnapshots[i].Renderer;
+            if (renderer != null)
+                renderer.enabled = rendererSnapshots[i].Enabled;
+        }
+
+        phase = LeasePhase.Flying;
+        gameObject.SetActive(true);
+
+        for (int i = 0; i < sourceParticleSnapshots.Length; i++)
+        {
+            ParticleSystem particle = sourceParticleSnapshots[i].Particle;
+            if (particle != null && (visualMode != ProjectileVisualMode.None || sourceParticleSnapshots[i].PlayOnAwake))
+                particle.Play(false);
+        }
+        wizardProjectileVisual?.PlayForLaunch(visualMode);
+        return true;
     }
 
-    // 이동 / 사거리 종료
+    private void RestoreOriginalState()
+    {
+        transform.localScale = originalRootScale;
+        for (int i = 0; i < originalImmediateChildren.Length; i++)
+        {
+            Transform child = originalImmediateChildren[i];
+            if (child != null)
+                child.localScale = originalImmediateChildScales[i];
+        }
+
+        for (int i = 0; i < sourceParticleSnapshots.Length; i++)
+        {
+            ParticleSnapshot snapshot = sourceParticleSnapshots[i];
+            if (snapshot.Particle == null)
+                continue;
+
+            snapshot.Particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            snapshot.Restore(true);
+        }
+
+        for (int i = 0; i < colliderSnapshots.Length; i++)
+        {
+            Collider collider = colliderSnapshots[i].Collider;
+            if (collider != null)
+                collider.enabled = colliderSnapshots[i].Enabled;
+        }
+
+        for (int i = 0; i < rendererSnapshots.Length; i++)
+        {
+            Renderer renderer = rendererSnapshots[i].Renderer;
+            if (renderer != null)
+                renderer.enabled = rendererSnapshots[i].Enabled;
+        }
+
+        if (wizardProjectileVisual != null)
+            wizardProjectileVisual.RestoreForLease();
+
+        if (body != null)
+        {
+            ClearBodyVelocity();
+            body.useGravity = originalUseGravity;
+            body.isKinematic = originalIsKinematic;
+            body.detectCollisions = originalDetectCollisions;
+            body.collisionDetectionMode = originalCollisionDetectionMode;
+        }
+    }
+
+    private void ClearBodyVelocity()
+    {
+        if (body == null)
+            return;
+
+        bool wasKinematic = body.isKinematic;
+        if (wasKinematic)
+            body.isKinematic = false;
+        body.linearVelocity = Vector3.zero;
+        body.angularVelocity = Vector3.zero;
+        body.Sleep();
+        if (wasKinematic)
+            body.isKinematic = true;
+    }
+
     private void FixedUpdate()
     {
-        if (!initialized)
+        if (phase != LeasePhase.Flying || !HasCurrentAuthority())
             return;
 
         float remaining = maxDistance - Vector3.Distance(body.position, spawnPosition);
@@ -88,8 +442,30 @@ public sealed class DamageProjectile : MonoBehaviour
         }
 
         TrackTargetHeight(remaining);
+        if (phase != LeasePhase.Flying || !HasCurrentAuthority())
+            return;
+
         float step = Mathf.Min(moveSpeed * Time.fixedDeltaTime, remaining);
         body.MovePosition(body.position + moveDirection * step);
+    }
+
+    private void Update()
+    {
+        if (phase != LeasePhase.Finishing)
+            return;
+
+        int leaseId = finishLeaseId;
+        int capturedOwnerGeneration = finishOwnerGeneration;
+        if (leaseId != LeaseId || capturedOwnerGeneration != ownerGeneration || !HasCurrentAuthority())
+            return;
+
+        if (hitSparkDeadline > 0f && Time.time >= hitSparkDeadline)
+        {
+            wizardProjectileVisual.StopHitSpark();
+            hitSparkDeadline = 0f;
+        }
+        if (Time.time >= finishDeadline)
+            RequestReturn(leaseId, capturedOwnerGeneration);
     }
 
     // 비행 중 높이만 보정: 수평 진행 방향은 플레이어 조준 그대로 유지
@@ -100,7 +476,6 @@ public sealed class DamageProjectile : MonoBehaviour
 
         if (aimTarget == null || !aimTarget.enabled || aimTargetHealth == null || aimTargetHealth.IsDead)
         {
-            // 추적 대상이 사라진 경우, 같은 수평 방향 콘 안에서 재탐색
             HeightAim.Resolve(body.position, planarDirection, remaining,
                 damageDealer != null ? damageDealer.transform : null,
                 horizontalAimAngle, verticalAimAngle, out aimTarget);
@@ -130,10 +505,10 @@ public sealed class DamageProjectile : MonoBehaviour
         moveDirection = next;
     }
 
-    // 적 적중
     private void OnTriggerEnter(Collider other)
     {
-        if (!initialized || damageDealer == null || other.transform.root == damageDealer.transform)
+        if (phase != LeasePhase.Flying || other == null || !HasCurrentAuthority() ||
+            damageDealer == null || other.transform.root == damageDealer.transform)
             return;
 
         EnemyHealth enemy = other.GetComponentInParent<EnemyHealth>();
@@ -142,54 +517,429 @@ public sealed class DamageProjectile : MonoBehaviour
 
         if (explosionRadius <= 0f && remainingPierces > 0)
         {
-            remainingPierces--;
-            damageDealer.DealDamage(enemy, damage, damageType, spawnPosition);
-            wizardProjectileVisual?.OnSuccessfulHit(other.ClosestPoint(transform.position));
+            ResolvePiercingHit(enemy, other.ClosestPoint(transform.position));
             return;
         }
 
         Finish(enemy, other.ClosestPoint(transform.position));
     }
 
+    private void ResolvePiercingHit(EnemyHealth enemy, Vector3 hitPosition)
+    {
+        // 피해 콜백 중 반환·재대여 금지 · 종료 후 소유권 재검사
+        int leaseId = LeaseId;
+        int capturedOwnerGeneration = ownerGeneration;
+        PlayerDamageDealer dealer = damageDealer;
+        Vector3 sourcePosition = spawnPosition;
+        int hitDamage = damage;
+        PlayerDamageType hitType = damageType;
+
+        remainingPierces--;
+        phase = LeasePhase.Resolving;
+        SetCollidersEnabled(false);
+        resolutionDepth++;
+        try
+        {
+            dealer.DealDamage(enemy, hitDamage, hitType, sourcePosition);
+            if (!IsLeaseStillValid(leaseId, capturedOwnerGeneration))
+                return;
+
+            if (visualMode != ProjectileVisualMode.None)
+                wizardProjectileVisual?.OnSuccessfulHit(hitPosition, false);
+        }
+        catch
+        {
+            CancelFromOwner();
+            throw;
+        }
+        finally
+        {
+            resolutionDepth--;
+            CompleteResolution();
+        }
+    }
+
     private void Finish(EnemyHealth directTarget, Vector3 hitPosition)
     {
-        if (!initialized)
+        // 종료 판정 단일 진입 · 충돌 비활성으로 중복 적중 차단
+        if (phase != LeasePhase.Flying || !HasCurrentAuthority())
             return;
 
-        initialized = false;
-        if (explosionRadius <= 0f)
+        int leaseId = LeaseId;
+        int capturedOwnerGeneration = ownerGeneration;
+        phase = LeasePhase.Resolving;
+        SetCollidersEnabled(false);
+        resolutionDepth++;
+        try
         {
-            if (directTarget != null && damageDealer != null)
-            {
-                damageDealer.DealDamage(directTarget, damage, damageType, spawnPosition);
-                wizardProjectileVisual?.OnSuccessfulHit(hitPosition, true);
-            }
-            Destroy(gameObject);
+            if (explosionRadius > 0f)
+                FinishExplosion(directTarget, hitPosition, leaseId, capturedOwnerGeneration);
+            else
+                FinishDirectHit(directTarget, hitPosition, leaseId, capturedOwnerGeneration);
+        }
+        catch
+        {
+            CancelFromOwner();
+            throw;
+        }
+        finally
+        {
+            resolutionDepth--;
+            CompleteResolution();
+        }
+    }
+
+    private void FinishDirectHit(EnemyHealth directTarget, Vector3 hitPosition, int leaseId,
+        int capturedOwnerGeneration)
+    {
+        if (directTarget == null || damageDealer == null)
+        {
+            RequestReturn(leaseId, capturedOwnerGeneration);
             return;
         }
 
-        explosionQuery.DealDamage(damageDealer, body.position, explosionRadius, damage,
-            damageType, spawnPosition, directTarget);
-        if (directTarget != null)
-            wizardProjectileVisual?.OnSuccessfulHit(hitPosition, true);
+        PlayerDamageDealer dealer = damageDealer;
+        dealer.DealDamage(directTarget, damage, damageType, spawnPosition);
+        if (!IsLeaseStillValid(leaseId, capturedOwnerGeneration))
+            return;
 
-        foreach (Collider hitbox in GetComponentsInChildren<Collider>())
-            hitbox.enabled = false;
-
-        // 투사체 입자를 짧은 고정 폭발로 재사용
-        foreach (ParticleSystem particle in particles)
+        if (visualMode != ProjectileVisualMode.None && wizardProjectileVisual != null)
         {
+            wizardProjectileVisual.OnSuccessfulHit(hitPosition, true);
+            if (!IsLeaseStillValid(leaseId, capturedOwnerGeneration))
+                return;
+
+            StopSourceFlightEffects();
+            wizardProjectileVisual.StopFlightKeepingHitSpark();
+            ScheduleFinish(HitSparkCleanupDelay, leaseId, capturedOwnerGeneration);
+            return;
+        }
+
+        RequestReturn(leaseId, capturedOwnerGeneration);
+    }
+
+    private void FinishExplosion(EnemyHealth directTarget, Vector3 hitPosition, int leaseId,
+        int capturedOwnerGeneration)
+    {
+        PlayerDamageDealer dealer = damageDealer;
+        if (dealer == null)
+        {
+            RequestReturn(leaseId, capturedOwnerGeneration);
+            return;
+        }
+
+        IReadOnlyList<EnemyHealth> targets = explosionQuery.Collect(body.position, explosionRadius);
+        bool directTargetIncluded = false;
+        for (int i = 0; i < targets.Count; i++)
+        {
+            EnemyHealth enemy = targets[i];
+            if (enemy == directTarget)
+                directTargetIncluded = true;
+            if (enemy == null || enemy.IsDead)
+                continue;
+
+            dealer.DealDamage(enemy, damage, damageType, spawnPosition);
+            if (!IsLeaseStillValid(leaseId, capturedOwnerGeneration))
+                return;
+        }
+
+        if (directTarget != null && !directTarget.IsDead && !directTargetIncluded)
+        {
+            dealer.DealDamage(directTarget, damage, damageType, spawnPosition);
+            if (!IsLeaseStillValid(leaseId, capturedOwnerGeneration))
+                return;
+        }
+
+        if (directTarget != null && visualMode != ProjectileVisualMode.None)
+        {
+            wizardProjectileVisual?.OnSuccessfulHit(hitPosition, true);
+            if (!IsLeaseStillValid(leaseId, capturedOwnerGeneration))
+                return;
+            hitSparkDeadline = Time.time + HitSparkCleanupDelay;
+        }
+
+        EmitExplosionBurst();
+        ScheduleFinish(ExplosionCleanupDelay, leaseId, capturedOwnerGeneration);
+    }
+
+    private void EmitExplosionBurst()
+    {
+        // 원본 폭발 대상 유지 · 원본 파티클 + 생성 코어·스파크
+        ParticleSystem[] particles = visualMode == ProjectileVisualMode.None ? sourceParticles : wizardExplosionParticles;
+        for (int i = 0; i < particles.Length; i++)
+        {
+            ParticleSystem particle = particles[i];
+            if (particle == null)
+                continue;
+
             particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-            var main = particle.main;
+            ParticleSystem.MainModule main = particle.main;
             main.loop = false;
             main.startLifetime = 0.4f;
             main.startSpeed = 3f;
-            var emission = particle.emission;
+            ParticleSystem.EmissionModule emission = particle.emission;
             emission.enabled = false;
             particle.Play(false);
             particle.Emit(24);
         }
-        Destroy(gameObject, 0.6f);
     }
 
+    private void StopSourceFlightEffects()
+    {
+        for (int i = 0; i < sourceParticles.Length; i++)
+        {
+            ParticleSystem particle = sourceParticles[i];
+            if (particle != null)
+                particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        for (int i = 0; i < rendererSnapshots.Length; i++)
+        {
+            Renderer renderer = rendererSnapshots[i].Renderer;
+            if (renderer != null)
+                renderer.enabled = false;
+        }
+    }
+
+    private void ScheduleFinish(float delay, int leaseId, int capturedOwnerGeneration)
+    {
+        // 연출 잔여 시간 유지 · scaled time 기준 · 대여 ID 함께 보관
+        phase = LeasePhase.Finishing;
+        finishLeaseId = leaseId;
+        finishOwnerGeneration = capturedOwnerGeneration;
+        finishDeadline = Time.time + delay;
+    }
+
+    private void RequestReturn(int leaseId, int capturedOwnerGeneration)
+    {
+        // 오래된 요청 무시 · 콜백 처리 중이면 반환 예약만 수행
+        if (leaseId != LeaseId || capturedOwnerGeneration != ownerGeneration ||
+            phase == LeasePhase.ReturnPending || phase == LeasePhase.Cancelled || phase == LeasePhase.Disposed ||
+            phase == LeasePhase.Idle)
+            return;
+
+        phase = LeasePhase.ReturnPending;
+        finishDeadline = 0f;
+        finishLeaseId = 0;
+        finishOwnerGeneration = 0;
+        if (resolutionDepth == 0)
+            CompleteReturn(leaseId, capturedOwnerGeneration);
+    }
+
+    private void CompleteResolution()
+    {
+        // 최외곽 콜백 종료 후 취소·반환 처리 · 유효한 관통탄만 비행 재개
+        if (resolutionDepth != 0)
+            return;
+
+        if (phase == LeasePhase.Cancelled)
+        {
+            FinalizeCancelledLease();
+            return;
+        }
+
+        if (phase == LeasePhase.ReturnPending)
+        {
+            CompleteReturn(LeaseId, ownerGeneration);
+            return;
+        }
+
+        if (phase == LeasePhase.Resolving)
+        {
+            if (HasCurrentAuthority())
+            {
+                phase = LeasePhase.Flying;
+                SetColliderSnapshotState();
+            }
+            else if (phase != LeasePhase.Cancelled)
+            {
+                CancelFromOwner();
+            }
+        }
+    }
+
+    private void CompleteReturn(int leaseId, int capturedOwnerGeneration)
+    {
+        if (resolutionDepth != 0 || phase != LeasePhase.ReturnPending || leaseId != LeaseId ||
+            capturedOwnerGeneration != ownerGeneration)
+            return;
+
+        PlayerProjectilePool owner = poolOwner;
+        if (owner != null && owner.ReturnLease(this, leaseId, capturedOwnerGeneration))
+            return;
+
+        if (phase == LeasePhase.ReturnPending)
+            CancelFromOwner();
+    }
+
+    private bool HasCurrentAuthority()
+    {
+        PlayerProjectilePool owner = poolOwner;
+        return owner != null && owner.IsLeaseCurrent(this, LeaseId, ownerGeneration);
+    }
+
+    private bool IsLeaseStillValid(int leaseId, int capturedOwnerGeneration)
+    {
+        if (phase != LeasePhase.Resolving || leaseId != LeaseId || capturedOwnerGeneration != ownerGeneration)
+            return false;
+
+        PlayerProjectilePool owner = poolOwner;
+        return owner != null && owner.IsLeaseCurrent(this, leaseId, capturedOwnerGeneration);
+    }
+
+    private void SetCollidersEnabled(bool enabled)
+    {
+        for (int i = 0; i < colliderSnapshots.Length; i++)
+        {
+            Collider collider = colliderSnapshots[i].Collider;
+            if (collider != null)
+                collider.enabled = enabled && colliderSnapshots[i].Enabled;
+        }
+    }
+
+    private void SetColliderSnapshotState()
+    {
+        for (int i = 0; i < colliderSnapshots.Length; i++)
+        {
+            Collider collider = colliderSnapshots[i].Collider;
+            if (collider != null)
+                collider.enabled = colliderSnapshots[i].Enabled;
+        }
+    }
+
+    internal bool IsLeaseCurrent(int leaseId, int capturedOwnerGeneration)
+    {
+        return leaseId == LeaseId && ownerGeneration == capturedOwnerGeneration &&
+               phase != LeasePhase.Idle && phase != LeasePhase.Cancelled && phase != LeasePhase.Disposed;
+    }
+
+    internal void CancelFromOwner()
+    {
+        if (phase == LeasePhase.Idle || phase == LeasePhase.Disposed || phase == LeasePhase.Cancelled)
+            return;
+
+        phase = LeasePhase.Cancelled;
+        finishDeadline = 0f;
+        finishLeaseId = 0;
+        finishOwnerGeneration = 0;
+        SetCollidersEnabled(false);
+        // 콜백 종료 전 부모 파괴 대비 · 분리 후 지연 정리
+        if (resolutionDepth > 0)
+            transform.SetParent(null, true);
+        if (resolutionDepth == 0)
+            FinalizeCancelledLease();
+    }
+
+    internal void DisposeFromOwner()
+    {
+        if (resolutionDepth > 0)
+        {
+            phase = LeasePhase.Cancelled;
+            SetCollidersEnabled(false);
+            return;
+        }
+
+        phase = LeasePhase.Cancelled;
+        FinalizeCancelledLease();
+    }
+
+    private void FinalizeCancelledLease()
+    {
+        if (phase == LeasePhase.Disposed || resolutionDepth != 0)
+            return;
+
+        PlayerProjectilePool owner = poolOwner;
+        StopAndClearSourceParticles();
+        wizardProjectileVisual?.ResetForPool();
+        explosionQuery.ClearResults();
+        directHits.Clear();
+        ClearLeaseReferences();
+        phase = LeasePhase.Disposed;
+        gameObject.SetActive(false);
+        if (owner != null)
+            owner.ForgetDisposed(this);
+        DestroyForTeardown(gameObject);
+    }
+
+    internal void ResetForPool()
+    {
+        // 입자 제거 → 원본 복원 → 타깃·적중·조회·소유 참조 해제
+        if (resolutionDepth != 0)
+            throw new InvalidOperationException("A projectile cannot return while damage callbacks are on the stack.");
+
+        StopAndClearSourceParticles();
+        wizardProjectileVisual?.ResetForPool();
+        RestoreOriginalState();
+        explosionQuery.ClearResults();
+        directHits.Clear();
+        ClearLeaseReferences();
+        phase = LeasePhase.Idle;
+        resolutionDepth = 0;
+    }
+
+    private void StopAndClearSourceParticles()
+    {
+        for (int i = 0; i < sourceParticles.Length; i++)
+        {
+            ParticleSystem particle = sourceParticles[i];
+            if (particle != null)
+                particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+    }
+
+    private void ClearLeaseReferences()
+    {
+        poolOwner = null;
+        damageDealer = null;
+        damageType = default;
+        spawnPosition = Vector3.zero;
+        maxDistance = 0f;
+        moveSpeed = 0f;
+        damage = 0;
+        moveDirection = Vector3.zero;
+        planarDirection = Vector3.zero;
+        aimTarget = null;
+        aimTargetHealth = null;
+        hadAimTarget = false;
+        explosionRadius = 0f;
+        remainingPierces = 0;
+        visualMode = ProjectileVisualMode.None;
+        hitSparkDeadline = 0f;
+        finishDeadline = 0f;
+        finishLeaseId = 0;
+        finishOwnerGeneration = 0;
+    }
+
+
+    internal void MarkDisposedByPool()
+    {
+        if (phase == LeasePhase.Disposed)
+            return;
+
+        phase = LeasePhase.Disposed;
+        SetCollidersEnabled(false);
+        StopAndClearSourceParticles();
+        wizardProjectileVisual?.ResetForPool();
+        gameObject.SetActive(false);
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (phase != LeasePhase.Idle)
+            CancelFromOwner();
+    }
+
+    private static void DestroyForTeardown(GameObject target)
+    {
+        if (target == null)
+            return;
+
+        if (Application.isPlaying)
+            Destroy(target);
+        else
+            DestroyImmediate(target);
+    }
+
+    private const float HitSparkCleanupDelay = 0.35f;
+    private const float ExplosionCleanupDelay = 0.6f;
 }

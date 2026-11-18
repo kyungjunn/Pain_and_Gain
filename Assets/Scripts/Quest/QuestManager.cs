@@ -125,6 +125,7 @@ public class QuestManager : MonoBehaviour
     private GameObject player;
     private PlayerHealth playerHealth;
     private int boundSessionId;
+    private Scene playerScene;
 
     private float countdown;
     private float previewCountdown;
@@ -280,6 +281,7 @@ public class QuestManager : MonoBehaviour
         ClearCurrentQuest();
         ClearRiskPenaltyTarget();
         player = playerObject;
+        playerScene = playerObject != null ? playerObject.scene : default;
         boundSessionId = sessionId;
         playerHealth = playerObject != null ? playerObject.GetComponent<PlayerHealth>() : null;
         playerStats = playerObject != null ? playerObject.GetComponent<PlayerStats>() : null;
@@ -299,7 +301,7 @@ public class QuestManager : MonoBehaviour
 
     private void HandleSceneUnloaded(Scene scene)
     {
-        if (player != null || State != QuestState.Stopped)
+        if (scene == playerScene || scene == gameObject.scene)
         {
             ClearSession();
         }
@@ -324,6 +326,7 @@ public class QuestManager : MonoBehaviour
         damageDealer = null;
         playerLevelSystem = null;
         boundSessionId = 0;
+        playerScene = default;
         ResetRunActionMemory();
     }
 

@@ -12,6 +12,7 @@ public class EnemyAttack : MonoBehaviour
     [SerializeField] private bool useFallbackHitDelay = true;
 
     private EnemyAnimator enemyAnimator;
+    private EnemyHealth enemyHealth;
     private Transform pendingTarget;
     private Coroutine fallbackHitRoutine;
     private float nextAttackTime;
@@ -24,6 +25,7 @@ public class EnemyAttack : MonoBehaviour
     protected EnemyStats Stats => stats;
     protected EnemyAnimator EnemyAnimator => enemyAnimator;
     protected bool IsAttackReady => Time.time >= nextAttackTime;
+    protected bool CanAttack => isActiveAndEnabled && (enemyHealth == null || !enemyHealth.IsDead);
     protected virtual int CurrentAttackDamage => stats != null ? stats.AttackDamage : attackDamage;
     protected virtual float CurrentAttackCooldown => stats != null ? stats.AttackCooldown : attackCooldown;
     protected virtual float CurrentFallbackHitDelay => fallbackHitDelay;
@@ -31,12 +33,24 @@ public class EnemyAttack : MonoBehaviour
     protected virtual void Awake()
     {
         enemyAnimator = GetComponent<EnemyAnimator>();
+        enemyHealth = GetComponent<EnemyHealth>();
+    }
+
+    protected virtual void OnDisable()
+    {
+        if (fallbackHitRoutine != null)
+        {
+            StopCoroutine(fallbackHitRoutine);
+            fallbackHitRoutine = null;
+        }
+
+        ClearPendingAttack();
     }
 
     // 공격 가능 상태일 때 공격 애니메이션을 재생하고 피해 적용을 예약
     public virtual bool TryAttack(Transform target)
     {
-        if (target == null || Time.time < nextAttackTime)
+        if (!CanAttack || target == null || !target.gameObject.activeInHierarchy || Time.time < nextAttackTime)
         {
             return false;
         }
@@ -93,14 +107,14 @@ public class EnemyAttack : MonoBehaviour
 
     private void ApplyPendingAttackDamage()
     {
-        if (pendingDamageApplied || pendingTarget == null)
+        if (!CanAttack || pendingTarget == null || !pendingTarget.gameObject.activeInHierarchy)
         {
+            ClearPendingAttack();
             return;
         }
 
-        if (TryGetComponent(out EnemyHealth enemyHealth) && enemyHealth.IsDead)
+        if (pendingDamageApplied)
         {
-            ClearPendingAttack();
             return;
         }
 
