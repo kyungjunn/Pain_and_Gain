@@ -201,6 +201,7 @@ public sealed class WizardProjectileVisual : MonoBehaviour
         sourceCacheBuilt = true;
     }
 
+    // 생성 자식 재사용 · 최초 크기·파티클 복원 · 기본 비활성
     internal void RestoreForLease()
     {
         RestoreGeneratedConstruction();
@@ -208,6 +209,7 @@ public sealed class WizardProjectileVisual : MonoBehaviour
         currentMode = ProjectileVisualMode.None;
     }
 
+    // None: 생성 연출 숨김 · Basic/Empowered: 현재 발사 설정 적용
     internal void PrepareLease(ProjectileVisualMode mode)
     {
         RestoreForLease();
@@ -222,6 +224,7 @@ public sealed class WizardProjectileVisual : MonoBehaviour
         ConfigureGeneratedVisuals(mode == ProjectileVisualMode.Empowered);
     }
 
+    // 원본 크기 × 발사 배율 · 재대여 시 배율 누적 방지
     internal void ApplyLaunchScale(float scale, bool hierarchyParticleScaling, ProjectileVisualMode mode)
     {
         if (mode == ProjectileVisualMode.None || generatedImmediateChildren == null)
@@ -302,6 +305,7 @@ public sealed class WizardProjectileVisual : MonoBehaviour
         EmitSpark(hitPosition, -up * 0.65f - right * 0.35f, cyan, empowered);
     }
 
+    // 폭발 부모 수명과 분리 · 직접 적중 스파크만 종료
     internal void StopHitSpark()
     {
         if (hitSpark == null)
@@ -337,7 +341,7 @@ public sealed class WizardProjectileVisual : MonoBehaviour
             return;
 
         ParticleSystemRenderer[] sourceRenderers = GetComponentsInChildren<ParticleSystemRenderer>(true);
-        // Preserve the original prefab contract: use its first material when no named glow exists.
+        // 원본 재질 선택 유지 · glow 우선 → 첫 재질 → 없으면 코어·트레일 생략
         glowMaterial = FindGlowMaterial(sourceRenderers) ?? FindAnyMaterial(sourceRenderers);
         CreateCore(glowMaterial);
         CreateTrail(glowMaterial);

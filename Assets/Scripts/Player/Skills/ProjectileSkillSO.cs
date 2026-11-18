@@ -15,7 +15,7 @@ public sealed class ProjectileSkillSO : PlayerSkillSO
     [SerializeField, Min(0.1f)] private float visualScale = 1f;
     [SerializeField, Min(0f)] private float explosionRadius;
 
-    // 발사체 생성
+    // 기본 공격과 소유자 풀 공유 · 대여 실패 시 시전 실패
     public override bool Cast(PlayerSkillController owner, PlayerDamageType damageType)
     {
         if (owner == null || projectilePrefab == null || owner.SkillOrigin == null || owner.DamageDealer == null)

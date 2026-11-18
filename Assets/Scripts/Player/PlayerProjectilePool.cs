@@ -10,10 +10,11 @@ public enum ProjectileVisualMode
     Empowered
 }
 
-// One projectile pool per owner, with prefab identity as the only bucket key.
+// 플레이어별 소유 · 프리팹별 풀 · 연출 모드는 대여별 상태
 [DisallowMultipleComponent]
 public sealed class PlayerProjectilePool : MonoBehaviour
 {
+    // 저장 용량만 예약 · 선생성 없음 · 동시 발사 제한 없음
     private const int InitialCapacity = 8;
     private const int MaxRetainedPerPrefab = 32;
 
@@ -66,7 +67,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
         if (pool == null)
             pool = damageDealer.gameObject.AddComponent<PlayerProjectilePool>();
 
-        // Editor fixtures can call this without Unity invoking Awake/OnEnable.
+        // 에디터 직접 호출 보완 · Awake/OnEnable 미호출 대응
         pool.dealer = damageDealer;
         if (pool.isActiveAndEnabled && !pool.manuallyClosed)
             pool.OpenInterval();
@@ -86,6 +87,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
         if (projectile == null)
             return null;
 
+        // 사용 등록 → 비활성 초기화 → 대여 유효성 재검사
         checkedOut.Add(projectile);
         int capturedOwnerGeneration = ownerGeneration;
         try
@@ -112,7 +114,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
         }
     }
 
-    // Explicit terminal teardown for fixtures and the owning player lifecycle.
+    // 명시적 종료 · 재개 금지 · 활성/보관 객체 정리
     public void Close()
     {
         manuallyClosed = true;
@@ -133,6 +135,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
 
     internal bool ReturnLease(DamageProjectile projectile, int leaseId, int capturedOwnerGeneration)
     {
+        // 이전 대여·이전 세션·중복 반환 차단
         if (projectile == null || !intervalOpen || capturedOwnerGeneration != ownerGeneration ||
             !checkedOut.Contains(projectile) || !projectile.IsLeaseCurrent(leaseId, capturedOwnerGeneration) ||
             !HasAuthority())
@@ -147,6 +150,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
         }
 
         checkedOut.Remove(projectile);
+        // 상태 복원 후 비활성 보관 · 상한 초과 시 파괴
         projectile.ResetForPool();
         bucket.Release(projectile);
         return true;
@@ -179,6 +183,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
 
     private DamageProjectile CreateProjectile(DamageProjectile prefab)
     {
+        // 비활성 부모 아래 생성 · 초기화 전 자동 실행 방지
         DamageProjectile projectile = Instantiate(prefab, staging, false);
         projectile.gameObject.SetActive(false);
         projectile.transform.SetParent(container, false);
@@ -226,6 +231,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
 
     private bool HasAuthority()
     {
+        // 최초 소유 세션만 허용 · 새 세션으로 재바인딩 금지
         if (!intervalOpen || !isActiveAndEnabled || !gameObject.activeInHierarchy)
             return false;
 
@@ -269,6 +275,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
         sessionManager = null;
         sessionId = 0;
 
+        // 최초 권한 고정 · 매니저 없는 테스트 씬은 독립 실행
         if (!authorityCaptured)
         {
             GameManager currentManager = GameManager.Instance;
@@ -324,6 +331,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
 
     private void CloseInterval()
     {
+        // 신규 발사 차단 → 세대 무효화 → 사용 중 취소 → 보관 풀 비우기
         bool hasResources = intervalOpen || checkedOut.Count > 0 || buckets.Count > 0 || container != null;
         intervalOpen = false;
         ownerGeneration++;
@@ -353,6 +361,7 @@ public sealed class PlayerProjectilePool : MonoBehaviour
 
     private void DisposeContainerIfClosed()
     {
+        // 피해 콜백 종료 후 마지막 사용 객체까지 정리된 경우 컨테이너 제거
         if (intervalOpen || buckets.Count != 0 || checkedOut.Count != 0 || container == null)
             return;
 

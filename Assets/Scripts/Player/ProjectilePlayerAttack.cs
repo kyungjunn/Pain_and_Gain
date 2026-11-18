@@ -66,6 +66,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
                 PlayerCombatAugmentEffect.BasicProjectileCount));
         }
 
+        // 소유자 풀 공유 · 일반/강화는 별도 풀 대신 발사별 연출 설정
         PlayerProjectilePool pool = PlayerProjectilePool.GetOrCreate(damageDealer);
         ProjectileVisualMode visualMode = wizardCombat == null
             ? ProjectileVisualMode.None

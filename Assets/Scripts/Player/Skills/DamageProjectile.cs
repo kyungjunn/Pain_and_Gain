@@ -6,6 +6,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public sealed class DamageProjectile : MonoBehaviour
 {
+    // 보관 → 준비 → 비행 → 피해 처리 → 잔상/반환 · 취소 시 폐기
     private enum LeasePhase
     {
         Idle,
@@ -91,7 +92,7 @@ public sealed class DamageProjectile : MonoBehaviour
         }
     }
 
-    // Unity getters expose native-backed curves/gradients; a struct copy is not an immutable baseline.
+    // 곡선·그라디언트 원본 복제 · 구조체 복사만으로 내부 상태 격리 불가
     private static ParticleSystem.MinMaxCurve CopyCurve(ParticleSystem.MinMaxCurve value)
     {
         if (value.curveMin != null)
@@ -254,6 +255,7 @@ public sealed class DamageProjectile : MonoBehaviour
         cacheBuilt = true;
     }
 
+    // 비활성 초기화 · 원본 복원 → 발사 데이터·조준·물리 설정 → 활성화
     internal bool PrepareLease(PlayerProjectilePool owner, PlayerDamageDealer dealer, int capturedOwnerGeneration,
         Vector3 position, Quaternion rotation, PlayerDamageType type, int value, float speed, float distance,
         Vector3 direction, float blastRadius, float visualScale, int additionalPierces,
@@ -263,6 +265,7 @@ public sealed class DamageProjectile : MonoBehaviour
         if (phase != LeasePhase.Idle || owner == null || dealer == null)
             return false;
 
+        // 객체 재사용마다 새 대여 ID · 이전 반환 요청 구분
         LeaseId = unchecked(LeaseId + 1);
         if (LeaseId == 0)
             LeaseId = 1;
@@ -288,6 +291,7 @@ public sealed class DamageProjectile : MonoBehaviour
         finishLeaseId = 0;
         finishOwnerGeneration = 0;
 
+        // 크기·파티클 복원 후 연출 적용 · 누적 배율 방지
         RestoreOriginalState();
         if (visualMode != ProjectileVisualMode.None && wizardProjectileVisual == null)
         {
@@ -522,6 +526,7 @@ public sealed class DamageProjectile : MonoBehaviour
 
     private void ResolvePiercingHit(EnemyHealth enemy, Vector3 hitPosition)
     {
+        // 피해 콜백 중 반환·재대여 금지 · 종료 후 소유권 재검사
         int leaseId = LeaseId;
         int capturedOwnerGeneration = ownerGeneration;
         PlayerDamageDealer dealer = damageDealer;
@@ -556,6 +561,7 @@ public sealed class DamageProjectile : MonoBehaviour
 
     private void Finish(EnemyHealth directTarget, Vector3 hitPosition)
     {
+        // 종료 판정 단일 진입 · 충돌 비활성으로 중복 적중 차단
         if (phase != LeasePhase.Flying || !HasCurrentAuthority())
             return;
 
@@ -658,7 +664,7 @@ public sealed class DamageProjectile : MonoBehaviour
 
     private void EmitExplosionBurst()
     {
-        // Original Initialize discovered particles after wizard construction, including core and spark.
+        // 원본 폭발 대상 유지 · 원본 파티클 + 생성 코어·스파크
         ParticleSystem[] particles = visualMode == ProjectileVisualMode.None ? sourceParticles : wizardExplosionParticles;
         for (int i = 0; i < particles.Length; i++)
         {
@@ -697,6 +703,7 @@ public sealed class DamageProjectile : MonoBehaviour
 
     private void ScheduleFinish(float delay, int leaseId, int capturedOwnerGeneration)
     {
+        // 연출 잔여 시간 유지 · scaled time 기준 · 대여 ID 함께 보관
         phase = LeasePhase.Finishing;
         finishLeaseId = leaseId;
         finishOwnerGeneration = capturedOwnerGeneration;
@@ -705,6 +712,7 @@ public sealed class DamageProjectile : MonoBehaviour
 
     private void RequestReturn(int leaseId, int capturedOwnerGeneration)
     {
+        // 오래된 요청 무시 · 콜백 처리 중이면 반환 예약만 수행
         if (leaseId != LeaseId || capturedOwnerGeneration != ownerGeneration ||
             phase == LeasePhase.ReturnPending || phase == LeasePhase.Cancelled || phase == LeasePhase.Disposed ||
             phase == LeasePhase.Idle)
@@ -720,6 +728,7 @@ public sealed class DamageProjectile : MonoBehaviour
 
     private void CompleteResolution()
     {
+        // 최외곽 콜백 종료 후 취소·반환 처리 · 유효한 관통탄만 비행 재개
         if (resolutionDepth != 0)
             return;
 
@@ -814,7 +823,7 @@ public sealed class DamageProjectile : MonoBehaviour
         finishLeaseId = 0;
         finishOwnerGeneration = 0;
         SetCollidersEnabled(false);
-        // The owner may destroy its container before a synchronous damage callback unwinds.
+        // 콜백 종료 전 부모 파괴 대비 · 분리 후 지연 정리
         if (resolutionDepth > 0)
             transform.SetParent(null, true);
         if (resolutionDepth == 0)
@@ -854,6 +863,7 @@ public sealed class DamageProjectile : MonoBehaviour
 
     internal void ResetForPool()
     {
+        // 입자 제거 → 원본 복원 → 타깃·적중·조회·소유 참조 해제
         if (resolutionDepth != 0)
             throw new InvalidOperationException("A projectile cannot return while damage callbacks are on the stack.");
 
