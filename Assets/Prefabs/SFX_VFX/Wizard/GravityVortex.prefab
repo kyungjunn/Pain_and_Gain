@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 568726555220404443}
   - component: {fileID: 6096270808777363851}
   - component: {fileID: 7506128351561177753}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Wind
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4767,7 +4767,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -4848,7 +4848,7 @@ GameObject:
   - component: {fileID: 7991657777718944461}
   - component: {fileID: 4959403899914139283}
   - component: {fileID: 487684722632587828}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: GravityVortex
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9617,7 +9617,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0

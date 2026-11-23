@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8198500204234940662}
   - component: {fileID: 8162833017702109856}
   - component: {fileID: 5338298644457822321}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: RotatePart
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4825,7 +4825,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -4905,7 +4905,7 @@ GameObject:
   - component: {fileID: 6954917618977063247}
   - component: {fileID: 48477824870577585}
   - component: {fileID: 7819319089241081902}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Sparks
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9777,7 +9777,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -9857,7 +9857,7 @@ GameObject:
   - component: {fileID: 8697774155557348991}
   - component: {fileID: 7571785617333457298}
   - component: {fileID: 4136281522820283692}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Slash
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14671,7 +14671,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -14752,7 +14752,7 @@ GameObject:
   - component: {fileID: 5926825603339762686}
   - component: {fileID: 3966229822002772730}
   - component: {fileID: 475767438903154321}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: OverdriveWave
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19571,7 +19571,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -19663,7 +19663,7 @@ GameObject:
   - component: {fileID: 916378485953702039}
   - component: {fileID: 2476727290711903374}
   - component: {fileID: 8172653728158533609}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Flares
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24486,7 +24486,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -24566,7 +24566,7 @@ GameObject:
   - component: {fileID: 3240248079788082919}
   - component: {fileID: 6591643114492482497}
   - component: {fileID: 323371887955093842}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Glow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -29398,7 +29398,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
