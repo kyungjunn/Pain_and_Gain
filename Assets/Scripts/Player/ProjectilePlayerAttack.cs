@@ -11,6 +11,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
     [SerializeField] private float maxDistance = 14f;
     [SerializeField] private float damageMultiplier = 1f;
     [SerializeField] private float attackCooldown = 0.5f;
+    [SerializeField, Min(0.01f)] private float parallelProjectileSpacing = 0.5f;
 
     private PlayerDamageDealer damageDealer;
     private PlayerAugments playerAugments;
@@ -56,12 +57,15 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
         int damage = Mathf.Max(1, Mathf.RoundToInt(AttackDamage * damageMultiplier * overdriveDamage));
         // 증강값으로 추가 발사 수와 전체 산탄 각도 산출.
         int extraProjectileCount = 0;
+        int parallelExtraCount = 0;
         float spreadDegrees = 0f;
 
         if (playerAugments != null)
         {
             extraProjectileCount = Mathf.Max(0, Mathf.RoundToInt(
                 playerAugments.GetCombatAugmentValue(PlayerCombatAugmentEffect.BasicProjectileCount)));
+            parallelExtraCount = Mathf.Max(0, Mathf.RoundToInt(
+                playerAugments.GetCombatAugmentValue(PlayerCombatAugmentEffect.BasicProjectileParallelCount)));
             spreadDegrees = Mathf.Max(0f, playerAugments.GetCombatAugmentSpread(
                 PlayerCombatAugmentEffect.BasicProjectileCount));
         }
@@ -71,15 +75,21 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
         ProjectileVisualMode visualMode = wizardCombat == null
             ? ProjectileVisualMode.None
             : empoweredWizardAttack ? ProjectileVisualMode.Empowered : ProjectileVisualMode.Basic;
-        int projectileCount = 1 + extraProjectileCount;
-        for (int i = 0; i < projectileCount; i++)
+        int projectileCount = 1 + extraProjectileCount + parallelExtraCount;
+        bool useParallelPattern = parallelExtraCount > 0;
+        for (int shotIndex = 0; shotIndex < projectileCount; shotIndex++)
         {
-            // 투사체를 산탄 각도 안에 균등 배치. 한 발이면 정면.
-            float yaw = projectileCount > 1
+            float yaw = !useParallelPattern && projectileCount > 1
                 ? Mathf.Lerp(-spreadDegrees * 0.5f, spreadDegrees * 0.5f,
-                    i / (float)(projectileCount - 1))
+                    shotIndex / (float)(projectileCount - 1))
                 : 0f;
             Quaternion yawRotation = Quaternion.AngleAxis(yaw, projectileOrigin.up);
+            Vector3 spawnPosition = projectileOrigin.position;
+            if (useParallelPattern)
+            {
+                float lateralOffset = (shotIndex - (projectileCount - 1) * 0.5f) * parallelProjectileSpacing;
+                spawnPosition += projectileOrigin.right * lateralOffset;
+            }
 
             // 발사 방향과 투사체 프리팹의 자체 회전을 함께 적용.
             Quaternion projectileRotation = yawRotation * projectileOrigin.rotation * projectilePrefab.transform.localRotation;
@@ -87,7 +97,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
 
             DamageProjectile projectile = pool.Spawn(
                 projectilePrefab,
-                projectileOrigin.position,
+                spawnPosition,
                 projectileRotation,
                 PlayerDamageType.BasicAttack,
                 damage,
@@ -112,5 +122,6 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
         maxDistance = Mathf.Max(0.1f, maxDistance);
         damageMultiplier = Mathf.Max(0.1f, damageMultiplier);
         attackCooldown = Mathf.Max(0.1f, attackCooldown);
+        parallelProjectileSpacing = Mathf.Max(0.01f, parallelProjectileSpacing);
     }
 }

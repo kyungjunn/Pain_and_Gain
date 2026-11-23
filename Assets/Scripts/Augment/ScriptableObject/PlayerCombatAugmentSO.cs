@@ -16,7 +16,8 @@ public enum PlayerCombatAugmentEffect
     WizardResidualGravity,
     WizardExtraField,
     WizardFieldCollapse,
-    WizardOvercharge
+    WizardOvercharge,
+    BasicProjectileParallelCount
 }
 
 // 플레이어 전투 동작을 바꾸는 공용 증강 데이터.
@@ -47,8 +48,17 @@ public sealed class PlayerCombatAugmentSO : SkillAugmentSO
         }
 
         PlayerCharacter character = player.GetComponent<PlayerCharacter>();
-        if (character == null ||
-            (IsWizardEffect(effect) ? !character.Is(PlayerCharacterId.Wizard) : !character.Is(requiredCharacter)))
+        if (character == null)
+        {
+            return false;
+        }
+
+        if (effect == PlayerCombatAugmentEffect.BasicProjectileParallelCount)
+        {
+            return targetSkill == null && player.GetComponent<ProjectilePlayerAttack>() != null;
+        }
+
+        if (IsWizardEffect(effect) ? !character.Is(PlayerCharacterId.Wizard) : !character.Is(requiredCharacter))
         {
             return false;
         }
