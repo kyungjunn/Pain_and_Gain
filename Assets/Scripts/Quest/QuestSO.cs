@@ -1,17 +1,25 @@
 using UnityEngine;
 
+public enum QuestCategory
+{
+    Tutorial,
+    Normal,
+    RiskChallenge
+}
+
 // 퀘스트 목표
 public enum QuestObjectiveType
 {
     KillEnemies,
-    HuntEventMonster
+    HuntEventMonster,
+    SkillHits,
+    QSkillHits,
+    FirstAugment
 }
 
-// 실패 페널티
-public enum QuestPenaltyType
+public enum SkillHitCountingRule
 {
-    SkillRemove,
-    StatReduce
+    EveryDamageEvent
 }
 
 [CreateAssetMenu(fileName = "New Quest", menuName = "Game/Quest")]
@@ -24,31 +32,35 @@ public class QuestSO : ScriptableObject
     [TextArea]
     public string description;
 
+    [Header("Quest Type")]
+    public QuestCategory category = QuestCategory.Normal;
+
     // 성공 조건
     [Header("Objective")]
     public QuestObjectiveType objectiveType = QuestObjectiveType.KillEnemies;
+    [Tooltip("EveryDamageEvent counts each PlayerDamageDealer event that reports positive actual skill damage, including each damaging multi-hit tick.")]
+    public SkillHitCountingRule skillHitCountingRule = SkillHitCountingRule.EveryDamageEvent;
     [Min(1)] public int targetAmount = 3;
-    [Min(1f)] public float timeLimit = 30f;
+    [Tooltip("길잡이는 시간 제한 없음. 일반·위험 도전은 최소 1초.")]
+    [Min(0f)] public float timeLimit = 30f;
     public GameObject eventMonsterPrefab;
     public GameObject eventMonsterBeaconPrefab;
 
     [Header("Success Reward")]
+    [Tooltip("Tutorial rewards are fixed references; the manager clones them before applying runtime amounts.")]
+    public QuestRewardSO successReward;
     public QuestRewardPoolSO rewardPool;
-
-    // 실패 설정
-    [Header("Failure Penalty")]
-    [Tooltip("SkillRemove: 증강 스킬 중첩 1 감소, 마지막 중첩이면 제거. StatReduce: 증강 스탯 보너스 감소.")]
-    public QuestPenaltyType penaltyType = QuestPenaltyType.SkillRemove;
-    [Range(0f, 1f)] public float statReduceMin = 0.25f;
-    [Range(0f, 1f)] public float statReduceMax = 0.5f;
 
     private void OnValidate()
     {
-        // 입력값 보정
         targetAmount = Mathf.Max(1, targetAmount);
-        if (objectiveType == QuestObjectiveType.HuntEventMonster) targetAmount = 1;
-        timeLimit = Mathf.Max(1f, timeLimit);
-        statReduceMin = Mathf.Clamp01(statReduceMin);
-        statReduceMax = Mathf.Clamp(statReduceMax, statReduceMin, 1f);
+        if (objectiveType == QuestObjectiveType.HuntEventMonster || objectiveType == QuestObjectiveType.FirstAugment)
+        {
+            targetAmount = 1;
+        }
+
+        timeLimit = category == QuestCategory.Tutorial
+            ? Mathf.Max(0f, timeLimit)
+            : Mathf.Max(1f, timeLimit);
     }
 }

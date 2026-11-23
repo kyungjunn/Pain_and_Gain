@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+// 체력바. 스포너 또는 부모 플레이어.
 public sealed class PlayerHealthBarUI : MonoBehaviour
 {
     [SerializeField] private Slider slider;
@@ -11,24 +12,39 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
 
     private PlayerHealth playerHealth;
     private Camera cachedCamera;
+    private HealthDamageTrail damageTrail;
 
     private void Awake()
     {
+        if (valueText != null)
+        {
+            valueText.outlineColor = Color.black;
+            valueText.outlineWidth = 0.2f;
+            valueText.fontMaterial.EnableKeyword("OUTLINE_ON");
+        }
         if (slider != null)
         {
             slider.minValue = 0f;
             slider.maxValue = 1f;
             slider.wholeNumbers = false;
             slider.interactable = false;
+            CreateDamageTrail();
         }
+    }
+
+    private void CreateDamageTrail()
+    {
+        if (slider.fillRect == null) return;
+        damageTrail = HealthDamageTrail.Create(slider.fillRect.parent, Vector2.zero);
     }
 
     private void OnEnable()
     {
         if (bindSpawnedPlayer)
         {
+            // 이벤트 + 현재 스냅샷
             SpawnManager.OnPlayerSpawned += HandlePlayerSpawned;
-            HandlePlayerSpawned(GameObject.FindGameObjectWithTag("Player"));
+            HandlePlayerSpawned(SpawnManager.Instance?.SpawnedPlayer);
         }
         else
         {
@@ -38,10 +54,10 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
 
     private void Start()
     {
-        // PlayerHealth initializes its current value in Awake, which may run after this UI binds.
+        // 초기화 순서 차이 대응: 연결 후 체력 재조회
         if (bindSpawnedPlayer)
         {
-            HandlePlayerSpawned(GameObject.FindGameObjectWithTag("Player"));
+            HandlePlayerSpawned(SpawnManager.Instance?.SpawnedPlayer);
         }
         else
         {
@@ -101,6 +117,7 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
         }
 
         playerHealth = health;
+        if (damageTrail != null) damageTrail.Clear();
 
         if (playerHealth != null)
         {
@@ -114,6 +131,7 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
     {
         if (playerHealth == null)
         {
+            if (damageTrail != null) damageTrail.Clear();
             if (slider != null)
             {
                 slider.SetValueWithoutNotify(0f);
@@ -130,6 +148,7 @@ public sealed class PlayerHealthBarUI : MonoBehaviour
         int currentHealth = playerHealth.CurrentHealth;
         int maxHealth = playerHealth.MaxHealth;
         float normalizedHealth = maxHealth > 0 ? Mathf.Clamp01((float)currentHealth / maxHealth) : 0f;
+        if (damageTrail != null) damageTrail.SetHealth(currentHealth, maxHealth);
 
         if (slider != null)
         {

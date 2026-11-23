@@ -108,6 +108,10 @@ Assets/_Recovery/
 /Assets/Editor/
 /Assets/Editor.meta
 
+# Local-only ad-hoc Editor validation runners
+/Assets/Scripts/**/Editor/*Validation.cs
+/Assets/Scripts/**/Editor/*Validation.cs.meta
+
 # macOS folder metadata
 .DS_Store
 **/.DS_Store

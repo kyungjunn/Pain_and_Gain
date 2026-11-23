@@ -2,6 +2,7 @@
 using UnityEngine;
 
 // 플레이어 현재 체력, 피격, 회복을 관리
+[RequireComponent(typeof(PlayerStateManager), typeof(Rigidbody))]
 public class PlayerHealth : LivingEntity
 {
     [SerializeField] private PlayerStats stats;
@@ -12,6 +13,7 @@ public class PlayerHealth : LivingEntity
     public int CurrentHealth { get; private set; }
     public bool IsDead { get; private set; }
     public Action onHealthChanged;
+    public event Action<int> OnDamaged;
 
     private PlayerStateManager stateManager;
     private Animator animator;
@@ -25,16 +27,16 @@ public class PlayerHealth : LivingEntity
         }
 
         stateManager = GetComponent<PlayerStateManager>();
-        if (stateManager == null)
-        {
-            // 같은 오브젝트에 없으면 씬 전체에서 찾음
-            stateManager = FindFirstObjectByType<PlayerStateManager>();
-        }
 
         animator = GetComponentInChildren<Animator>();
         rb = GetComponent<Rigidbody>();
 
         CurrentHealth = MaxHealth;
+
+        if (GetComponent<CombatDamageNumbers>() == null)
+            gameObject.AddComponent<CombatDamageNumbers>();
+        if (GetComponent<PlayerCombatFeedback>() == null)
+            gameObject.AddComponent<PlayerCombatFeedback>();
     }
 
     private void OnEnable()
@@ -43,6 +45,8 @@ public class PlayerHealth : LivingEntity
         {
             stats.onStatsChanged += HandleStatsChanged;
         }
+
+        HandleStatsChanged();
     }
 
     private void OnDisable()
@@ -61,9 +65,14 @@ public class PlayerHealth : LivingEntity
         }
 
         // 방어력을 적용하되 최소 1 피해는 보장
+        int previousHealth = CurrentHealth;
         int finalDamage = Mathf.Max(1, damage - Defense);
         CurrentHealth = Mathf.Max(CurrentHealth - finalDamage, 0);
+        int actualDamage = previousHealth - CurrentHealth;
         onHealthChanged?.Invoke();
+
+        if (actualDamage > 0)
+            OnDamaged?.Invoke(actualDamage);
 
         if (CurrentHealth == 0)
         {
@@ -80,8 +89,11 @@ public class PlayerHealth : LivingEntity
 
         int previousHealth = CurrentHealth;
         CurrentHealth = Mathf.Min(CurrentHealth + amount, MaxHealth);
+        int healed = CurrentHealth - previousHealth;
         onHealthChanged?.Invoke();
-        return CurrentHealth - previousHealth;
+        if (healed > 0 && AudioManager.Instance != null)
+            AudioManager.Instance.PlayHeal();
+        return healed;
     }
 
     private int Defense => stats != null ? Mathf.RoundToInt(stats.Defense) : 0;

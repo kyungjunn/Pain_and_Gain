@@ -49,6 +49,7 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
         if (wizardCombat == null)
             wizardCombat = GetComponent<WizardCombat>();
 
+        bool empoweredWizardAttack = wizardCombat != null && wizardCombat.IsOverdriveActive;
         float overdriveDamage = wizardCombat != null ? wizardCombat.BasicDamageMultiplier : 1f;
         float visualScale = wizardCombat != null ? wizardCombat.BasicVisualScale : 1f;
         int additionalPierces = wizardCombat != null ? wizardCombat.BasicAdditionalPierces : 0;
@@ -65,6 +66,11 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
                 PlayerCombatAugmentEffect.BasicProjectileCount));
         }
 
+        // 소유자 풀 공유 · 일반/강화는 별도 풀 대신 발사별 연출 설정
+        PlayerProjectilePool pool = PlayerProjectilePool.GetOrCreate(damageDealer);
+        ProjectileVisualMode visualMode = wizardCombat == null
+            ? ProjectileVisualMode.None
+            : empoweredWizardAttack ? ProjectileVisualMode.Empowered : ProjectileVisualMode.Basic;
         int projectileCount = 1 + extraProjectileCount;
         for (int i = 0; i < projectileCount; i++)
         {
@@ -79,20 +85,20 @@ public class ProjectilePlayerAttack : MonoBehaviour, IPlayerBasicAttack
             Quaternion projectileRotation = yawRotation * projectileOrigin.rotation * projectilePrefab.transform.localRotation;
             Vector3 direction = yawRotation * projectileOrigin.forward;
 
-            DamageProjectile projectile = Instantiate(
+            DamageProjectile projectile = pool.Spawn(
                 projectilePrefab,
                 projectileOrigin.position,
-                projectileRotation);
-            // 피해 주체, 피해 유형, 속도, 사거리, 진행 방향 전달.
-            projectile.Initialize(
-                damageDealer,
+                projectileRotation,
                 PlayerDamageType.BasicAttack,
                 damage,
                 speed,
                 maxDistance,
                 direction,
                 visualScale: visualScale,
-                additionalPierces: additionalPierces);
+                additionalPierces: additionalPierces,
+                visualMode: visualMode);
+            if (projectile == null)
+                return false;
         }
 
         nextAttackTime = Time.time + AttackCooldown;

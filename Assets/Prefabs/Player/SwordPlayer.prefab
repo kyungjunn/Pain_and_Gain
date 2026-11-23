@@ -5132,6 +5132,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: 1.0999999
       objectReference: {fileID: 0}
+    - target: {fileID: 2126891989114054287, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: basicAttackClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 323e15cfe809e114ab92c9f4b25e8bc2, type: 3}
     - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: skillE
       value: 
@@ -5232,11 +5236,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2743050c52c28845b6dcfb5757e8fc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SwordCombatFeedback
-  hitStopDuration: 0.035
-  hitStopTimeScale: 0.18
-  impulseSource: {fileID: 3166712346496264553}
-  shakeForce: 0.1
-  feedbackInterval: 0.1
   hitVfx: {fileID: 0}
   hitVfxPrefab: {fileID: 8500920156052182585, guid: 830e92a3f95c4b04caf8edd648aed9bd, type: 3}
   hitVfxScale: 0.38

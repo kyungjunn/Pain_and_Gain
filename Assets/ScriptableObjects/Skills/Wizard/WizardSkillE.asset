@@ -19,6 +19,8 @@ MonoBehaviour:
   resonanceFieldRange: 12
   resonanceFieldDuration: 5
   resonanceFieldRadius: 3
+  resonanceMaxPlacementSlope: 50
+  resonanceMaxSurfaceDeviation: 0.2
   resonanceFieldTickInterval: 1
   resonanceFieldTickDamageMultiplier: 0.35
   resonanceDamageMultiplier: 0.65

@@ -9,7 +9,7 @@ public sealed class PlayerUltimateGauge : MonoBehaviour
     // 현재 게이지
     [SerializeField, Min(0f)] private float currentGauge;
     // 피해당 충전량
-    [SerializeField, Min(0f)] private float gaugePerDamage = 1f;
+    [SerializeField, Min(0f)] private float gaugePerDamage = 0.25f;
 
     private PlayerDamageDealer damageDealer;
     private NinjaUltimate ninjaUltimate;
@@ -36,7 +36,7 @@ public sealed class PlayerUltimateGauge : MonoBehaviour
     // 충전
     public void Add(float amount)
     {
-        // Lazy lookup also supports runtime factories that add combat after the gauge.
+        // 게이지 이후 추가된 전투 컴포넌트 지연 탐색
         if (ninjaUltimate == null)
             ninjaUltimate = GetComponent<NinjaUltimate>();
         if (wizardCombat == null)

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using TMPro;
 using UnityEngine.UI;
 
@@ -53,6 +54,19 @@ public class AugmentOptionUI : MonoBehaviour
     }
 
     public AugmentSO CurrentAugment => currentAugment;
+
+    public bool Focus()
+    {
+        CacheButton();
+        if (EventSystem.current == null || button == null || currentAugment == null
+            || !button.IsActive() || !button.IsInteractable())
+        {
+            return false;
+        }
+
+        EventSystem.current.SetSelectedGameObject(button.gameObject);
+        return true;
+    }
 
     public void Clear()
     {

@@ -18,6 +18,7 @@ public class AugmentSlotUI : MonoBehaviour
     public void Setup(AugmentData data)
     {
         iconImage.sprite = data.icon;
+        iconImage.enabled = data.icon != null;
         valueText.text = data.valueText;
         nameText.text = data.displayName;
 

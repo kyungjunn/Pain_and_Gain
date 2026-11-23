@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Ghost
   maxHealth: 20
-  expReward: 50
+  expReward: 25
   moveSpeed: 3
   acceleration: 8
   stoppingDistance: 1.1

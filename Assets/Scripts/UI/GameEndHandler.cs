@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// 인게임 씬의 빈 오브젝트(예: GameEndHandler)에 붙이는 스크립트
+// 사망 결과 저장 후 세션 종료 요청
 public class GameEndHandler : MonoBehaviour
 {
     private PlayerStateManager stateManager;
@@ -18,13 +18,13 @@ public class GameEndHandler : MonoBehaviour
 
     private void Awake()
     {
-        RunStats.Reset(); // 새 판 시작: 킬 수 초기화
         ended = false;
     }
 
     private void OnEnable()
     {
         SpawnManager.OnPlayerSpawned += BindPlayer;
+        // 이벤트 + 현재 스냅샷
         if (SpawnManager.Instance != null)
             BindPlayer(SpawnManager.Instance.SpawnedPlayer);
     }
@@ -46,6 +46,7 @@ public class GameEndHandler : MonoBehaviour
 
     private void BindPlayer(GameObject player)
     {
+        if (stateManager != null && stateManager.gameObject == player) return;
         UnbindPlayer();
         if (player == null || ended) return;
         if (!player.TryGetComponent(out stateManager)
@@ -66,26 +67,16 @@ public class GameEndHandler : MonoBehaviour
         if (ended) return; // 두 번 실행 방지
         ended = true;
 
-        GameResult.Data = BuildResult(); // 죽은 순간의 값을 바로 저장
+        GameResult.Data = BuildResult(); // 사망 순간 수치
+        // 결과 보존 후 세션 종료
+        GameManager.Instance?.NotifyPlayerUnavailable(stateManager.gameObject);
         StartCoroutine(LoadEndingAfterDelay());
     }
 
     private ResultData BuildResult()
     {
-        return new ResultData
-        {
-            isVictory = false,
-            survivalTime = Time.time - combatStartTime,
-            monsterKills = RunStats.Kills,
-            finalLevel = levelSystem.level,
-
-            attackDamage = stats.AttackDamage,
-            hp = 0f,                // 죽은 순간이라 현재 체력은 0
-            maxHp = stats.HP,       // PlayerStats.HP는 최대 체력
-            speed = stats.MoveSpeed,
-            attackSpeed = stats.AttackSpeed,
-            defense = stats.Defense
-        };
+        return ResultData.Capture(stats, levelSystem, stats.GetComponent<PlayerAugments>(),
+            Time.time - combatStartTime, RunStats.Kills);
     }
 
     private IEnumerator LoadEndingAfterDelay()

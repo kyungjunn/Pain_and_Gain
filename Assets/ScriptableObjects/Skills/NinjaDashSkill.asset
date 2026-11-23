@@ -15,6 +15,7 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 3e9d0145ea10ba74b9459daaea2b0816, type: 3}
   cooldown: 4
   animationTrigger: SkillE
+  dashStartSfx: {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
   distance: 7
   duration: 0.28
   hitRadius: 1.1

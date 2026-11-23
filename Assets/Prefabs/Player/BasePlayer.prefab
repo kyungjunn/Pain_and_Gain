@@ -804,7 +804,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUltimateGauge
   maxGauge: 100
   currentGauge: 0
-  gaugePerDamage: 1
+  gaugePerDamage: 0.25
 --- !u!114 &5763021708063854728
 MonoBehaviour:
   m_ObjectHideFlags: 0

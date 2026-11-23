@@ -14,10 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::QuestRewardPoolSO
   entries:
   - reward: {fileID: 11400000, guid: a31dc926e8ab47bb96cf78178d702002, type: 2}
-    weight: 4
+    weight: 1
   - reward: {fileID: 11400000, guid: a31dc926e8ab47bb96cf78178d702003, type: 2}
-    weight: 3
-  - reward: {fileID: 11400000, guid: a31dc926e8ab47bb96cf78178d702004, type: 2}
-    weight: 2
-  - reward: {fileID: 11400000, guid: a31dc926e8ab47bb96cf78178d702005, type: 2}
     weight: 1

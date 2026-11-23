@@ -25,15 +25,6 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "ExpTest",
-                    "type": "Button",
-                    "id": "671e28e9-cafc-4990-b71e-a0d03d6bde25",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "Attack",
                     "type": "Button",
                     "id": "eda6bccc-de34-4d2e-b4cc-480a688c0871",
@@ -143,17 +134,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "Look",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "53337e73-a993-4abe-9b8a-7dc3aa2a07e0",
-                    "path": "<Keyboard>/x",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ExpTest",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

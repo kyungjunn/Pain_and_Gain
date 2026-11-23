@@ -1,15 +1,16 @@
 using System;
 using UnityEngine;
 
-// 발사 시에만 높이를 보정한다. 좌우 조준과 발사 후 직선 이동은 유지한다.
+// 발사 시 좌우 조준 콘 안의 적을 고르고 높이를 보정한다. 좌우 방향은 바꾸지 않는다.
 public sealed class ProjectileHeightAim
 {
     private Collider[] candidates = new Collider[32];
     private RaycastHit[] obstacles = new RaycastHit[32];
 
     public Vector3 Resolve(Vector3 origin, Vector3 direction, float range, Transform owner,
-        float horizontalAngle, float verticalAngle)
+        float horizontalAngle, float verticalAngle, out Collider target)
     {
+        target = null;
         Vector3 forward = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.001f || range <= 0f) return direction.normalized;
 
@@ -51,6 +52,7 @@ public sealed class ProjectileHeightAim
             bestAlignment = alignment;
             bestDistance = targetHit.distance;
             result = corrected;
+            target = collider;
         }
         return result;
     }

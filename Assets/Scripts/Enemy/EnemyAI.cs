@@ -55,11 +55,17 @@ public class EnemyAI : MonoBehaviour
     private void OnEnable()
     {
         SpawnManager.OnPlayerSpawned += AssignTarget;
+        currentState = EnemyState.Idle;
+        nextRepathTime = 0f;
+        FindTarget();
     }
 
     private void OnDisable()
     {
         SpawnManager.OnPlayerSpawned -= AssignTarget;
+        StopAgent();
+        target = null;
+        currentState = EnemyState.Idle;
     }
 
     private void Start()
@@ -79,59 +85,63 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        if (target == null)
+        if (target == null || !target.gameObject.activeInHierarchy)
         {
-            // 밑에서 이미 범위로 감지 중이기 때문에 매 프레임 타겟 설정하는 코드 주석처리
-            //FindTarget();
             Patrol();
-            //Debug.Log("Target null");
-
             return;
         }
 
         float sqrDistance = (target.position - transform.position).sqrMagnitude;
-        float attackRange = enemyAttack.AttackRange;
         float currentDetectionRange = DetectionRange;
+        float sqrDetectionRange = currentDetectionRange * currentDetectionRange;
 
+        if (sqrDistance > sqrDetectionRange)
+        {
+            Patrol();
+            return;
+        }
 
+        if (currentState != EnemyState.Chase && currentState != EnemyState.Attack)
+            nextRepathTime = 0f;
+
+        float attackRange = enemyAttack.AttackRange;
         if (sqrDistance <= attackRange * attackRange)
         {
             Attack();
-            //Debug.Log("Enemy Attack");
-
-            //return;
-        }
-        else if (sqrDistance <= currentDetectionRange * currentDetectionRange)
-        {
-            Chase();
-            //Debug.Log("Enemy Chase");
-
-            //return;
         }
         else
         {
-            Patrol();
+            Chase();
         }
     }
 
     public void SetTarget(Transform newTarget)
     {
+        if (target != newTarget)
+        {
+            StopAgent();
+            currentState = EnemyState.Idle;
+            nextRepathTime = 0f;
+        }
+
         target = newTarget;
     }
 
     // 플레이어 스폰 시 타겟 설정
     private void AssignTarget(GameObject player)
     {
-        if (player != null)
-        {
-            target = player.transform;
-            //Debug.Log("플레이어 타겟 설정");
-        }
+        SetTarget(player != null ? player.transform : null);
     }
 
     // Player 태그를 가진 오브젝트를 추적 대상으로 설정
     private void FindTarget()
     {
+        if (SpawnManager.Instance != null && SpawnManager.Instance.SpawnedPlayer != null)
+        {
+            AssignTarget(SpawnManager.Instance.SpawnedPlayer);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(playerTag))
         {
             return;
@@ -141,7 +151,7 @@ public class EnemyAI : MonoBehaviour
 
         if (player != null)
         {
-            target = player.transform;
+            SetTarget(player.transform);
             //Debug.Log("Find Target ");
 
         }
@@ -179,10 +189,9 @@ public class EnemyAI : MonoBehaviour
             waitingForNextPatrolPoint = false;
             nextPatrolTime = Time.time;
 
-            if (agent.hasPath)
-            {
-                agent.ResetPath();
-            }
+            // 계산 중인 추격 경로도 취소하고 현재 위치 주변의 기존 순찰 패턴을 사용.
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
         }
 
         if (agent.pathPending)
@@ -271,24 +280,22 @@ public class EnemyAI : MonoBehaviour
     // 이동 정지 및 경로 초기화
     private void StopAgent()
     {
+        waitingForNextPatrolPoint = false;
+
         if (!CanUseAgent())
         {
             return;
         }
 
+        agent.ResetPath();
+        agent.velocity = Vector3.zero;
+        // ResetPath clears isStopped in Unity 6; set the stop flag afterwards.
         agent.isStopped = true;
-
-        if (agent.hasPath)
-        {
-            agent.ResetPath();
-        }
-
-        waitingForNextPatrolPoint = false;
     }
 
     private bool CanUseAgent()
     {
-        return agent != null && agent.enabled && agent.isOnNavMesh;
+        return agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
     }
 
     private bool HasReachedDestination()

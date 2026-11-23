@@ -16,6 +16,7 @@ MonoBehaviour:
   cooldown: 6
   animationTrigger: SkillQ
   flamethrowerPrefab: {fileID: 163286, guid: 50daa816369323b42b56093bb108296f, type: 3}
+  castSfx: {fileID: 8300000, guid: a652877b012108e41871f867ada9f176, type: 3}
   duration: 2
   tickInterval: 0.25
   damageMultiplier: 1

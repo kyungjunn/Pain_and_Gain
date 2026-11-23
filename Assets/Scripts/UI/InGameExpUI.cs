@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+// 경험치 UI. 스포너 스냅샷.
 public class InGameExpUI : MonoBehaviour
 {
     [Header("UI 컴포넌트")]
@@ -23,8 +24,8 @@ public class InGameExpUI : MonoBehaviour
     private void OnEnable()
     {
         SpawnManager.OnPlayerSpawned += BindLevelSystem;
-        var player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null) BindLevelSystem(player);
+        // 이벤트 + 현재 스냅샷
+        BindLevelSystem(SpawnManager.Instance?.SpawnedPlayer);
     }
 
     private void OnDisable()
@@ -36,9 +37,27 @@ public class InGameExpUI : MonoBehaviour
 
     private void BindLevelSystem(GameObject player)
     {
+        UnbindLevelSystem();
+        targetProgress = 0f;
+        displayedLevel = 1;
+
+        if (expSlider != null)
+        {
+            expSlider.SetValueWithoutNotify(0f);
+        }
+
+        if (levelText != null)
+        {
+            levelText.text = string.Empty;
+        }
+
+        if (expValueText != null)
+        {
+            expValueText.text = string.Empty;
+        }
+
         if (player == null) return;
 
-        UnbindLevelSystem();
         playerLevelSystem = player.GetComponent<PlayerLevelSystem>();
         if (playerLevelSystem != null)
         {
@@ -48,7 +67,10 @@ public class InGameExpUI : MonoBehaviour
             // 초기 데이터 동기화
             displayedLevel = playerLevelSystem.level;
             targetProgress = playerLevelSystem.GetExpPercent();
-            expSlider.value = targetProgress;
+            if (expSlider != null)
+            {
+                expSlider.value = targetProgress;
+            }
 
             UpdateTextUI();
         }

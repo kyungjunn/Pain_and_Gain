@@ -5,7 +5,7 @@ using UnityEngine.AI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-// Runtime ownership for the wizard's independently tunable Q/E/R effects.
+// 마법사 스킬별 효과 상태·수명 관리
 public sealed class WizardCombat : MonoBehaviour
 {
     private const float ResidualGravityDuration = 2f;
@@ -62,6 +62,9 @@ public sealed class WizardCombat : MonoBehaviour
         public Material LineMaterial;
         public LineRenderer RangeRenderer;
         public LineRenderer FieldRenderer;
+        public Mesh FillMesh;
+        public MeshRenderer FillRenderer;
+        public MaterialPropertyBlock FillTint;
     }
 
     private sealed class Overdrive
@@ -102,10 +105,23 @@ public sealed class WizardCombat : MonoBehaviour
     [SerializeField] private GameObject gravityCorePrefab;
     [SerializeField] private GameObject gravityVortexPrefab;
     [SerializeField] private GameObject starHitPrefab;
+    [SerializeField] private GameObject resonanceHitPrefab;
     [SerializeField] private GameObject resonanceFieldPrefab;
     [SerializeField] private GameObject overdriveAuraPrefab;
     [SerializeField] private GameObject overdriveWavePrefab;
     [SerializeField] private GameObject overdriveFinalPrefab;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip gravityPullSfx;
+    [SerializeField] private AudioClip gravityBlastSfx;
+    [SerializeField] private AudioClip resonanceCastSfx;
+    [SerializeField] private AudioClip overdriveStartSfx;
+    [SerializeField] private AudioClip overdriveFinalSfx;
+
+    [Header("Resonance Preview")]
+    [SerializeField] private Color previewValidColor = new Color(0.72f, 0.38f, 1f, 0.95f);
+    [SerializeField] private Color previewInvalidColor = new Color(1f, 0.12f, 0.12f, 0.95f);
+    [SerializeField, Range(0f, 1f)] private float previewFillOpacity = 0.18f;
 
     private PlayerSkillController owner;
     private PlayerDamageDealer damageDealer;
@@ -141,7 +157,7 @@ public sealed class WizardCombat : MonoBehaviour
         }
     }
 
-    // Includes synchronous final-blast damage, but not its lingering visual.
+    // 종료 폭발 피해 포함, 잔여 연출 제외
     public bool IsUltimateActive =>
         isActiveAndEnabled && overdrive != null && !overdrive.Cancelled && !IsOwnerDead();
 
@@ -308,6 +324,8 @@ public sealed class WizardCombat : MonoBehaviour
         }
         if (preview.LineMaterial != null)
             Destroy(preview.LineMaterial);
+        if (preview.FillMesh != null)
+            Destroy(preview.FillMesh);
         owner?.SuppressBasicAttackForCurrentFrame();
     }
 
@@ -334,7 +352,8 @@ public sealed class WizardCombat : MonoBehaviour
         else
         {
             ClearPreparedResonancePreviewCast();
-            if (!TryFindGroundPosition(skill.ResonanceFieldRange, out groundPosition, out groundNormal))
+            if (!TryFindGroundCandidate(skill, out groundPosition, out groundNormal, out bool validPlacement) ||
+                !validPlacement)
                 return false;
         }
 
@@ -351,14 +370,18 @@ public sealed class WizardCombat : MonoBehaviour
             ResonanceDamage = CalculateDamage(skill.ResonanceDamageMultiplier),
             ResonanceRadius = skill.ResonanceRadius
         };
-        field.Visual = CreateVisual(resonanceFieldPrefab, "WizardResonanceField", groundPosition + groundNormal * 0.035f, field.Radius / 3f, true);
+        field.Visual = CreateVisual(resonanceFieldPrefab, "WizardResonanceField",
+            groundPosition + groundNormal * 0.035f,
+            field.Radius / 3f, true);
         if (field.Visual != null)
         {
             field.Visual.transform.rotation = Quaternion.FromToRotation(Vector3.up, groundNormal);
+            AddGroundBoundary(field.Visual, field.Radius, new Color(0.68f, 0.46f, 1f, 0.82f), 0.075f);
         }
         resonanceFields.Add(field);
         EnforceResonanceFieldCapacity();
         CancelResonancePreview();
+        PlaySkillSfx(resonanceCastSfx);
         return true;
     }
 
@@ -382,15 +405,18 @@ public sealed class WizardCombat : MonoBehaviour
             BasicVisualScale = skill.OverdriveBasicVisualScale,
             BasicAdditionalPierces = skill.OverdriveBasicAdditionalPierces
         };
-        state.Aura = CreateVisual(overdriveAuraPrefab, "WizardOverdriveAura", Vector3.up, 1f, true, owner.transform);
+        state.Aura = CreateVisual(overdriveAuraPrefab, "WizardOverdriveAura",
+            Vector3.up, 1f, true, owner.transform);
         overdrive = state;
+        PlaySkillSfx(overdriveStartSfx);
         StartCoroutine(RunOverdrive(state));
         return true;
     }
 
     private IEnumerator RunGravityCore(WizardSkillSO skill, Vector3 position, Vector3 direction)
     {
-        WizardSkillVisual coreVisual = CreateVisual(gravityCorePrefab, "WizardGravityCore", position, 0.16f, true);
+        WizardSkillVisual coreVisual = CreateVisual(gravityCorePrefab, "WizardGravityCore",
+            position, 0.16f, true);
         if (coreVisual != null)
             coreVisual.transform.rotation = Quaternion.LookRotation(direction);
         WizardSkillVisual vortexVisual = null;
@@ -446,9 +472,13 @@ public sealed class WizardCombat : MonoBehaviour
                 vortexVisual = CreateVisual(gravityVortexPrefab, "WizardGravityVortex",
                     floor.point + floor.normal * 0.04f, pullRadius / 4f, true);
                 if (vortexVisual != null)
+                {
                     vortexVisual.transform.rotation = Quaternion.FromToRotation(Vector3.up, floor.normal);
+                    AddGroundBoundary(vortexVisual, pullRadius, new Color(0.42f, 0.75f, 1f, 0.68f), 0.07f);
+                }
             }
             float pullEndTime = Time.time + skill.GravityCorePullDuration;
+            bool pullStarted = false;
             while (Time.time < pullEndTime)
             {
                 if (!CanRunEffects())
@@ -457,6 +487,12 @@ public sealed class WizardCombat : MonoBehaviour
                 {
                     yield return null;
                     continue;
+                }
+
+                if (!pullStarted)
+                {
+                    pullStarted = true;
+                    PlaySkillSfx(gravityPullSfx);
                 }
 
                 float pullRadius = GetAugmentedGravityPullRadius(skill);
@@ -471,6 +507,7 @@ public sealed class WizardCombat : MonoBehaviour
             if (!CanRunEffects())
                 yield break;
 
+            PlaySkillSfx(gravityBlastSfx);
             SkillAreaQuery blastQuery = new SkillAreaQuery();
             blastQuery.DealDamage(
                 damageDealer,
@@ -478,12 +515,13 @@ public sealed class WizardCombat : MonoBehaviour
                 skill.GravityCoreBlastRadius,
                 CalculateDamage(skill.GravityCoreDamageMultiplier),
                 PlayerDamageType.Skill,
-                owner.transform.position);
+                owner.transform.position,
+                sourceSkill: skill);
 
             if (CanRunEffects())
             {
-                PlayBurst(starHitPrefab, "WizardGravityBlast", position + Vector3.up * 0.04f,
-                    skill.GravityCoreBlastRadius / 2f);
+                PlayBurst(starHitPrefab, "WizardGravityBlast",
+                    position + Vector3.up * 0.04f, skill.GravityCoreBlastRadius / 2f);
             }
 
             completedNormally = true;
@@ -528,7 +566,8 @@ public sealed class WizardCombat : MonoBehaviour
                         state.WaveRadius,
                         CalculateDamage(state.WaveDamageMultiplier),
                         PlayerDamageType.Skill,
-                        center);
+                        center,
+                        sourceSkill: state.Skill);
                     if (CanRunEffects() && !state.Cancelled)
                     {
                         PlayBurst(overdriveWavePrefab, "WizardOverdriveWave",
@@ -547,13 +586,15 @@ public sealed class WizardCombat : MonoBehaviour
             state.Aura = null;
 
             Vector3 finalCenter = owner.transform.position;
+            PlaySkillSfx(overdriveFinalSfx);
             state.FinalBlastQuery.DealDamage(
                 damageDealer,
                 finalCenter,
                 state.FinalBlastRadius,
                 CalculateDamage(state.FinalDamageMultiplier),
                 PlayerDamageType.Skill,
-                finalCenter);
+                finalCenter,
+                sourceSkill: state.Skill);
 
             if (CanRunEffects())
             {
@@ -586,7 +627,15 @@ public sealed class WizardCombat : MonoBehaviour
         return nearest < float.PositiveInfinity && Vector3.Dot(floor.normal, Vector3.up) >= 0.5f;
     }
 
-    private void PlayBurst(GameObject prefab, string name, Vector3 position, float scale)
+    private static void PlaySkillSfx(AudioClip clip)
+    {
+        AudioManager audioManager = AudioManager.Instance;
+        if (audioManager != null && clip != null)
+            audioManager.PlaySFX(clip);
+    }
+
+    private void PlayBurst(GameObject prefab, string name,
+        Vector3 position, float scale)
     {
         WizardSkillVisual visual = CreateVisual(prefab, name, position, scale, false);
         if (visual != null)
@@ -595,7 +644,7 @@ public sealed class WizardCombat : MonoBehaviour
 
     private IEnumerator CleanupBurst(WizardSkillVisual visual)
     {
-        // Particle lifetime owns the tail, with a bound for malformed assets.
+        // 입자 수명까지 연출 유지, 비정상 자산 대기 제한
         float endTime = Time.time + 12f;
         yield return null;
         while (visual != null && visual.IsAlive() && Time.time < endTime)
@@ -607,27 +656,61 @@ public sealed class WizardCombat : MonoBehaviour
         DestroyVisual(visual);
     }
 
-    private bool TryFindGroundPosition(float range, out Vector3 groundPosition, out Vector3 groundNormal)
-    {
-        return TryFindGroundCandidate(range, out groundPosition, out groundNormal, out bool withinRange) &&
-               withinRange;
-    }
-
-    private bool TryFindGroundCandidate(float range, out Vector3 groundPosition, out Vector3 groundNormal,
-        out bool withinRange)
+    private bool TryFindGroundCandidate(WizardSkillSO skill, out Vector3 groundPosition,
+        out Vector3 groundNormal, out bool validPlacement)
     {
         groundPosition = default;
         groundNormal = Vector3.up;
-        withinRange = false;
+        validPlacement = false;
         Camera aimCamera = Camera.main;
-        if (aimCamera == null || owner == null)
+        if (aimCamera == null || owner == null || skill == null)
             return false;
 
         Ray aimRay = aimCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        if (!TryFindNearestPlacementSurface(aimRay, aimCamera.farClipPlane, out RaycastHit nearest))
+            return false;
+
+        // 경사·주변 지형으로 설치 불가 시에도 적중 지점 유지
+        groundPosition = nearest.point;
+        groundNormal = nearest.normal.normalized;
+        Vector3 flatOffset = groundPosition - owner.transform.position;
+        flatOffset.y = 0f;
+        validPlacement = flatOffset.sqrMagnitude <= skill.ResonanceFieldRange * skill.ResonanceFieldRange &&
+                         IsResonanceSurfaceValid(skill, groundPosition, groundNormal);
+        return true;
+    }
+
+    private bool IsResonanceSurfaceValid(WizardSkillSO skill, Vector3 center, Vector3 normal)
+    {
+        float minimumUp = Mathf.Cos(skill.ResonanceMaxPlacementSlope * Mathf.Deg2Rad);
+        if (normal.y + 0.00001f < minimumUp)
+            return false;
+
+        const int perimeterSamples = 8;
+        Quaternion rotation = Quaternion.FromToRotation(Vector3.up, normal);
+        float probeHeight = skill.ResonanceFieldRadius + skill.ResonanceMaxSurfaceDeviation + 0.05f;
+        for (int i = 0; i < perimeterSamples; i++)
+        {
+            float angle = Mathf.PI * 2f * i / perimeterSamples;
+            Vector3 point = center + rotation * new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) *
+                skill.ResonanceFieldRadius;
+            Ray probe = new Ray(point + Vector3.up * probeHeight, Vector3.down);
+            if (!TryFindNearestPlacementSurface(probe, probeHeight * 2f, out RaycastHit surface) ||
+                surface.normal.y + 0.00001f < minimumUp ||
+                Mathf.Abs(Vector3.Dot(surface.point - center, normal)) > skill.ResonanceMaxSurfaceDeviation)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private bool TryFindNearestPlacementSurface(Ray ray, float distance, out RaycastHit nearest)
+    {
         int hitCount;
         while (true)
         {
-            hitCount = Physics.RaycastNonAlloc(aimRay, groundHitBuffer, aimCamera.farClipPlane, ~0,
+            hitCount = Physics.RaycastNonAlloc(ray, groundHitBuffer, distance, ~0,
                 QueryTriggerInteraction.Ignore);
             if (hitCount < groundHitBuffer.Length)
                 break;
@@ -635,7 +718,7 @@ public sealed class WizardCombat : MonoBehaviour
             System.Array.Resize(ref groundHitBuffer, groundHitBuffer.Length * 2);
         }
         bool hasNearest = false;
-        RaycastHit nearest = default;
+        nearest = default;
         for (int i = 0; i < hitCount; i++)
         {
             Collider hitCollider = groundHitBuffer[i].collider;
@@ -652,15 +735,7 @@ public sealed class WizardCombat : MonoBehaviour
             }
         }
 
-        if (!hasNearest || nearest.normal.y < Mathf.Cos(50f * Mathf.Deg2Rad))
-            return false;
-
-        Vector3 flatOffset = nearest.point - owner.transform.position;
-        flatOffset.y = 0f;
-        groundPosition = nearest.point;
-        groundNormal = nearest.normal.normalized;
-        withinRange = flatOffset.sqrMagnitude <= range * range;
-        return true;
+        return hasNearest;
     }
 
     private bool TryFindCoreOverlap(Vector3 center, float radius, ref Collider[] overlapBuffer)
@@ -906,7 +981,7 @@ public sealed class WizardCombat : MonoBehaviour
             RefreshOverchargeExtension(activeOverdrive);
         }
 
-        // Finish every field's hit even if an earlier kill opened the paused level-up UI.
+        // 처치로 레벨업 화면이 열려도 모든 장판 타격 완료
         if (damageType != PlayerDamageType.BasicAttack)
             return;
 
@@ -923,7 +998,7 @@ public sealed class WizardCombat : MonoBehaviour
             if (offset.sqrMagnitude > field.Radius * field.Radius)
                 continue;
 
-            // Reserve this field's independent cooldown before re-entrant damage callbacks.
+            // 피해 콜백 재진입 전 장판별 재발동 기한 선점
             field.NextResonanceTime = Time.time + field.ResonanceCooldown;
             float radius = field.ResonanceRadius * (1f + Mathf.Max(0f,
                 GetCombatAugmentValue(PlayerCombatAugmentEffect.WizardResonanceRadius, field.Skill)));
@@ -933,12 +1008,13 @@ public sealed class WizardCombat : MonoBehaviour
                 radius,
                 field.ResonanceDamage,
                 PlayerDamageType.Skill,
-                owner.transform.position);
+                owner.transform.position,
+                sourceSkill: field.Skill);
 
             if (!CanRunEffects())
                 return;
 
-            PlayBurst(starHitPrefab, "WizardResonanceBurst",
+            PlayBurst(resonanceHitPrefab, "WizardResonanceBurst",
                 hitPosition + Vector3.up * 0.04f, radius / 2f);
         }
     }
@@ -972,7 +1048,8 @@ public sealed class WizardCombat : MonoBehaviour
                 field.Radius,
                 field.TickDamage,
                 PlayerDamageType.Skill,
-                field.Center);
+                field.Center,
+                sourceSkill: field.Skill);
         }
     }
 
@@ -1006,16 +1083,17 @@ public sealed class WizardCombat : MonoBehaviour
             field.Radius,
             CalculateDamage(collapseDamageMultiplier),
             PlayerDamageType.Skill,
-            field.Center);
+            field.Center,
+            sourceSkill: field.Skill);
         if (CanRunEffects())
-            PlayBurst(starHitPrefab, "WizardFieldCollapse", field.Center + Vector3.up * 0.04f,
-                field.Radius / 2f);
+            PlayBurst(resonanceHitPrefab, "WizardFieldCollapse",
+                field.Center + Vector3.up * 0.04f, field.Radius / 2f);
     }
 
-    // Practical authoring radii: circle 3, vortex/slash 4, hit 2, final 5 units.
-    // Portal is reduced to a compact core; body aura retains its authored size.
-    private WizardSkillVisual CreateVisual(GameObject prefab, string objectName, Vector3 position,
-        float scale, bool continuous, Transform parent = null)
+    // 제작 기준 반경: 원형 3, 소용돌이·참격 4, 타격 2, 종료 폭발 5
+    // 포탈 중심부 축소, 신체 오라 원본 크기 유지
+    private WizardSkillVisual CreateVisual(GameObject prefab, string objectName,
+        Vector3 position, float scale, bool continuous, Transform parent = null)
     {
         if (prefab == null)
             return null;
@@ -1032,7 +1110,7 @@ public sealed class WizardCombat : MonoBehaviour
         }
 
         visualObject.transform.localScale = Vector3.one * scale;
-        WizardSkillVisual visual = visualObject.AddComponent<WizardSkillVisual>();
+        WizardSkillVisual visual = visualObject.GetComponent<WizardSkillVisual>();
         activeVisuals.Add(visualObject);
         visual.Initialize(continuous, parent != null);
         return visual;
@@ -1051,15 +1129,15 @@ public sealed class WizardCombat : MonoBehaviour
             return;
         }
 
-        preview.HasGroundTarget = TryFindGroundCandidate(preview.Skill.ResonanceFieldRange,
-            out Vector3 position, out Vector3 normal, out bool withinRange);
+        preview.HasGroundTarget = TryFindGroundCandidate(preview.Skill,
+            out Vector3 position, out Vector3 normal, out bool validPlacement);
         if (preview.HasGroundTarget)
         {
             preview.Center = position;
             preview.Normal = normal;
         }
 
-        preview.IsValid = preview.HasGroundTarget && withinRange && owner != null &&
+        preview.IsValid = preview.HasGroundTarget && validPlacement && owner != null &&
                           owner.ECharges > 0 && !IsOwnerDead() && !IsGamePaused;
 
         if (preview.RangeRenderer == null)
@@ -1069,8 +1147,8 @@ public sealed class WizardCombat : MonoBehaviour
             ? new Color(0.25f, 0.85f, 1f, 0.95f)
             : new Color(1f, 0.12f, 0.12f, 0.95f);
         Color fieldColor = preview.IsValid
-            ? new Color(0.72f, 0.38f, 1f, 0.95f)
-            : new Color(1f, 0.12f, 0.12f, 0.95f);
+            ? previewValidColor
+            : previewInvalidColor;
         preview.RangeRenderer.startColor = rangeColor;
         preview.RangeRenderer.endColor = rangeColor;
         SetPreviewRing(preview.RangeRenderer, owner.transform.position, Vector3.up,
@@ -1079,58 +1157,148 @@ public sealed class WizardCombat : MonoBehaviour
         preview.FieldRenderer.enabled = preview.HasGroundTarget;
         preview.FieldRenderer.startColor = fieldColor;
         preview.FieldRenderer.endColor = fieldColor;
+        preview.FillRenderer.enabled = preview.HasGroundTarget;
         if (preview.HasGroundTarget)
         {
             SetPreviewRing(preview.FieldRenderer, preview.Center, preview.Normal,
                 preview.Skill.ResonanceFieldRadius, 0.055f, false);
+            Transform fill = preview.FillRenderer.transform;
+            fill.SetPositionAndRotation(preview.Center + preview.Normal * 0.045f,
+                Quaternion.FromToRotation(Vector3.up, preview.Normal));
+            fill.localScale = Vector3.one;
+            float parentScale = fill.lossyScale.x;
+            fill.localScale = Vector3.one * (preview.Skill.ResonanceFieldRadius / parentScale);
+            fieldColor.a = previewFillOpacity;
+            preview.FillTint.SetColor("_BaseColor", fieldColor);
+            preview.FillTint.SetColor("_Color", fieldColor);
+            preview.FillRenderer.SetPropertyBlock(preview.FillTint);
         }
     }
 
     private bool CreateResonancePreviewVisual(ResonancePreview preview)
     {
-        Material lineMaterial = null;
-        if (resonanceFieldPrefab != null)
-        {
-            foreach (Renderer renderer in resonanceFieldPrefab.GetComponentsInChildren<Renderer>(true))
-            {
-                if (renderer.sharedMaterial != null)
-                {
-                    lineMaterial = renderer.sharedMaterial;
-                    break;
-                }
-            }
-        }
-
-        if (lineMaterial == null)
+        preview.LineMaterial = CreateLineMaterial(resonanceFieldPrefab);
+        if (preview.LineMaterial == null)
             return false;
-
-        preview.LineMaterial = new Material(lineMaterial);
-        if (preview.LineMaterial.HasProperty("_BaseMap"))
-            preview.LineMaterial.SetTexture("_BaseMap", Texture2D.whiteTexture);
-        if (preview.LineMaterial.HasProperty("_MainTex"))
-            preview.LineMaterial.SetTexture("_MainTex", Texture2D.whiteTexture);
-        if (preview.LineMaterial.HasProperty("_BaseColor"))
-            preview.LineMaterial.SetColor("_BaseColor", Color.white);
-        if (preview.LineMaterial.HasProperty("_Color"))
-            preview.LineMaterial.SetColor("_Color", Color.white);
 
         preview.VisualRoot = new GameObject("WizardResonancePreview");
         preview.VisualRoot.transform.SetParent(transform, false);
         preview.RangeRenderer = CreatePreviewLine(preview.VisualRoot.transform,
-            "WizardResonancePreviewRange", preview.LineMaterial, 0.055f);
+            "WizardResonancePreviewRange", preview.LineMaterial, 0.05f);
         preview.FieldRenderer = CreatePreviewLine(preview.VisualRoot.transform,
-            "WizardResonancePreviewField", preview.LineMaterial, 0.075f);
+            "WizardResonancePreviewField", preview.LineMaterial, 0.105f);
+        CreatePreviewFill(preview);
         if (preview.RangeRenderer != null && preview.FieldRenderer != null)
             return true;
 
         preview.VisualRoot.SetActive(false);
         Destroy(preview.VisualRoot);
         Destroy(preview.LineMaterial);
+        Destroy(preview.FillMesh);
         preview.VisualRoot = null;
         preview.LineMaterial = null;
         preview.RangeRenderer = null;
         preview.FieldRenderer = null;
         return false;
+    }
+
+    private static void CreatePreviewFill(ResonancePreview preview)
+    {
+        const int segments = 64;
+        Vector3[] vertices = new Vector3[segments + 1];
+        int[] triangles = new int[segments * 3];
+        for (int i = 0; i < segments; i++)
+        {
+            float angle = Mathf.PI * 2f * i / segments;
+            vertices[i + 1] = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            triangles[i * 3] = 0;
+            triangles[i * 3 + 1] = (i + 1) % segments + 1;
+            triangles[i * 3 + 2] = i + 1;
+        }
+        preview.FillMesh = new Mesh { name = "WizardResonancePreviewFill" };
+        preview.FillMesh.vertices = vertices;
+        preview.FillMesh.triangles = triangles;
+        preview.FillMesh.RecalculateNormals();
+        preview.FillMesh.RecalculateBounds();
+        GameObject fill = new GameObject("WizardResonancePreviewFill");
+        fill.transform.SetParent(preview.VisualRoot.transform, false);
+        fill.AddComponent<MeshFilter>().sharedMesh = preview.FillMesh;
+        preview.FillRenderer = fill.AddComponent<MeshRenderer>();
+        preview.FillRenderer.sharedMaterial = preview.LineMaterial;
+        preview.FillRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        preview.FillRenderer.receiveShadows = false;
+        preview.FillRenderer.enabled = false;
+        preview.FillTint = new MaterialPropertyBlock();
+    }
+
+    private static Material CreateLineMaterial(GameObject sourcePrefab)
+    {
+        if (sourcePrefab == null)
+            return null;
+
+        Material source = null;
+        foreach (Renderer renderer in sourcePrefab.GetComponentsInChildren<Renderer>(true))
+        {
+            if (renderer.sharedMaterial != null)
+            {
+                source = renderer.sharedMaterial;
+                break;
+            }
+        }
+
+        if (source == null)
+            return null;
+
+        Material lineMaterial = new Material(source);
+        if (lineMaterial.HasProperty("_BaseMap"))
+            lineMaterial.SetTexture("_BaseMap", Texture2D.whiteTexture);
+        if (lineMaterial.HasProperty("_MainTex"))
+            lineMaterial.SetTexture("_MainTex", Texture2D.whiteTexture);
+        if (lineMaterial.HasProperty("_BaseColor"))
+            lineMaterial.SetColor("_BaseColor", Color.white);
+        if (lineMaterial.HasProperty("_Color"))
+            lineMaterial.SetColor("_Color", Color.white);
+        return lineMaterial;
+    }
+
+    private void AddGroundBoundary(WizardSkillVisual visual, float radius, Color color, float width)
+    {
+        if (visual == null || radius <= 0f)
+            return;
+
+        float rootScale = Mathf.Abs(visual.transform.lossyScale.x);
+        if (rootScale <= 0.001f)
+            return;
+
+        Material lineMaterial = CreateLineMaterial(resonanceFieldPrefab);
+        if (lineMaterial == null)
+            return;
+
+        visual.OwnGroundBoundaryMaterial(lineMaterial);
+        GameObject lineObject = new GameObject("WizardGroundBoundary");
+        lineObject.transform.SetParent(visual.transform, false);
+        LineRenderer line = lineObject.AddComponent<LineRenderer>();
+        line.useWorldSpace = false;
+        line.loop = true;
+        line.positionCount = 64;
+        line.startWidth = width;
+        line.endWidth = width;
+        line.startColor = color;
+        line.endColor = color;
+        line.sharedMaterial = lineMaterial;
+        line.alignment = LineAlignment.View;
+        line.textureMode = LineTextureMode.Tile;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false;
+
+        float localRadius = radius / rootScale;
+        float localSurfaceOffset = 0.02f / rootScale;
+        for (int i = 0; i < line.positionCount; i++)
+        {
+            float angle = Mathf.PI * 2f * i / line.positionCount;
+            line.SetPosition(i, new Vector3(Mathf.Cos(angle) * localRadius,
+                localSurfaceOffset, Mathf.Sin(angle) * localRadius));
+        }
     }
 
     private static LineRenderer CreatePreviewLine(Transform parent, string objectName, Material material,
@@ -1325,7 +1493,10 @@ public sealed class WizardCombat : MonoBehaviour
         field.Visual = CreateVisual(gravityVortexPrefab, "WizardResidualGravity",
             visualPosition, radius / 4f, true);
         if (field.Visual != null)
+        {
             field.Visual.transform.rotation = Quaternion.FromToRotation(Vector3.up, visualNormal);
+            AddGroundBoundary(field.Visual, radius, new Color(0.66f, 0.45f, 1f, 0.52f), 0.06f);
+        }
         residualGravityFields.Add(field);
     }
 
@@ -1526,6 +1697,14 @@ public sealed class WizardCombat : MonoBehaviour
         playerAugments = GetComponent<PlayerAugments>();
     }
 
-    private static bool IsGamePaused => Time.timeScale <= 0f ||
-        (GameManager.Instance != null && GameManager.Instance.IsPaused);
+    private static bool IsGamePaused
+    {
+        get
+        {
+            GameManager gameManager = GameManager.Instance;
+            return gameManager != null
+                ? gameManager.IsPaused || (Time.timeScale <= 0f && !gameManager.IsHitStopped)
+                : Time.timeScale <= 0f;
+        }
+    }
 }

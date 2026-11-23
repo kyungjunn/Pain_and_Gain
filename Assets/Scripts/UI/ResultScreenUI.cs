@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -31,11 +32,13 @@ public class ResultScreenUI : MonoBehaviour
     [SerializeField] private Button quitButton;
 
     [Header("씬 이름")]
-    [SerializeField] private string homeSceneName = "IntroScene";
-    [SerializeField] private string gameSceneName = "GameScene";
+    [SerializeField] private string homeSceneName = "IntroUI";
+    [SerializeField] private string gameSceneName = "InGame";
 
     [Header("에디터 테스트용")]
     [SerializeField] private ResultData testData;
+
+    private bool leaving;
 
     private void Awake()
     {
@@ -50,6 +53,29 @@ public class ResultScreenUI : MonoBehaviour
             Show(GameResult.Data);   // 인게임에서 넘어온 실제 결과
         else if (testData != null)
             Show(testData);          // 엔딩 씬만 단독 실행할 때 테스트용
+
+        FocusHomeButton();
+    }
+
+    private void OnEnable()
+    {
+        FocusHomeButton();
+    }
+
+    private void FocusHomeButton()
+    {
+        if (EventSystem.current != null && homeButton != null
+            && homeButton.IsActive() && homeButton.IsInteractable())
+        {
+            EventSystem.current.SetSelectedGameObject(homeButton.gameObject);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        homeButton.onClick.RemoveListener(OnHome);
+        restartButton.onClick.RemoveListener(OnRestart);
+        quitButton.onClick.RemoveListener(OnQuit);
     }
 
     // 게임 매니저에서 ResultData 를 채운 뒤 이 함수를 호출
@@ -72,6 +98,7 @@ public class ResultScreenUI : MonoBehaviour
 
         BuildAugmentSlots(data);
         gameObject.SetActive(true);
+        FocusHomeButton();
     }
 
     private void BuildAugmentSlots(ResultData data)
@@ -81,7 +108,10 @@ public class ResultScreenUI : MonoBehaviour
 
         // 이전 슬롯 정리
         foreach (Transform child in augmentContainer)
+        {
+            child.gameObject.SetActive(false);
             Destroy(child.gameObject);
+        }
 
         foreach (var augment in data.augments)
         {
@@ -90,8 +120,17 @@ public class ResultScreenUI : MonoBehaviour
         }
     }
 
-    private void OnHome() => SceneManager.LoadScene(homeSceneName);
-    private void OnRestart() => SceneManager.LoadScene(gameSceneName);
+    private void OnHome() => LeaveResult(homeSceneName);
+    private void OnRestart() => LeaveResult(gameSceneName);
+
+    private void LeaveResult(string sceneName)
+    {
+        if (leaving) return;
+        leaving = true;
+        Time.timeScale = 1f;
+        GameResult.Clear();
+        SceneManager.LoadScene(sceneName);
+    }
 
     private void OnQuit()
     {

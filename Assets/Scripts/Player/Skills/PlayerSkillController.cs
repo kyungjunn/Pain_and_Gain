@@ -90,6 +90,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     // 이동 잠금, 종료 대기 스킬, E 무기 이펙트, 닌자 궁극기 상태.
     private bool movementLocked;
     private PlayerSkillSO deferredCooldownSkill;
+    private NinjaHwaDunChannel hwaDunChannel;
     private Coroutine skillEWeaponRoutine;
     private NinjaUltimate ninjaUltimate;
     private int resonancePreviewOpenedFrame = -1;
@@ -98,6 +99,7 @@ public sealed class PlayerSkillController : MonoBehaviour
     public Transform SkillOrigin => skillOrigin;
     public PlayerStats Stats => stats;
     public PlayerDamageDealer DamageDealer => damageDealer;
+    internal bool HasActiveHwaDunChannel => hwaDunChannel != null;
     public bool IsMovementLocked => movementLocked;
     public bool IsUltimateDashing => ninjaUltimate != null && ninjaUltimate.IsDashing;
     public bool IsWizardResonancePreviewActive
@@ -168,7 +170,9 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void Update()
     {
-        // 채널링 중 사망하면 대기 중인 쿨타임을 시작.
+        // 채널링 중 사망하면 피해를 중단하고 대기 중인 쿨타임을 시작.
+        if (IsPlayerDead)
+            CancelHwaDunChannel();
         if (deferredCooldownSkill != null &&
             IsPlayerDead)
             CompleteDeferredSkill(deferredCooldownSkill);
@@ -180,6 +184,10 @@ public sealed class PlayerSkillController : MonoBehaviour
             ClearDashMoveSpeedBonus();
             return;
         }
+
+        // 히트 스톱은 조준 취소가 아니라 짧은 전투 시간 정지다.
+        if (GameManager.Instance != null && GameManager.Instance.IsHitStopped)
+            return;
 
         if (Time.timeScale <= 0f || (GameManager.Instance != null && GameManager.Instance.IsPaused))
         {
@@ -210,6 +218,7 @@ public sealed class PlayerSkillController : MonoBehaviour
         }
         if (skillEWeapon != null)
             skillEWeapon.SetActive(false);
+        CancelHwaDunChannel();
         if (deferredCooldownSkill != null)
             CompleteDeferredSkill(deferredCooldownSkill);
 
@@ -223,7 +232,7 @@ public sealed class PlayerSkillController : MonoBehaviour
         if (value.isPressed)
         {
             CancelWizardResonancePreview();
-            TryCast(skillQ, false);
+            if (!TryCast(skillQ, false)) PlaySkillDeniedFeedback();
         }
     }
 
@@ -259,22 +268,22 @@ public sealed class PlayerSkillController : MonoBehaviour
                 if (IsPointerOverUI())
                     return;
 
-                if (IsWizardResonancePreviewActive)
-                    TryConfirmWizardResonancePreview();
-                else
-                    TryBeginWizardResonancePreview();
+                bool accepted = IsWizardResonancePreviewActive
+                    ? TryConfirmWizardResonancePreview()
+                    : TryBeginWizardResonancePreview();
+                if (!accepted) PlaySkillDeniedFeedback();
                 return;
             }
 
-            TryCast(skillE, true);
+            if (!TryCast(skillE, true)) PlaySkillDeniedFeedback();
         }
     }
 
     // R 입력. 게이지 풀일 때만 시전.
     public void OnUltimate(InputValue value)
     {
-        if (value.isPressed)
-            TryUseUltimate();
+        if (value.isPressed && !TryUseUltimate())
+            PlaySkillDeniedFeedback();
     }
 
     public bool TryUseUltimate()
@@ -308,6 +317,30 @@ public sealed class PlayerSkillController : MonoBehaviour
     {
         // 지속형 스킬 종료 알림을 받아 지연 쿨타임 완료.
         CompleteDeferredSkill(skill);
+    }
+
+    internal bool TryOwnHwaDunChannel(NinjaHwaDunChannel channel)
+    {
+        if (channel == null || HasActiveHwaDunChannel || !isActiveAndEnabled || IsPlayerDead)
+            return false;
+
+        hwaDunChannel = channel;
+        return true;
+    }
+
+    internal void NotifyHwaDunChannelFinished(NinjaHwaDunChannel channel, PlayerSkillSO skill)
+    {
+        if (hwaDunChannel != channel)
+            return;
+
+        hwaDunChannel = null;
+        NotifyChannelFinished(skill);
+    }
+
+    private void CancelHwaDunChannel()
+    {
+        if (hwaDunChannel != null)
+            hwaDunChannel.StopChannel();
     }
 
     public bool TryBeginWizardResonancePreview()
@@ -469,6 +502,7 @@ public sealed class PlayerSkillController : MonoBehaviour
         if (speedBonusRatio <= 0f)
             return;
 
+        // 기존 돌진 보너스 제외: 재발동 시 복리 증가 방지
         float moveSpeedWithoutDashBonus = stats.MoveSpeed -
                                           (dashMoveSpeedBonusActive ? dashMoveSpeedBonus : 0f);
         dashMoveSpeedBonus = Mathf.Max(0f, moveSpeedWithoutDashBonus) * speedBonusRatio;
@@ -500,6 +534,7 @@ public sealed class PlayerSkillController : MonoBehaviour
 
     private void HandlePlayerDeath()
     {
+        CancelHwaDunChannel();
         CancelWizardResonancePreview();
         ClearDashMoveSpeedBonus();
         movementLocked = false;
@@ -528,10 +563,11 @@ public sealed class PlayerSkillController : MonoBehaviour
             return;
         }
 
+        // 시작 프레임·화면 조작 클릭의 설치 확정 방지
         if (mouse.leftButton.wasPressedThisFrame && Time.frameCount > resonancePreviewOpenedFrame &&
             !IsPointerOverUI())
         {
-            TryConfirmWizardResonancePreview();
+            if (!TryConfirmWizardResonancePreview()) PlaySkillDeniedFeedback();
         }
     }
 
@@ -676,11 +712,18 @@ public sealed class PlayerSkillController : MonoBehaviour
             animator.SetTrigger(skill.AnimationTrigger);
     }
 
+    private void PlaySkillDeniedFeedback()
+    {
+        if (Time.timeScale > 0f && CanCast() && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySkillDenied();
+    }
+
     // 일시정지/사망 차단
     private bool CanCast()
     {
         return isActiveAndEnabled &&
-               (GameManager.Instance == null || !GameManager.Instance.IsPaused) &&
+               (GameManager.Instance == null ||
+                (!GameManager.Instance.IsPaused && !GameManager.Instance.IsHitStopped)) &&
                !IsPlayerDead;
     }
 

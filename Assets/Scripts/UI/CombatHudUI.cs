@@ -1,9 +1,10 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-// 전투 HUD: 스킬 상태와 궁극기 게이지 표시. 수치 계산은 플레이어 컴포넌트 담당.
+// 전투 HUD. 수치 계산은 플레이어 측.
 public sealed class CombatHudUI : MonoBehaviour
 {
     [SerializeField] private Image basicAttackIcon;
@@ -16,6 +17,7 @@ public sealed class CombatHudUI : MonoBehaviour
     [SerializeField] private GameObject statsPanel;
     private PlayerSkillController skills;
     private PlayerUltimateGauge gauge;
+    private GameObject selectionBeforeStats;
     private static readonly Color Charging = new Color(0.28f, 0.82f, 1f);
     private static readonly Color Ready = new Color(1f, 0.75f, 0.25f);
 
@@ -26,17 +28,16 @@ public sealed class CombatHudUI : MonoBehaviour
 
     private void OnEnable()
     {
-        // 플레이어 교체 시 재연결하고, 이미 생성된 플레이어도 즉시 연결.
+        // 이벤트 + 현재 스냅샷
         SpawnManager.OnPlayerSpawned += Bind;
-        var player = GameObject.FindGameObjectWithTag("Player");
-        Bind(player);
+        Bind(SpawnManager.Instance?.SpawnedPlayer);
     }
 
     private void OnDisable()
     {
         SpawnManager.OnPlayerSpawned -= Bind;
         Unbind();
-        statsPanel.SetActive(false);
+        SetStatsPanelVisible(false);
     }
 
     private void Unbind()
@@ -72,12 +73,39 @@ public sealed class CombatHudUI : MonoBehaviour
     {
         // Tab: 능력치 패널 토글. 쿨타임: 매 프레임 표시 갱신.
         if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
-            statsPanel.SetActive(!statsPanel.activeSelf);
+            SetStatsPanelVisible(!statsPanel.activeSelf);
         RefreshSkills();
         bool recast = skills != null && skills.UltimateRecastReady;
         // 궁극기 충전 완료 또는 재시전 가능 시 강조색 적용.
         ultimateKey.color = recast || (gauge != null && gauge.IsFull) ? Ready : Color.white;
         ultimateFill.color = recast || (gauge != null && gauge.IsFull) ? Ready : Charging;
+    }
+
+    private void SetStatsPanelVisible(bool visible)
+    {
+        var events = EventSystem.current;
+        if (visible && events != null)
+            selectionBeforeStats = events.currentSelectedGameObject;
+        var selected = events != null ? events.currentSelectedGameObject : null;
+        bool ownsFocus = selected != null && selected.transform.IsChildOf(statsPanel.transform);
+        statsPanel.SetActive(visible);
+        if (events == null) return;
+        if (visible)
+        {
+            foreach (Selectable control in statsPanel.GetComponentsInChildren<Selectable>())
+                if (control.IsInteractable())
+                {
+                    events.SetSelectedGameObject(control.gameObject);
+                    break;
+                }
+        }
+        else
+        {
+            if (ownsFocus)
+                events.SetSelectedGameObject(selectionBeforeStats != null && selectionBeforeStats.activeInHierarchy
+                    ? selectionBeforeStats : null);
+            selectionBeforeStats = null;
+        }
     }
 
     private void RefreshSkills()
