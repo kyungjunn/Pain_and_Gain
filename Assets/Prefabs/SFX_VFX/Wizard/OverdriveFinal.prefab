@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1440606435192038245}
   - component: {fileID: 3137072487943157953}
   - component: {fileID: 7918031480049099071}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Trails
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4834,7 +4834,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -4916,7 +4916,7 @@ GameObject:
   - component: {fileID: 8861175600497558657}
   - component: {fileID: 6015181899705302484}
   - component: {fileID: 6071734483656836178}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: OverdriveFinal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9749,7 +9749,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -9841,7 +9841,7 @@ GameObject:
   - component: {fileID: 7971090107761337037}
   - component: {fileID: 7887315667441916430}
   - component: {fileID: 1997299503757239328}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: ShockWaveIn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14655,7 +14655,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -14735,7 +14735,7 @@ GameObject:
   - component: {fileID: 6025836572371810726}
   - component: {fileID: 3419111654230064894}
   - component: {fileID: 9090412783524445800}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Flash
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19549,7 +19549,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -19629,7 +19629,7 @@ GameObject:
   - component: {fileID: 9209188162782104125}
   - component: {fileID: 8452156482660924260}
   - component: {fileID: 902066209079506495}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Core
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24515,7 +24515,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -24595,7 +24595,7 @@ GameObject:
   - component: {fileID: 1282303622373987254}
   - component: {fileID: 8769413513259679716}
   - component: {fileID: 1017688818623266048}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Glow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -29418,7 +29418,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -29498,7 +29498,7 @@ GameObject:
   - component: {fileID: 1506810192808986618}
   - component: {fileID: 3920243565172741236}
   - component: {fileID: 5875341711322090356}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Circle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -34312,7 +34312,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -34392,7 +34392,7 @@ GameObject:
   - component: {fileID: 3326674200880190839}
   - component: {fileID: 2248553805655416060}
   - component: {fileID: 2838579744894795915}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Smoke
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -39215,7 +39215,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -39295,7 +39295,7 @@ GameObject:
   - component: {fileID: 4925080608187121004}
   - component: {fileID: 1240971433318443002}
   - component: {fileID: 2069896126033846889}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: ShockSphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -44109,7 +44109,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -44189,7 +44189,7 @@ GameObject:
   - component: {fileID: 2118071983238908245}
   - component: {fileID: 6892661767461744028}
   - component: {fileID: 8367255396436978308}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: ShockWave
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -49003,7 +49003,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -49083,7 +49083,7 @@ GameObject:
   - component: {fileID: 8349605254467656136}
   - component: {fileID: 7943782880934989300}
   - component: {fileID: 4263343961293727690}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Stones
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -53906,7 +53906,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0

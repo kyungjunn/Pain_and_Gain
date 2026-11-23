@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3970284031717738185}
   - component: {fileID: 8711434960367211909}
   - component: {fileID: 413497480796541172}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: GravityCore
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4829,7 +4829,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -4921,7 +4921,7 @@ GameObject:
   - component: {fileID: 1129931302465988927}
   - component: {fileID: 9050484401973638580}
   - component: {fileID: 5556609840166719032}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Distortion
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9735,7 +9735,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -9815,7 +9815,7 @@ GameObject:
   - component: {fileID: 5841878366764426389}
   - component: {fileID: 1708139573364077394}
   - component: {fileID: 1467018987546871597}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Smoke
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14580,7 +14580,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -14660,7 +14660,7 @@ GameObject:
   - component: {fileID: 325832180025611504}
   - component: {fileID: 681118607246119302}
   - component: {fileID: 1317514884862599331}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: CircleSparks
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19425,7 +19425,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
