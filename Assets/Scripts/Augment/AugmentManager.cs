@@ -143,13 +143,12 @@ public class AugmentManager : MonoBehaviour
             }
         }
 
-        int level = playerStats.GetComponent<PlayerLevelSystem>()?.level ?? 2;
-        FillRandomOptions(pool, result, optionCount, level);
+        FillRandomOptions(pool, result, optionCount);
 
         return result;
     }
 
-    private static void FillRandomOptions(List<AugmentSO> pool, List<AugmentSO> result, int optionCount, int level)
+    private static void FillRandomOptions(List<AugmentSO> pool, List<AugmentSO> result, int optionCount)
     {
         List<AugmentSO> normalPool = new List<AugmentSO>();
         List<AugmentSO> epicPool = new List<AugmentSO>();
@@ -165,11 +164,9 @@ public class AugmentManager : MonoBehaviour
             rarityPool.Add(augment);
         }
 
-        const int totalRarityWeight = 10_000;
-        int levelSteps = Mathf.Clamp(level, 2, 10) - 2;
-        int epicWeight = 2_000 + 200 * levelSteps;
-        int legendaryWeight = 1_000 + 50 * levelSteps;
-        int normalWeight = totalRarityWeight - epicWeight - legendaryWeight;
+        const int normalWeight = 80;
+        const int epicWeight = 19;
+        const int legendaryWeight = 1;
 
         while (result.Count < optionCount)
         {
