@@ -1181,7 +1181,7 @@ public sealed class WizardCombat : MonoBehaviour
         if (preview.LineMaterial == null)
             return false;
 
-        preview.VisualRoot = new GameObject("WizardResonancePreview");
+        preview.VisualRoot = new GameObject("WizardResonancePreview") { layer = resonanceFieldPrefab.layer };
         preview.VisualRoot.transform.SetParent(transform, false);
         preview.RangeRenderer = CreatePreviewLine(preview.VisualRoot.transform,
             "WizardResonancePreviewRange", preview.LineMaterial, 0.05f);
@@ -1220,10 +1220,11 @@ public sealed class WizardCombat : MonoBehaviour
         preview.FillMesh.triangles = triangles;
         preview.FillMesh.RecalculateNormals();
         preview.FillMesh.RecalculateBounds();
-        GameObject fill = new GameObject("WizardResonancePreviewFill");
+        GameObject fill = new GameObject("WizardResonancePreviewFill") { layer = preview.VisualRoot.layer };
         fill.transform.SetParent(preview.VisualRoot.transform, false);
         fill.AddComponent<MeshFilter>().sharedMesh = preview.FillMesh;
         preview.FillRenderer = fill.AddComponent<MeshRenderer>();
+        preview.FillRenderer.allowOcclusionWhenDynamic = false;
         preview.FillRenderer.sharedMaterial = preview.LineMaterial;
         preview.FillRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         preview.FillRenderer.receiveShadows = false;
@@ -1275,9 +1276,10 @@ public sealed class WizardCombat : MonoBehaviour
             return;
 
         visual.OwnGroundBoundaryMaterial(lineMaterial);
-        GameObject lineObject = new GameObject("WizardGroundBoundary");
+        GameObject lineObject = new GameObject("WizardGroundBoundary") { layer = visual.gameObject.layer };
         lineObject.transform.SetParent(visual.transform, false);
         LineRenderer line = lineObject.AddComponent<LineRenderer>();
+        line.allowOcclusionWhenDynamic = false;
         line.useWorldSpace = false;
         line.loop = true;
         line.positionCount = 64;
@@ -1304,9 +1306,10 @@ public sealed class WizardCombat : MonoBehaviour
     private static LineRenderer CreatePreviewLine(Transform parent, string objectName, Material material,
         float width)
     {
-        GameObject lineObject = new GameObject(objectName);
+        GameObject lineObject = new GameObject(objectName) { layer = parent.gameObject.layer };
         lineObject.transform.SetParent(parent, false);
         LineRenderer line = lineObject.AddComponent<LineRenderer>();
+        line.allowOcclusionWhenDynamic = false;
         line.useWorldSpace = true;
         line.loop = true;
         line.positionCount = 64;

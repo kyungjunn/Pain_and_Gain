@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6160850509567007292}
   - component: {fileID: 275092480635367641}
   - component: {fileID: 8941604851262706936}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Sparks
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4776,7 +4776,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -4856,7 +4856,7 @@ GameObject:
   - component: {fileID: 1018493802415280744}
   - component: {fileID: 3918713719151993053}
   - component: {fileID: 1975837138591084927}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: DarkSparks
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9621,7 +9621,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -9701,7 +9701,7 @@ GameObject:
   - component: {fileID: 8107262431794465094}
   - component: {fileID: 8072954142644887679}
   - component: {fileID: 6807257178066333286}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Sides
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14457,7 +14457,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -14538,7 +14538,7 @@ GameObject:
   - component: {fileID: 8341681366329643417}
   - component: {fileID: 7782505839965119254}
   - component: {fileID: 1941813627008295402}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: ResonanceField
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19356,7 +19356,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -19449,7 +19449,7 @@ GameObject:
   - component: {fileID: 4538602329246621418}
   - component: {fileID: 671537291384672676}
   - component: {fileID: 1630039588317194857}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24326,7 +24326,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0

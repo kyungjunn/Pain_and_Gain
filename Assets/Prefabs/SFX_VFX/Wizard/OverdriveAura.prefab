@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4641399288458659542}
   - component: {fileID: 8353399274111557867}
   - component: {fileID: 4362289301367583920}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Smoke
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4776,7 +4776,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -4856,7 +4856,7 @@ GameObject:
   - component: {fileID: 211873240463883009}
   - component: {fileID: 6780350466831582836}
   - component: {fileID: 7142075069779516094}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Trails
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9621,7 +9621,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
@@ -9703,7 +9703,7 @@ GameObject:
   - component: {fileID: 1263223636841942232}
   - component: {fileID: 2802730429128386797}
   - component: {fileID: 7075489309776351512}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: OverdriveAura
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14470,7 +14470,7 @@ ParticleSystemRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0

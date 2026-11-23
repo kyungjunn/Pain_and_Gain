@@ -5136,6 +5136,18 @@ PrefabInstance:
       propertyPath: basicAttackClip
       value: 
       objectReference: {fileID: 8300000, guid: 323e15cfe809e114ab92c9f4b25e8bc2, type: 3}
+    - target: {fileID: 2672923580594890391, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 2672948092393308451, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 2673854626750208923, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 5763021708063854728, guid: 2a4bbe959178e1d4393b6341b8072781, type: 3}
       propertyPath: skillE
       value: 

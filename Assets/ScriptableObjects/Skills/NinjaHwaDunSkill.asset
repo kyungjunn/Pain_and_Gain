@@ -15,7 +15,7 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: e1c3c25782a016e408dbcea1ee592702, type: 3}
   cooldown: 6
   animationTrigger: SkillQ
-  flamethrowerPrefab: {fileID: 163286, guid: 50daa816369323b42b56093bb108296f, type: 3}
+  flamethrowerPrefab: {fileID: 7972499524057912967, guid: 96dc51735857746179e6ad30dae0cd35, type: 3}
   castSfx: {fileID: 8300000, guid: a652877b012108e41871f867ada9f176, type: 3}
   duration: 2
   tickInterval: 0.25

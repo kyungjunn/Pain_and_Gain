@@ -151,8 +151,8 @@ MonoBehaviour:
   initialEnemyCount: 0
   enableEnemyAutoSpawn: 1
   enemySpawnInterval: 5
-  enemiesPerSpawn: 1
-  maxAliveEnemies: 12
+  enemiesPerSpawn: 2
+  maxAliveEnemies: 16
   enableDynamicDifficulty: 1
   difficultyStepDuration: 60
   spawnIntervalDecreasePerStep: 0.4
