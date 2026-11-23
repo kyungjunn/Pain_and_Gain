@@ -143,20 +143,56 @@ public class AugmentManager : MonoBehaviour
             }
         }
 
-        while (result.Count < optionCount && pool.Count > 0)
-        {
-            AugmentSO selected = GetWeightedRandom(pool);
-            result.Add(selected);
-            pool.Remove(selected);
-        }
+        int level = playerStats.GetComponent<PlayerLevelSystem>()?.level ?? 2;
+        FillRandomOptions(pool, result, optionCount, level);
 
         return result;
     }
 
-    // 가중치 추첨
-    private AugmentSO GetWeightedRandom(List<AugmentSO> pool)
+    private static void FillRandomOptions(List<AugmentSO> pool, List<AugmentSO> result, int optionCount, int level)
     {
-        int totalWeight = pool.Sum(x => x.weight);
+        List<AugmentSO> normalPool = new List<AugmentSO>();
+        List<AugmentSO> epicPool = new List<AugmentSO>();
+        List<AugmentSO> legendaryPool = new List<AugmentSO>();
+        foreach (AugmentSO augment in pool)
+        {
+            List<AugmentSO> rarityPool = augment.rarity switch
+            {
+                RarityType.Epic => epicPool,
+                RarityType.Legendary => legendaryPool,
+                _ => normalPool
+            };
+            rarityPool.Add(augment);
+        }
+
+        const int totalRarityWeight = 10_000;
+        int levelSteps = Mathf.Clamp(level, 2, 10) - 2;
+        int epicWeight = 2_000 + 200 * levelSteps;
+        int legendaryWeight = 1_000 + 50 * levelSteps;
+        int normalWeight = totalRarityWeight - epicWeight - legendaryWeight;
+
+        while (result.Count < optionCount)
+        {
+            int availableNormal = normalPool.Count > 0 ? normalWeight : 0;
+            int availableEpic = epicPool.Count > 0 ? epicWeight : 0;
+            int availableLegendary = legendaryPool.Count > 0 ? legendaryWeight : 0;
+            int availableTotal = availableNormal + availableEpic + availableLegendary;
+            if (availableTotal == 0) break;
+
+            int roll = Random.Range(0, availableTotal);
+            List<AugmentSO> selectedPool = roll < availableNormal ? normalPool
+                : roll < availableNormal + availableEpic ? epicPool : legendaryPool;
+
+            AugmentSO selected = GetWeightedRandom(selectedPool);
+            result.Add(selected);
+            selectedPool.Remove(selected);
+        }
+    }
+
+    // 가중치 추첨
+    private static AugmentSO GetWeightedRandom(List<AugmentSO> pool)
+    {
+        int totalWeight = pool.Sum(augment => augment.weight);
         if (totalWeight <= 0)
         {
             return pool[0];
